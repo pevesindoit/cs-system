@@ -31,7 +31,7 @@ export function DropDown({
 }: CustomSelectProps) {
     return (
         <div className="space-y-1">
-            <Label htmlFor="email">Email</Label>
+            <Label htmlFor="email">{label}</Label>
             <Select onValueChange={onValueChange}>
                 <SelectTrigger className="w-[180px]">
                     <SelectValue placeholder={placeholder} />

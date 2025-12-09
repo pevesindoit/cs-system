@@ -41,8 +41,8 @@ export function DropDown({
                         {label && <SelectLabel>{label}</SelectLabel>}
 
                         {/* 👇 Map through the items prop to generate options dynamically */}
-                        {items.map((item) => (
-                            <SelectItem key={item.value} value={item.value}>
+                        {items.map((item, index) => (
+                            <SelectItem key={index} value={item.value}>
                                 {item.label}
                             </SelectItem>
                         ))}

@@ -18,6 +18,8 @@ export default function Dashboard() {
         { value: "referral", label: "Friend Referral" },
     ]
 
+    console.log(source)
+
     return (
         <div>
             <div className="grid w-full max-w-sm items-center gap-3">

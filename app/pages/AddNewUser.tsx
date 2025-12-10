@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { DropDown } from "../custom-component/DropDown";
 import { getBranch, getType } from "../function/fetch/get/fetch";
+import { addUser } from "../function/fetch/auth/fetch";
 
 // Define the shape your DropDown expects
 interface SelectItemData {
@@ -13,16 +14,20 @@ interface SelectItemData {
     label: string;
 }
 
+interface itemType {
+    id: number;
+    name: string;
+}
+
 export default function AddNewUser() {
-    const [formData, setFormData] = useState({
+    const [formData, setFormData] = useState<formType>({
         email: "",
         password: "",
-        cabang: "", // Stores Branch ID
-        type: "",   // Stores Type ID
+        cabang: "",
+        type: 0,
         nama: "",
     });
 
-    // Fix 1: State matches Dropdown requirements
     const [typeList, setTypeList] = useState<SelectItemData[]>([]);
     const [branchList, setBranchList] = useState<SelectItemData[]>([]);
 
@@ -31,13 +36,12 @@ export default function AddNewUser() {
             const res = await getType();
             const rawData = res?.data.data || [];
 
-            // Map DB data to Dropdown format
-            const formattedList = rawData.map((item: BranchType) => ({
-                value: String(item.id), // Ensure ID is string
+            // Fixed: Use TypeType (or any) here, not BranchType
+            const formattedList = rawData.map((item: itemType) => ({
+                value: String(item.id),
                 label: item.name
             }));
 
-            // Fix 2: Set the correct state (was setBranchList)
             setTypeList(formattedList);
         };
 
@@ -49,12 +53,12 @@ export default function AddNewUser() {
             const res = await getBranch();
             const rawData = res?.data.data || [];
 
-            const formattedList = rawData.map((item: TypeType) => ({
+            // Fixed: Use BranchType (or any) here, not TypeType
+            const formattedList = rawData.map((item: itemType) => ({
                 value: String(item.id),
                 label: item.name
             }));
 
-            // Fix 3: Set the correct state (was setTypeList)
             setBranchList(formattedList);
         };
 
@@ -68,12 +72,12 @@ export default function AddNewUser() {
 
     const handleSignup = async () => {
         console.log("Submitting:", formData);
-        // Call your API here
+        const res = addUser(formData)
+        console.log(res)
     };
 
     return (
         <div className="p-4 grid grid-cols-1 gap-5">
-            {/* ... Nama, Email, Password inputs (unchanged) ... */}
             <div className="space-y-1">
                 <Label>Nama</Label>
                 <Input name="nama" value={formData.nama} onChange={handleChange} />
@@ -87,23 +91,28 @@ export default function AddNewUser() {
                 <Input type="password" name="password" value={formData.password} onChange={handleChange} />
             </div>
 
+            {/* BRANCH (CABANG) DROPDOWN */}
             <div className="space-y-1">
+                <Label>Cabang</Label>
                 <DropDown
                     label="Select Cabang"
-                    items={branchList} // Now matches Type
-                    onValueChange={(value) =>
-                        // Fix 4: Update 'cabang', not 'type'
+                    items={branchList}
+                    // The Dropdown returns a string value
+                    onValueChange={(value: string) =>
                         setFormData((prev) => ({ ...prev, cabang: value }))
                     }
                 />
             </div>
 
+            {/* TYPE DROPDOWN */}
             <div className="space-y-1">
+                <Label>Type</Label>
                 <DropDown
                     label="Select Type"
                     items={typeList}
-                    onValueChange={(value) =>
-                        setFormData((prev) => ({ ...prev, type: value }))
+                    // ✅ FIXED: accept string, convert to Number
+                    onValueChange={(value: string) =>
+                        setFormData((prev) => ({ ...prev, type: Number(value) }))
                     }
                 />
             </div>

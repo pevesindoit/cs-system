@@ -30,10 +30,10 @@ export function DropDown({
     onValueChange
 }: CustomSelectProps) {
     return (
-        <div className="space-y-1">
+        <div className="space-y-2">
             <Label htmlFor="email">{label}</Label>
             <Select onValueChange={onValueChange}>
-                <SelectTrigger className="w-[180px]">
+                <SelectTrigger className="w-full">
                     <SelectValue placeholder={placeholder} />
                 </SelectTrigger>
                 <SelectContent>

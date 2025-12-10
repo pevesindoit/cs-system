@@ -9,16 +9,6 @@ import { getBranch, getType } from "../function/fetch/get/fetch";
 import { addUser } from "../function/fetch/auth/fetch";
 
 // Define the shape your DropDown expects
-interface SelectItemData {
-    value: string;
-    label: string;
-}
-
-interface itemType {
-    id: number;
-    name: string;
-}
-
 export default function AddNewUser() {
     const [formData, setFormData] = useState<formType>({
         email: "",

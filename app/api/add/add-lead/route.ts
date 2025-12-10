@@ -38,9 +38,9 @@ export async function POST(req: NextRequest) {
     // Fetch updated list
     const { data: allLeads, error: fetchError } = await supabase
       .from("leads")
-      .select("*")
+      .select("*, platform:platform_id(name)")
       .eq("user_id", user_id)
-      .order("name", { ascending: true });
+      .order("created_at", { ascending: false });
 
     if (fetchError) {
       console.error("Supabase Fetch Error:", fetchError);

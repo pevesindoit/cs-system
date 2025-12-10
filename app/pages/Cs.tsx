@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react";
-import { getPlatforms } from "../function/fetch/get/fetch";
+import { getLeads, getPlatforms } from "../function/fetch/get/fetch";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import H1 from "../custom-component/H1";
@@ -9,6 +9,7 @@ import { DropDown } from "../custom-component/DropDown";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { addLead } from "../function/fetch/add/fetch";
+import LeadTable from "../custom-component/card/LeadTable";
 
 export default function Cs() {
     const [formData, setFormData] = useState<leadsType>({
@@ -27,6 +28,15 @@ export default function Cs() {
         { label: "Followup", value: "followup" },
         { label: "Los", value: "los" }
     ]
+    const [leads, setLeads] = useState<leadsType[]>([]);
+
+    useEffect(() => {
+        const fetchLeads = async () => {
+            const res = await getLeads(); // <-- Create if not exist
+            setLeads(res?.data.data || []);
+        };
+        fetchLeads();
+    }, []);
 
     useEffect(() => {
         const fetchPlatforms = async () => {
@@ -63,17 +73,18 @@ export default function Cs() {
     const addLeads = async () => {
         const res = await addLead(formData)
         console.log(res)
+        setLeads(res?.data.allLeads)
     }
 
     return (
-        <div>
+        <div className="space-y-6">
             <H1>Leads Management</H1>
-            <div className="border rounded-[5px] h-full py-5 px-6 bg-[#FEFEFE] grid grid-cols-1 gap-4">
+            <div className="border rounded-[5px] h-full py-10 px-9 bg-[#FEFEFE] grid grid-cols-1 gap-8">
                 <div className="space-y-2">
-                    <Label>Nama Costumer</Label>
+                    <Label className="font-normal">Nama Costumer</Label>
                     <Input name="name" value={formData.name} onChange={handleChange} />
                 </div>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-2 gap-8">
                     <div className="space-y-2">
                         <DropDown
                             label="Platform"
@@ -96,15 +107,16 @@ export default function Cs() {
                     </div>
                 </div>
                 <div className="space-y-2">
-                    <Label>Nominal</Label>
+                    <Label className="font-normal">Nominal</Label>
                     <Input name="nominal" value={formData.nominal} onChange={handleChange} type="number" />
                 </div>
                 <div className="space-y-2">
-                    <Label>Alasan Closing / Tidak Closing</Label>
+                    <Label className="font-normal">Alasan Closing / Tidak Closing</Label>
                     <Textarea name="reason" value={formData.reason} onChange={handleChange} />
                 </div>
                 <Button onClick={addLeads}>Kirim</Button>
             </div>
+            <LeadTable data={leads} />
         </div>
     )
 }

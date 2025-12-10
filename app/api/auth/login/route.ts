@@ -4,7 +4,7 @@ import supabase from "@/lib/db";
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { email, password, nama, type, cabang } = body;
+    const { email, password } = body;
 
     if (!email || !password) {
       return NextResponse.json(
@@ -13,17 +13,11 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    console.log("BODY:", body);
-    const { data, error } = await supabase.auth.signUp({
-      email: email,
-      password: password,
-      options: {
-        data: {
-          name: nama,
-          branch_id: cabang,
-          type_id: type,
-        },
-      },
+    console.log("LOGIN BODY:", body);
+
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
     });
 
     if (error) {
@@ -31,12 +25,12 @@ export async function POST(req: NextRequest) {
     }
 
     return NextResponse.json(
-      { message: "User created successfully", user: data.user },
-      { status: 201 }
+      { message: "Login successful", user: data.user, session: data.session },
+      { status: 200 }
     );
   } catch (err) {
     return NextResponse.json(
-      { error: "Internal Server Error", err },
+      { error: "Internal Server Error", details: err },
       { status: 500 }
     );
   }

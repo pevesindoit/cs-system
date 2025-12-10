@@ -35,3 +35,12 @@ export const getCostumers = async () => {
     console.log("Failed to fetch organisations", error);
   }
 };
+
+export const getLeads = async () => {
+  try {
+    const res = await axios.get("/api/get/get-leads");
+    return res;
+  } catch (error) {
+    console.log("Failed to fetch organisations", error);
+  }
+};

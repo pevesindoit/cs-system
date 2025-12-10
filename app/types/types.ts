@@ -38,3 +38,8 @@ interface leadsType {
   name: string;
   user_id: string;
 }
+
+interface loginType {
+  email: string;
+  password: string;
+}

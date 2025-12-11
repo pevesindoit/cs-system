@@ -32,7 +32,7 @@ export default function Cs() {
         { label: "Followup", value: "followup" },
         { label: "Los", value: "los" }
     ]
-    const [leads, setLeads] = useState<leadsType[]>([]);
+    const [leads, setLeads] = useState<leadsTypeError[]>([]);
 
     useEffect(() => {
         const fetchLeads = async () => {

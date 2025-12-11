@@ -17,3 +17,11 @@ export const addLead = async (data: CostumerType) => {
     console.log("Failed to fetch organisations", error);
   }
 };
+export const addAdss = async (data: adsType) => {
+  try {
+    const res = await axios.post("/api/add/add-ads", data);
+    return res;
+  } catch (error) {
+    console.log("Failed to fetch organisations", error);
+  }
+};

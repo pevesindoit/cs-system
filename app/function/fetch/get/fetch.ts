@@ -44,3 +44,11 @@ export const getLeads = async (user_id: string) => {
     console.log("Failed to fetch organisations", error);
   }
 };
+export const getAds = async (user_id: string) => {
+  try {
+    const res = await axios.post("/api/get/get-ads", { user_id });
+    return res;
+  } catch (error) {
+    console.log("Failed to fetch organisations", error);
+  }
+};

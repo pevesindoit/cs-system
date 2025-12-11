@@ -1,5 +1,4 @@
 "use client"
-
 import {
     Table,
     TableBody,
@@ -9,9 +8,9 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui/table";
-import ColoredTemplate from "../accessories/ColoredTemplate";
+import FormatDate from "../formater/DateFormater";
 
-export default function LeadTable({ data }: { data: leadsTypeError[] }) {
+export default function AdsTable({ data }: { data: adsTypeError[] }) {
 
     console.log(data, "ini didalam komponent");
 
@@ -24,24 +23,22 @@ export default function LeadTable({ data }: { data: leadsTypeError[] }) {
 
                 <TableHeader>
                     <TableRow>
-                        <TableHead>Nama</TableHead>
-                        <TableHead>Status</TableHead>
+                        <TableHead>Date</TableHead>
+                        <TableHead>Campaign</TableHead>
                         <TableHead>Platform</TableHead>
-                        <TableHead className="text-center">Nominal</TableHead>
-                        <TableHead>Kenapa Closing / Tidak</TableHead>
+                        <TableHead className="text-center">Cost</TableHead>
                     </TableRow>
                 </TableHeader>
 
                 <TableBody>
-                    {safeData.map((item: leadsTypeError, index: number) => (
+                    {safeData.map((item: adsTypeError, index: number) => (
                         <TableRow key={index}>
-                            <TableCell className="font-medium">{item.name}</TableCell>
-                            <TableCell><ColoredTemplate>{item.status}</ColoredTemplate></TableCell>
+                            <TableCell className="font-medium"><FormatDate value={item.created_at} /></TableCell>
+                            <TableCell>{item.name}</TableCell>
                             <TableCell>{item.platform?.name}</TableCell>
                             <TableCell className="text-center">
-                                Rp {Number(item.nominal).toLocaleString("id-ID")}
+                                Rp {Number(item.daily_spend).toLocaleString("id-ID")}
                             </TableCell>
-                            <TableCell>{item.reason}</TableCell>
                         </TableRow>
                     ))}
                 </TableBody>

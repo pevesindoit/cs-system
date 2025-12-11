@@ -39,6 +39,36 @@ interface leadsType {
   user_id: string;
 }
 
+interface leadsTypeError {
+  platform: {
+    name: string;
+    id?: string;
+  } | null; // <-- Supabase bisa return null
+  status: string;
+  nominal: number | "";
+  reason: string;
+  name: string;
+  user_id: string;
+}
+
+interface adsTypeError {
+  platform: {
+    name: string;
+    id?: string;
+  } | null;
+  daily_spend: number | "";
+  name: string;
+  ads_manager_id: string;
+  created_at: string;
+}
+
+interface adsType {
+  platform_id: string;
+  daily_spend: number | "";
+  name: string;
+  ads_manager_id: string;
+}
+
 interface loginType {
   email: string;
   password: string;

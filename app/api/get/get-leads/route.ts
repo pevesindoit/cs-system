@@ -1,22 +1,25 @@
+import { NextRequest, NextResponse } from "next/server";
 import supabase from "@/lib/db";
-import { NextResponse } from "next/server";
 
-export async function GET() {
+export async function POST(req: NextRequest) {
+  const { user_id } = await req.json();
+  console.log(user_id, "ini leads user_id");
+
   try {
     const { data, error } = await supabase
       .from("leads")
       .select("*, platform:platform_id(name)")
+      .eq("user_id", user_id) // <-- filter by user id
       .order("created_at", { ascending: false });
+
     if (error) {
-      console.error("Supabase Error:", error);
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
-    console.log(data);
+
     return NextResponse.json({ data }, { status: 200 });
   } catch (err) {
-    console.error("Server Error:", err);
     return NextResponse.json(
-      { error: "Internal Server Error" },
+      { error: "Internal Server Error", details: err },
       { status: 500 }
     );
   }

@@ -36,9 +36,9 @@ export const getCostumers = async () => {
   }
 };
 
-export const getLeads = async () => {
+export const getLeads = async (user_id: string) => {
   try {
-    const res = await axios.get("/api/get/get-leads");
+    const res = await axios.post("/api/get/get-leads", { user_id });
     return res;
   } catch (error) {
     console.log("Failed to fetch organisations", error);

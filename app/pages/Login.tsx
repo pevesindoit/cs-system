@@ -14,6 +14,8 @@ import {
     CardHeader,
     CardTitle,
 } from "@/components/ui/card"
+import { useRouter } from "next/navigation";
+import { supabaseBrowser } from "@/lib/supabaseBrowser";
 // adjust your path
 
 export default function Login() {
@@ -24,6 +26,7 @@ export default function Login() {
 
     const [loading, setLoading] = useState(false);
     const [errorMsg, setErrorMsg] = useState("");
+    const router = useRouter()
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target;
@@ -34,16 +37,37 @@ export default function Login() {
         setLoading(true);
         setErrorMsg("");
 
-        const res = await login(formData); // <-- SAME as your AddNewUser pattern
+        const res = await login(formData); // API POST → returns { user, session }
 
-        console.log(res)
+        if (res?.status !== 200) {
+            setErrorMsg(res?.data.error || "Login failed");
+            setLoading(false);
+            return;
+        }
 
+        const session = res.data.session;
+
+        // ⭐ SAVE SESSION TO SUPABASE BROWSER CLIENT
+        await supabaseBrowser.auth.setSession({
+            access_token: session.access_token,
+            refresh_token: session.refresh_token,
+        });
+
+        router.push("/cs");
         setLoading(false);
     };
 
+
+    const handleLogout = async () => {
+        console.log("logout")
+        const res = await supabaseBrowser.auth.signOut();
+        console.log("logout", res)
+
+    }
+
     return (
         <Card className="w-full max-w-sm">
-            <CardContent>
+            <CardContent className="space-y-4">
                 <div className="space-y-1">
                     <Label>Email</Label>
                     <Input

@@ -1,41 +1,55 @@
-"use client"
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { DropDown } from "../custom-component/DropDown";
-import { TextArea } from "../custom-component/TextArea";
-import { Button } from "@/components/ui/button"
-import { useState } from "react"
+"use client";
+
+import { useEffect, useState } from "react";
+import DashboardCard from "../custom-component/card/DashboardCard";
+import H1 from "../custom-component/H1";
+import { getDashboardData } from "../function/fetch/get/fetch";
+import DateRangePicker from "../custom-component/DateRangePicker";
 
 export default function Dashboard() {
-    const [source, setSource] = useState("")
-    const [notes, setNotes] = useState("")
+    const [range, setRange] = useState({
+        start_date: "",
+        end_date: ""
+    });
+    const [revenue, setRevenue] = useState<number | null>(null);
+    const [adsSpend, setAdsSpend] = useState<number | null>(null);
+    const [adsRoas, setRoas] = useState<number | null>(null);
+    const [adsConvertionRate, setConvertionRate] = useState<number | null>(null);
 
-    const leadSources = [
-        { value: "facebook", label: "Facebook" },
-        { value: "tiktok", label: "TikTok" },
-        { value: "instagram", label: "Instagram" },
-        { value: "google", label: "Google Ads" },
-        { value: "referral", label: "Friend Referral" },
-    ]
+    console.log(range, "ini rangnya")
 
-    console.log(source)
+    useEffect(() => {
+        if (!range.start_date || !range.end_date) return;
+
+        const fetchData = async () => {
+            const res = await getDashboardData(range);
+            console.log("Dashboard data:", res);
+            setRevenue(res?.data.revenue)
+            setAdsSpend(res?.data.
+                ads_spend)
+            setRoas(res?.data.
+                roas)
+            setConvertionRate(res?.data.
+                conversion_rate)
+        };
+
+        fetchData();
+    }, [range]);
 
     return (
-        <div>
-            <div className="grid w-full max-w-sm items-center gap-3">
-                <Label htmlFor="email">Email</Label>
-                <Input type="email" id="email" placeholder="Email" />
-                <DropDown items={leadSources}
-                    placeholder="Select a fruit"
-                    label="Fruits"
-                    onValueChange={(val) => setSource(val)} />
-                <TextArea
-                    label="Lead Notes"
-                    placeholder="Enter details about this lead..."
-                    value={notes}
-                    onValueChange={(val) => setNotes(val)}
-                />
-                <Button variant="outline" className="bg-[#1C1C1C] text-[#ECECEB] hover:bg-[#616161] hover:text-[#ECECEB]">Button</Button>
+        <div className="space-y-7">
+            <div className="h-full">
+                <H1>Dashboard</H1>
+
+                {/* Single Date Picker Component */}
+                <DateRangePicker onChange={setRange} />
+
+                <div className="grid grid-cols-2 gap-8 mt-8">
+                    <DashboardCard>
+
+                        {/* Stats here */}
+                    </DashboardCard>
+                </div>
             </div>
         </div>
     );

@@ -73,3 +73,8 @@ interface loginType {
   email: string;
   password: string;
 }
+
+interface dashboardPayloadType {
+  start_date: string;
+  end_date: string;
+}

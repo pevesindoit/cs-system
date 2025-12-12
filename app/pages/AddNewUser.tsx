@@ -67,7 +67,7 @@ export default function AddNewUser() {
     };
 
     return (
-        <div className="p-4 grid grid-cols-1 gap-5">
+        <div className="grid grid-cols-1 gap-5 bg-white p-10">
             <div className="space-y-1">
                 <Label>Nama</Label>
                 <Input name="nama" value={formData.nama} onChange={handleChange} />
@@ -83,7 +83,6 @@ export default function AddNewUser() {
 
             {/* BRANCH (CABANG) DROPDOWN */}
             <div className="space-y-1">
-                <Label>Cabang</Label>
                 <DropDown
                     label="Select Cabang"
                     items={branchList}
@@ -96,7 +95,6 @@ export default function AddNewUser() {
 
             {/* TYPE DROPDOWN */}
             <div className="space-y-1">
-                <Label>Type</Label>
                 <DropDown
                     label="Select Type"
                     items={typeList}

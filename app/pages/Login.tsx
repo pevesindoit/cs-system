@@ -18,6 +18,15 @@ import { useRouter } from "next/navigation";
 import { supabaseBrowser } from "@/lib/supabaseBrowser";
 // adjust your path
 
+interface TypeRow {
+    name: string;
+}
+
+interface UserTypeRecord {
+    type_id: number;
+    type: TypeRow | TypeRow[] | null;
+}
+
 export default function Login() {
     const [formData, setFormData] = useState<loginType>({
         email: "",
@@ -37,7 +46,7 @@ export default function Login() {
         setLoading(true);
         setErrorMsg("");
 
-        const res = await login(formData); // API POST → returns { user, session }
+        const res = await login(formData);
 
         if (res?.status !== 200) {
             setErrorMsg(res?.data.error || "Login failed");
@@ -47,16 +56,39 @@ export default function Login() {
 
         const session = res.data.session;
 
-        // ⭐ SAVE SESSION TO SUPABASE BROWSER CLIENT
         await supabaseBrowser.auth.setSession({
             access_token: session.access_token,
             refresh_token: session.refresh_token,
         });
 
-        router.push("/cs");
+        const { data, error } = await supabaseBrowser
+            .from("users")
+            .select("type_id, type(name)")
+            .eq("id", session.user.id)
+            .single<UserTypeRecord>();
+
+        if (error || !data) {
+            setErrorMsg("Gagal mengambil tipe user");
+            setLoading(false);
+            return;
+        }
+
+        const typeField = data.type;
+
+        const userType = Array.isArray(typeField)
+            ? typeField[0]?.name
+            : typeField?.name;
+
+        await supabaseBrowser.auth.updateUser({
+            data: { type: userType },
+        });
+
+        if (userType === "cs") router.push("/cs");
+        else if (userType === "manager") router.push("/manager");
+        else router.push("/");
+
         setLoading(false);
     };
-
     return (
         <Card className="w-full max-w-sm">
             <CardContent className="space-y-4">

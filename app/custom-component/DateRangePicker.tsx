@@ -24,11 +24,9 @@ export default function DateRangePicker({
     };
 
     return (
-        <div className="flex flex-col space-y-2">
-            <label className="font-medium">Select Date Range</label>
-
+        <div className="flex flex-col space-y-2 text-[.7rem]">
+            {/* <label className="font-medium">Select Date Range</label> */}
             <div className="flex items-center gap-3">
-
                 {/* Start */}
                 <div className="flex flex-col">
                     <input

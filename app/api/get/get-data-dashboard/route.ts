@@ -1,6 +1,22 @@
 import { NextRequest, NextResponse } from "next/server";
 import supabase from "@/lib/db";
 
+type LeadSourceDetail = {
+  count: number;
+  percentage: number;
+};
+
+type LeadSourcesType = Record<string, LeadSourceDetail>;
+
+type LeadPlatform = {
+  name: string;
+};
+
+type LeadType = {
+  nominal: number;
+  platform: LeadPlatform | null;
+};
+
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
@@ -34,6 +50,32 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: errorAds.message }, { status: 500 });
     }
 
+    // ======== LEADS SOURCE COUNT (GROUPING) ============
+
+    // ======== LEADS SOURCE COUNT (GROUPING) ============
+
+    const lead_sources: LeadSourcesType = {};
+
+    // Step 1: Count leads per platform
+    leads?.forEach((lead: LeadType) => {
+      const platformName = lead.platform?.name || "Unknown";
+
+      if (!lead_sources[platformName]) {
+        lead_sources[platformName] = { count: 0, percentage: 0 };
+      }
+
+      lead_sources[platformName].count += 1;
+    });
+
+    // Step 2: Convert to percentage
+    const totalLeads = leads?.length || 0;
+
+    Object.keys(lead_sources).forEach((key) => {
+      const count = lead_sources[key].count;
+      const percentage = totalLeads > 0 ? (count / totalLeads) * 100 : 0;
+      lead_sources[key].percentage = Number(percentage.toFixed(2));
+    });
+
     // ======== CALCULATIONS ============
 
     // Revenue = Sum nominal from leads
@@ -59,6 +101,7 @@ export async function POST(req: NextRequest) {
         ads_spend,
         roas,
         conversion_rate,
+        lead_sources,
       },
       { status: 200 }
     );

@@ -42,7 +42,7 @@ export default function SideBar() {
     if (!user) return null;
 
     return (
-        <div className="w-[40%] px-3 py-3">
+        <div className="w-[20%] px-3 py-3">
             <div className="border rounded-[5px] h-full py-4 px-5 bg-[#FEFEFE] flex flex-col justify-between">
 
                 {/* TOP MENU */}

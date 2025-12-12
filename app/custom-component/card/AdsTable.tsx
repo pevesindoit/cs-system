@@ -26,7 +26,7 @@ export default function AdsTable({ data }: { data: adsTypeError[] }) {
                         <TableHead>Date</TableHead>
                         <TableHead>Campaign</TableHead>
                         <TableHead>Platform</TableHead>
-                        <TableHead className="text-center">Cost</TableHead>
+                        <TableHead>Cost</TableHead>
                     </TableRow>
                 </TableHeader>
 
@@ -36,7 +36,7 @@ export default function AdsTable({ data }: { data: adsTypeError[] }) {
                             <TableCell className="font-medium"><FormatDate value={item.created_at} /></TableCell>
                             <TableCell>{item.name}</TableCell>
                             <TableCell>{item.platform?.name}</TableCell>
-                            <TableCell className="text-center">
+                            <TableCell>
                                 Rp {Number(item.daily_spend).toLocaleString("id-ID")}
                             </TableCell>
                         </TableRow>

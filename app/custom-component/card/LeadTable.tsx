@@ -25,7 +25,7 @@ export default function LeadTable({ data }: { data: leadsTypeError[] }) {
                 <TableHeader>
                     <TableRow>
                         <TableHead>Nama</TableHead>
-                        <TableHead>Status</TableHead>
+                        <TableHead className="text-center">Status</TableHead>
                         <TableHead>Platform</TableHead>
                         <TableHead className="text-center">Nominal</TableHead>
                         <TableHead>Kenapa Closing / Tidak</TableHead>

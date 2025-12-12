@@ -57,14 +57,6 @@ export default function Login() {
         setLoading(false);
     };
 
-
-    const handleLogout = async () => {
-        console.log("logout")
-        const res = await supabaseBrowser.auth.signOut();
-        console.log("logout", res)
-
-    }
-
     return (
         <Card className="w-full max-w-sm">
             <CardContent className="space-y-4">

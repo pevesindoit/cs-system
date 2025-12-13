@@ -1,51 +1,97 @@
-"use client"
+"use client";
 
-import {
-    Table,
-    TableBody,
-    TableCaption,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
-} from "@/components/ui/table";
-import ColoredTemplate from "../accessories/ColoredTemplate";
+import { updateLead } from "@/app/function/fetch/update/update-lead/fetch";
+import EditableInput from "../table/EditableInput";
+import { useEffect, useState } from "react";
+import EditableSelect from "../table/EditableDropdown";
 
-export default function LeadTable({ data }: { data: leadsTypeError[] }) {
+type LeadTableGridProps = {
+    data: leadsTypeError[];
+    channels: SelectItemDataMap[];
+    platforms: SelectItemData[];
+    pics: SelectItemDataInt[];
+    branches: SelectItemData[];
+    keteranganLeads: SelectItemDataInt[];
+};
 
-    console.log(data, "ini didalam komponent");
+export default function LeadTableGrid({ data,
+    channels,
+    platforms,
+    pics,
+    branches,
+    keteranganLeads,
+}: LeadTableGridProps) {
+    const [rows, setRows] = useState<leadsTypeError[]>([]);
 
-    const safeData = Array.isArray(data) ? data : [];
+    useEffect(() => {
+        const fetchData = async () => {
+            if (Array.isArray(data)) {
+                setRows(data);
+            }
+        }
+        fetchData()
+    }, [data]); // 👈 penting
+
+    const handleSave = async (
+        id: string,
+        field: string,
+        value: string | number
+    ) => {
+        // optimistic update
+        setRows((prev) =>
+            prev.map((row) =>
+                row.id === id ? { ...row, [field]: value } : row
+            )
+        );
+
+        await updateLead({ id, field, value });
+    };
+
+    console.log(channels, "ini isinya")
 
     return (
-        <div className="border rounded-[5px] h-full py-10 px-9 bg-[#FEFEFE] grid grid-cols-1 gap-8">
-            <Table>
-                <TableCaption>Leads terbaru kamu.</TableCaption>
+        <>
+            {rows.map((item) => (
+                <div
+                    key={item.id}
+                    className="grid grid-cols-11 border-b text-[10px]"
+                >
+                    <EditableInput
+                        value={item.name}
+                        rowId={item.id}
+                        field="name"
+                        onSave={handleSave}
+                    />
 
-                <TableHeader>
-                    <TableRow>
-                        <TableHead>Nama</TableHead>
-                        <TableHead className="text-center">Status</TableHead>
-                        <TableHead>Platform</TableHead>
-                        <TableHead className="text-center">Nominal</TableHead>
-                        <TableHead>Kenapa Closing / Tidak</TableHead>
-                    </TableRow>
-                </TableHeader>
 
-                <TableBody>
-                    {safeData.map((item: leadsTypeError, index: number) => (
-                        <TableRow key={index}>
-                            <TableCell className="font-medium">{item.name}</TableCell>
-                            <TableCell><ColoredTemplate>{item.status}</ColoredTemplate></TableCell>
-                            <TableCell>{item.platform?.name}</TableCell>
-                            <TableCell className="text-center">
-                                Rp {Number(item.nominal).toLocaleString("id-ID")}
-                            </TableCell>
-                            <TableCell>{item.reason}</TableCell>
-                        </TableRow>
-                    ))}
-                </TableBody>
-            </Table>
-        </div>
+                    <EditableInput
+                        value={item.address}
+                        rowId={item.id}
+                        field="address"
+                        onSave={handleSave}
+                    />
+
+
+                    <EditableSelect<number>
+                        value={item.channel_id ?? undefined}
+                        rowId={item.id}
+                        field="channel_id"
+                        options={channels.map((c) => ({
+                            label: c.name,
+                            value: c.id,
+                        }))}
+                        onSave={handleSave}
+                    />
+
+                    <div className="border-r px-1 py-1">
+                        {item.reason}
+                    </div>
+
+                    <div className="px-1 py-1 text-center text-gray-400">
+                        —
+                    </div>
+                </div>
+            ))}
+        </>
     );
 }

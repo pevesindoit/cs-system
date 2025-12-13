@@ -16,6 +16,15 @@ interface SelectItemData {
   value: string;
   label: string;
 }
+interface SelectItemDataInt {
+  value: number;
+  label: string;
+}
+
+interface SelectItemDataMap {
+  id: number;
+  name: string;
+}
 
 interface itemType {
   id: number;
@@ -31,24 +40,36 @@ interface formType {
 }
 
 interface leadsType {
-  platform_id: string;
-  status: string;
-  nominal: number | "";
-  reason: string;
   name: string;
+  address: string;
+  channel_id: number | null;
+  platform_id: string; // 👈 FIXED
+  keterangan_leads: number | null;
+  status: string;
+  nominal: number | null;
+  pic_id: number | null;
+  branch_id: string;
+  reason: string;
   user_id: string;
 }
 
 interface leadsTypeError {
+  address: string;
+  id: string;
   platform: {
     name: string;
     id?: string;
+  } | null; // <-- Supabase bisa return null
+  channel: {
+    name: string;
+    id?: number;
   } | null; // <-- Supabase bisa return null
   status: string;
   nominal: number | "";
   reason: string;
   name: string;
   user_id: string;
+  channel_id: number;
 }
 
 interface adsTypeError {

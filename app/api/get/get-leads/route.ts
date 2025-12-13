@@ -8,7 +8,9 @@ export async function POST(req: NextRequest) {
   try {
     const { data, error } = await supabase
       .from("leads")
-      .select("*, platform:platform_id(name)")
+      .select(
+        "*, platform:platform_id(name,id), channel:channel_id(name,id), keterangan_leads:keterangan_leads(name,id), branch:branch_id(name,id), pic:pic_id(name,id)"
+      )
       .eq("user_id", user_id) // <-- filter by user id
       .order("created_at", { ascending: false });
 

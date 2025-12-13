@@ -19,7 +19,8 @@ type SelectItemData = {
 interface CustomSelectProps {
     items: SelectItemData[];       // The dynamic list of options
     placeholder?: string;          // Optional placeholder text
-    label?: string;                // Optional group label (e.g., "Fruits")
+    label?: string;
+    className: string;            // Optional group label (e.g., "Fruits")
     onValueChange: (value: string) => void; // Callback to send value to parent
 }
 
@@ -27,10 +28,11 @@ export function DropDown({
     items,
     placeholder = "Select an option",
     label,
+    className,
     onValueChange
 }: CustomSelectProps) {
     return (
-        <div className="space-y-2">
+        <div className={`space-y-2 ${className}`}>
             <Label htmlFor="email" className="font-normal">{label}</Label>
             <Select onValueChange={onValueChange}>
                 <SelectTrigger className="w-full">

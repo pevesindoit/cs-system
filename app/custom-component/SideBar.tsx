@@ -1,8 +1,14 @@
 "use client";
 
+import { useState, ReactNode } from "react";
 import { useAuth } from "./global/AuthProfider";
-import { ReactNode } from "react";
-import { CircleDollarSign, LayoutDashboard, Users } from "lucide-react";
+import {
+    CircleDollarSign,
+    LayoutDashboard,
+    Users,
+    ChevronLeft,
+    ChevronRight,
+} from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { supabaseBrowser } from "@/lib/supabaseBrowser";
@@ -21,6 +27,7 @@ export default function SideBar() {
     const { user, loading } = useAuth();
     const router = useRouter();
     const pathname = usePathname();
+    const [collapsed, setCollapsed] = useState(false);
 
     const menuList: MenuGroup[] = [
         {
@@ -28,7 +35,7 @@ export default function SideBar() {
             items: [
                 { link: "/dashboard", icon: <LayoutDashboard size={16} />, text: "Dashboard" },
                 { link: "/cs", icon: <Users size={16} />, text: "CS" },
-                { link: "/manager", icon: <CircleDollarSign size={16} />, text: "Manager" }
+                { link: "/manager", icon: <CircleDollarSign size={16} />, text: "Manager" },
             ],
         },
     ];
@@ -38,53 +45,77 @@ export default function SideBar() {
         if (!error) router.push("/login");
     };
 
-    if (loading) return null;
-    if (!user) return null;
+    if (loading || !user) return null;
 
     return (
-        <div className="w-[20%] px-3 py-3">
-            <div className="border rounded-[5px] h-full py-4 px-5 bg-[#FEFEFE] flex flex-col justify-between">
+        <div
+            className={`${collapsed ? "w-[72px]" : "w-[20%]"
+                } px-3 py-3 transition-all duration-300`}
+        >
+            <div className={`${collapsed ? "p-1" : "p-2"} border rounded-[5px] h-full  bg-[#FEFEFE] flex flex-col justify-between`}>
 
-                {/* TOP MENU */}
-                <nav className="space-y-4">
-                    {menuList.map((group, index) => (
-                        <div key={index}>
-                            <p className="text-xs text-gray-500 mb-2">{group.group}</p>
+                <div>
+                    {/* TOGGLE BUTTON */}
+                    <div className={`${collapsed ? "justify-center" : "justify-end"} flex mb-3`} >
+                        <button
+                            onClick={() => setCollapsed(!collapsed)}
+                            className="p-1 rounded hover:bg-gray-100"
+                        >
+                            {collapsed ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}
+                        </button>
+                    </div>
 
-                            <div className="space-y-1">
-                                {group.items.map((item, idx) => {
-                                    const isActive = pathname === item.link;
+                    {/* MENU */}
+                    <nav className="space-y-4">
+                        {menuList.map((group, index) => (
+                            <div key={index}>
+                                {!collapsed && (
+                                    <p className="text-xs text-gray-500 mb-2">{group.group}</p>
+                                )}
 
-                                    return (
-                                        <Link
-                                            key={idx}
-                                            href={item.link}
-                                            className={`
+                                <div className="space-y-1">
+                                    {group.items.map((item, idx) => {
+                                        const isActive = pathname === item.link;
+
+                                        return (
+                                            <Link
+                                                key={idx}
+                                                href={item.link}
+                                                className={`
                         flex items-center gap-3 px-3 py-2 rounded-md
                         transition-all
                         ${isActive ? "bg-gray-100" : "hover:bg-gray-100"}
+                        ${collapsed ? "justify-center" : ""}
                       `}
-                                        >
-                                            {item.icon}
-                                            {item.text}
-                                        </Link>
-                                    );
-                                })}
+                                            >
+                                                {item.icon}
+                                                {!collapsed && <span>{item.text}</span>}
+                                            </Link>
+                                        );
+                                    })}
+                                </div>
                             </div>
-                        </div>
-                    ))}
-                </nav>
-
-                {/* BOTTOM USER INFO */}
-                <div className="pt-4">
-                    <Button onClick={handleLogout}>Logout</Button>
-
-                    <p className="mt-3 text-sm">
-                        <span className="font-medium">{user.email}</span>
-                    </p>
+                        ))}
+                    </nav>
                 </div>
 
+                {/* USER / LOGOUT */}
+                <div className="pt-4">
+                    <Button
+                        onClick={handleLogout}
+                        variant="outline"
+                        className="w-full"
+                    >
+                        {collapsed ? "⎋" : "Logout"}
+                    </Button>
+
+                    {!collapsed && (
+                        <p className="mt-3 text-sm truncate">
+                            <span className="font-medium">{user.email}</span>
+                        </p>
+                    )}
+                </div>
             </div>
-        </div>
+        </div >
     );
 }

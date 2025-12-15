@@ -55,7 +55,6 @@ export default function Cs() {
         const fetchPlatforms = async () => {
             const res = await getPlatforms();
             const rawData = res?.data || [];
-            console.log(res?.data.platform, "ini datanyae")
 
             // Fixed: Use TypeType (or any) here, not BranchType
             const formattedListPlatform = rawData.platform.map((item: itemType) => ({
@@ -93,8 +92,6 @@ export default function Cs() {
         fetchPlatforms();
     }, []);
 
-    console.log(formData, "ini formdatanya")
-
     const handleChange = (
         e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
     ) => {
@@ -116,7 +113,6 @@ export default function Cs() {
             user_id: user,   // 👈 Add logged-in user's ID
         };
         const res = await addLead(finalData)
-        console.log(res)
         setLeads(res?.data.allLeads)
     }
 
@@ -134,8 +130,6 @@ export default function Cs() {
 
         loadUser();
     }, [router]);
-
-    console.log(platforms, "inimi platormnya")
 
     return (
         <div className="space-y-0 py-3 pr-3">
@@ -293,7 +287,9 @@ export default function Cs() {
                         pics={pic}
                         branches={branch}
                         keteranganLeads={keteranganLeads}
+                        status={status}
                     />
+
                 </div>
             </div>
         </div>

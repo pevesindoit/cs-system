@@ -26,7 +26,6 @@ export function DropDownGridInt({
     placeholder = "",
     onValueChange,
 }: DropDownGridProps) {
-    console.log(items, value, "ini coba")
     return (
         <Select
             value={value !== undefined ? String(value) : undefined}

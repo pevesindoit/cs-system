@@ -25,13 +25,26 @@ export default function EditableSelect<T extends string | number>({
     className = "",
 }: EditableSelectProps<T>) {
     const [isEditing, setIsEditing] = useState(false);
-    const [localValue, setLocalValue] = useState<T | "">(
-        value ?? ""
-    );
     const [loading, setLoading] = useState(false);
 
-    const handleSave = async (newValue: T) => {
-        if (newValue === value || newValue === "") {
+    // 🔑 SELECT selalu string
+    const [localValue, setLocalValue] = useState(
+        value !== null ? String(value) : ""
+    );
+
+    const handleSave = async (rawValue: string) => {
+        if (!rawValue) {
+            setIsEditing(false);
+            return;
+        }
+
+        // 🔑 konversi balik ke T (NUMBER atau STRING)
+        const newValue =
+            typeof options[0]?.value === "number"
+                ? (Number(rawValue) as T)
+                : (rawValue as T);
+
+        if (newValue === value) {
             setIsEditing(false);
             return;
         }
@@ -51,9 +64,8 @@ export default function EditableSelect<T extends string | number>({
                 autoFocus
                 value={localValue}
                 onChange={(e) => {
-                    const val = e.target.value as T;
-                    setLocalValue(val);
-                    handleSave(val);
+                    setLocalValue(e.target.value);
+                    handleSave(e.target.value);
                 }}
                 onBlur={() => setIsEditing(false)}
                 className="w-full border-r px-3 py-1 text-[10px] focus:outline-none"
@@ -61,8 +73,12 @@ export default function EditableSelect<T extends string | number>({
                 <option value="" disabled>
                     Select...
                 </option>
+
                 {options.map((opt) => (
-                    <option key={String(opt.value)} value={opt.value}>
+                    <option
+                        key={String(opt.value)}
+                        value={String(opt.value)} // 👈 selalu string
+                    >
                         {opt.label}
                     </option>
                 ))}
@@ -70,8 +86,9 @@ export default function EditableSelect<T extends string | number>({
         );
     }
 
+    // ❗ JANGAN tampilkan ID sebagai fallback
     const currentLabel =
-        options.find((o) => o.value === value)?.label ?? value;
+        options.find((o) => o.value === value)?.label ?? "—";
 
     return (
         <div

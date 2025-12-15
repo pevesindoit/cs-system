@@ -89,6 +89,12 @@ export default function Login() {
 
         setLoading(false);
     };
+
+    // const handleLogout = async () => {
+    //     const { error } = await supabaseBrowser.auth.signOut();
+    //     if (!error) router.push("/login");
+    // };
+
     return (
         <Card className="w-full max-w-sm">
             <CardContent className="space-y-4">
@@ -119,6 +125,14 @@ export default function Login() {
                 <Button onClick={handleLogin} disabled={loading}>
                     {loading ? "Logging in..." : "Login"}
                 </Button>
+
+                {/* <Button
+                    onClick={handleLogout}
+                    variant="outline"
+                    className="w-full"
+                >
+                    Logout
+                </Button> */}
             </CardContent >
         </Card >
     );

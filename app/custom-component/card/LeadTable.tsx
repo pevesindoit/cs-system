@@ -7,11 +7,12 @@ import EditableSelect from "../table/EditableDropdown";
 
 type LeadTableGridProps = {
     data: leadsTypeError[];
-    channels: SelectItemDataMap[];
+    channels: SelectItemDataInt[];
     platforms: SelectItemData[];
     pics: SelectItemDataInt[];
     branches: SelectItemData[];
     keteranganLeads: SelectItemDataInt[];
+    status: SelectItemData[];
 };
 
 export default function LeadTableGrid({ data,
@@ -20,6 +21,7 @@ export default function LeadTableGrid({ data,
     pics,
     branches,
     keteranganLeads,
+    status
 }: LeadTableGridProps) {
     const [rows, setRows] = useState<leadsTypeError[]>([]);
 
@@ -47,8 +49,6 @@ export default function LeadTableGrid({ data,
         await updateLead({ id, field, value });
     };
 
-    console.log(channels, "ini isinya")
-
     return (
         <>
             {rows.map((item) => (
@@ -56,13 +56,12 @@ export default function LeadTableGrid({ data,
                     key={item.id}
                     className="grid grid-cols-11 border-b text-[10px]"
                 >
-                    <EditableInput
+                    <EditableInput<string>
                         value={item.name}
                         rowId={item.id}
                         field="name"
                         onSave={handleSave}
                     />
-
 
                     <EditableInput
                         value={item.address}
@@ -77,19 +76,81 @@ export default function LeadTableGrid({ data,
                         rowId={item.id}
                         field="channel_id"
                         options={channels.map((c) => ({
-                            label: c.name,
-                            value: c.id,
+                            label: c.label,
+                            value: c.value,
                         }))}
                         onSave={handleSave}
                     />
 
-                    <div className="border-r px-1 py-1">
-                        {item.reason}
-                    </div>
+                    <EditableSelect<string>
+                        value={item.platform_id ?? undefined}
+                        rowId={item.id}
+                        field="platform_id"
+                        options={platforms.map((c) => ({
+                            label: c.label,
+                            value: c.value,
+                        }))}
+                        onSave={handleSave}
+                    />
 
-                    <div className="px-1 py-1 text-center text-gray-400">
-                        —
-                    </div>
+                    <EditableSelect<number>
+                        value={item.keterangan_leads_id ?? undefined}
+                        rowId={item.id}
+                        field="keterangan_leads_id"
+                        options={keteranganLeads.map((c) => ({
+                            label: c.label,
+                            value: c.value,
+                        }))}
+                        onSave={handleSave}
+                    />
+
+                    <EditableSelect<string>
+                        value={item.status ?? undefined}
+                        rowId={item.id}
+                        field="status"
+                        options={status.map((c) => ({
+                            label: c.label,
+                            value: c.value,
+                        }))}
+                        onSave={handleSave}
+                    />
+
+                    <EditableInput<number>
+                        value={item.nominal}
+                        rowId={item.id}
+                        field="nominal"
+                        parseValue={(v) => Number(v)}
+                        onSave={handleSave}
+                    />
+
+                    <EditableSelect<number>
+                        value={item.pic_id ?? undefined}
+                        rowId={item.id}
+                        field="pic_id"
+                        options={pics.map((c) => ({
+                            label: c.label,
+                            value: c.value,
+                        }))}
+                        onSave={handleSave}
+                    />
+
+                    <EditableSelect<string>
+                        value={item.branch_id ?? undefined}
+                        rowId={item.id}
+                        field="branch_id"
+                        options={branches.map((c) => ({
+                            label: c.label,
+                            value: c.value,
+                        }))}
+                        onSave={handleSave}
+                    />
+
+                    <EditableInput
+                        value={item.reason}
+                        rowId={item.id}
+                        field="reason"
+                        onSave={handleSave}
+                    />
                 </div>
             ))}
         </>

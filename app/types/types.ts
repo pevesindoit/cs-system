@@ -64,12 +64,28 @@ interface leadsTypeError {
     name: string;
     id?: number;
   } | null; // <-- Supabase bisa return null
+  ketearangan_leads: {
+    name: string;
+    id?: number;
+  } | null; // <-- Supabase bisa return null
+  pic: {
+    name: string;
+    id?: number;
+  } | null; // <-- Supabase bisa return null
+  branch: {
+    name: string;
+    id?: number;
+  } | null; // <-- Supabase bisa return null
   status: string;
-  nominal: number | "";
+  nominal: number | null;
   reason: string;
   name: string;
   user_id: string;
   channel_id: number;
+  platform_id: string;
+  keterangan_leads_id: number;
+  pic_id: number;
+  branch_id: string;
 }
 
 interface adsTypeError {

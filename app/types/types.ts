@@ -44,13 +44,14 @@ interface leadsType {
   address: string;
   channel_id: number | null;
   platform_id: string; // 👈 FIXED
-  keterangan_leads: number | null;
+  keterangan_leads_id: number | null;
   status: string;
   nominal: number | null;
   pic_id: number | null;
   branch_id: string;
   reason: string;
   user_id: string;
+  created_at: string;
 }
 
 interface leadsTypeError {
@@ -86,6 +87,7 @@ interface leadsTypeError {
   keterangan_leads_id: number;
   pic_id: number;
   branch_id: string;
+  created_at: string;
 }
 
 interface adsTypeError {

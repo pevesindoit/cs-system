@@ -32,8 +32,8 @@ export function DropDownGridInt({
             onValueChange={(val) => onValueChange(Number(val))}
         >
             <SelectTrigger
-                className={`
-          w-full h-7 px-1
+                className={`h-6! min-h-6
+          w-full px-1
           bg-transparent
           border-none shadow-none rounded-none
           text-[10px]

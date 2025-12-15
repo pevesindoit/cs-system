@@ -4,6 +4,7 @@ import { updateLead } from "@/app/function/fetch/update/update-lead/fetch";
 import EditableInput from "../table/EditableInput";
 import { useEffect, useState } from "react";
 import EditableSelect from "../table/EditableDropdown";
+import EditableDate from "../table/EditableDate";
 
 type LeadTableGridProps = {
     data: leadsTypeError[];
@@ -54,8 +55,14 @@ export default function LeadTableGrid({ data,
             {rows.map((item) => (
                 <div
                     key={item.id}
-                    className="grid grid-cols-11 border-b text-[10px]"
+                    className="grid grid-cols-12 border-b text-[10px]"
                 >
+                    <EditableDate
+                        value={item.created_at}
+                        rowId={item.id}
+                        field="created_at"
+                        onSave={handleSave}
+                    />
                     <EditableInput<string>
                         value={item.name}
                         rowId={item.id}

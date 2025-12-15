@@ -30,11 +30,12 @@ export function DropDownGrid({
         <Select value={value} onValueChange={onValueChange}>
             <SelectTrigger
                 className={`
-          w-full h-7 px-1
+                    h-6! min-h-6
+          w-full px-1
           bg-transparent
           border-none shadow-none rounded-none
           text-[10px]
-          focus:ring-0 focus:bg-gray-50
+          focus:ring-0 focus:bg-gray-50 
           ${className}
         `}
             >

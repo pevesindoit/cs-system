@@ -8,6 +8,7 @@ import { useRouter } from "next/navigation";
 import { supabaseBrowser } from "@/lib/supabaseBrowser";
 import { DropDownGrid } from "../custom-component/DropdownGrid";
 import { DropDownGridInt } from "../custom-component/DropDownGridInt";
+import EditableDate from "../custom-component/table/EditableDate";
 
 export default function Cs() {
     const [formData, setFormData] = useState<leadsType>({
@@ -15,13 +16,14 @@ export default function Cs() {
         address: "",
         channel_id: null,
         platform_id: "",
-        keterangan_leads: null,
+        keterangan_leads_id: null,
         status: "",
         nominal: null,
         pic_id: null,
         branch_id: "",
         reason: "",
         user_id: "",
+        created_at: ""
     });
     const [platforms, setPlatforms] = useState<SelectItemData[]>([]);
     const [channel, setChannel] = useState<SelectItemDataInt[]>([]);
@@ -37,6 +39,22 @@ export default function Cs() {
         { label: "Los", value: "los" }
     ]
     const [leads, setLeads] = useState<leadsTypeError[]>([]);
+
+    const resetFormExceptDate = (date: string) => ({
+        name: "",
+        address: "",
+        channel_id: null,
+        platform_id: "",
+        keterangan_leads_id: null,
+        status: "",
+        nominal: null,
+        pic_id: null,
+        branch_id: "",
+        reason: "",
+        user_id: "",
+        created_at: date, // 👈 KEEP DATE
+    });
+
 
     useEffect(() => {
         const fetchLeads = async () => {
@@ -110,11 +128,20 @@ export default function Cs() {
     const addLeads = async () => {
         const finalData = {
             ...formData,
-            user_id: user,   // 👈 Add logged-in user's ID
+            user_id: user,
         };
-        const res = await addLead(finalData)
-        setLeads(res?.data.allLeads)
-    }
+
+        const res = await addLead(finalData);
+
+        setLeads(res?.data.allLeads);
+
+        // ✅ remember date
+        localStorage.setItem("last_lead_date", formData.created_at);
+
+        // ✅ reset form but keep date
+        setFormData(resetFormExceptDate(formData.created_at));
+    };
+
 
     useEffect(() => {
         async function loadUser() {
@@ -131,14 +158,16 @@ export default function Cs() {
         loadUser();
     }, [router]);
 
+
     return (
         <div className="space-y-0 py-3 pr-3">
             <div className="border rounded-md bg-white text-[10px] overflow-x-auto">
                 <div className="min-w-[900px]">
 
                     {/* HEADER */}
-                    <div className="grid grid-cols-11 bg-gray-50 border-b">
+                    <div className="grid grid-cols-12 bg-gray-50 border-b">
                         {[
+                            "tanggal",
                             "Nama Customer",
                             "Alamat",
                             "Channel",
@@ -161,14 +190,34 @@ export default function Cs() {
                     </div>
 
                     {/* INPUT ROW */}
-                    <div className="grid grid-cols-11 border-b">
+                    <div className="grid grid-cols-12 border-b">
                         {/* Nama */}
+                        {/* Date */}
+                        <div className="border-r px-1 flex ">
+                            <input
+                                type="date"
+                                value={formData.created_at}
+                                onChange={(e) => {
+                                    const value = e.target.value;
+
+                                    setFormData((prev) => ({
+                                        ...prev,
+                                        created_at: value,
+                                    }));
+
+                                    // remember last date
+                                    localStorage.setItem("last_lead_date", value);
+                                }}
+                                className="w-full px-1 bg-transparent outline-none focus:bg-gray-50"
+                            />
+                        </div>
+
                         <div className="border-r px-1">
                             <input
                                 name="name"
                                 value={formData.name}
                                 onChange={handleChange}
-                                className="w-full h-7 px-1 bg-transparent outline-none focus:bg-gray-50"
+                                className="w-full h-6! px-1 bg-transparent outline-none focus:bg-gray-50"
                             />
                         </div>
 
@@ -178,7 +227,7 @@ export default function Cs() {
                                 name="address"
                                 value={formData.address}
                                 onChange={handleChange}
-                                className="w-full h-7 px-1 bg-transparent outline-none focus:bg-gray-50"
+                                className="w-full h-6! px-1 bg-transparent outline-none focus:bg-gray-50"
                             />
                         </div>
 
@@ -209,7 +258,7 @@ export default function Cs() {
                                 onValueChange={(value) =>
                                     setFormData((prev) => ({
                                         ...prev,
-                                        keterangan_leads: value, // ✅ number → number
+                                        keterangan_leads_id: value, // ✅ number → number
                                     }))
                                 }
                             />
@@ -231,7 +280,7 @@ export default function Cs() {
                                 name="nominal"
                                 value={formData.nominal ?? ""}
                                 onChange={handleChange}
-                                className="w-full h-7 px-1 bg-transparent outline-none focus:bg-gray-50"
+                                className="w-full h-6! min-h-6 px-1 bg-transparent outline-none focus:bg-gray-50"
                             />
                         </div>
                         {/* pic */}
@@ -262,17 +311,15 @@ export default function Cs() {
                                 name="reason"
                                 value={formData.reason}
                                 onChange={handleChange}
-                                className="w-full h-7 px-1 bg-transparent outline-none focus:bg-gray-50"
+                                className="w-full h-6! min-h-6 px-1 bg-transparent outline-none focus:bg-gray-50"
                             />
                         </div>
 
-
-
                         {/* Action */}
-                        <div className="flex justify-center items-center px-1">
+                        <div className="flex justify-center items-center px-1 hover:bg-gray-100">
                             <button
                                 onClick={addLeads}
-                                className="text-[10px] px-2 py-1 border rounded hover:bg-gray-100"
+                                className="text-[10px]"
                             >
                                 tambah
                             </button>

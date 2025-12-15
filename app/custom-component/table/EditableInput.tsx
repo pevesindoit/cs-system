@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 type EditableInputProps<T extends string | number> = {
     value: T | null;
@@ -9,6 +9,8 @@ type EditableInputProps<T extends string | number> = {
     onSave: (id: string, field: string, value: T) => Promise<void>;
     className?: string;
     parseValue?: (raw: string) => T;
+    isNumeric?: boolean;  // Input allows only numbers
+    isCurrency?: boolean; // Formats with "Rp" and dots "."
 };
 
 const formatRupiah = (value: number) =>
@@ -16,6 +18,7 @@ const formatRupiah = (value: number) =>
         style: "currency",
         currency: "IDR",
         minimumFractionDigits: 0,
+        maximumFractionDigits: 0,
     }).format(value);
 
 const formatThousands = (value: string) => {
@@ -30,28 +33,51 @@ export default function EditableInput<T extends string | number>({
     onSave,
     className = "",
     parseValue,
+    isNumeric = false,
+    isCurrency = false, // Default false
 }: EditableInputProps<T>) {
-    const isNumberField = typeof value === "number";
+
+    // Helper: is this field acting as a formatted number/currency?
+    const isFormattedNumber = isCurrency;
 
     const [isEditing, setIsEditing] = useState(false);
-    const [localValue, setLocalValue] = useState<string>(
-        value !== null
-            ? isNumberField
-                ? formatThousands(String(value))
-                : String(value)
-            : ""
-    );
+    const [localValue, setLocalValue] = useState<string>("");
     const [loading, setLoading] = useState(false);
 
+    useEffect(() => {
+        if (value !== null && value !== undefined) {
+            // Only add dots if it is Currency
+            if (isFormattedNumber) {
+                setLocalValue(formatThousands(String(value)));
+            } else {
+                setLocalValue(String(value));
+            }
+        } else {
+            setLocalValue("");
+        }
+    }, [value, isFormattedNumber]);
+
     const handleSave = async () => {
-        if (localValue === "") {
+        // If empty and was null, cancel
+        if (localValue === "" && value === null) {
             setIsEditing(false);
             return;
         }
 
-        const finalValue: T = parseValue
-            ? parseValue(localValue.replace(/\./g, ""))
-            : (localValue as T);
+        let finalValue: T;
+
+        if (parseValue) {
+            finalValue = parseValue(localValue);
+        } else if (isFormattedNumber) {
+            // If currency, strip dots before saving
+            finalValue = Number(localValue.replace(/\./g, "")) as T;
+        } else if (isNumeric) {
+            // If just numeric (like phone), keep as string (recommended) or cast to number
+            // Assuming T is number if isNumeric is set, but for phone we might use string
+            finalValue = (typeof value === 'number' ? Number(localValue) : localValue) as T;
+        } else {
+            finalValue = localValue as T;
+        }
 
         if (finalValue === value) {
             setIsEditing(false);
@@ -61,6 +87,8 @@ export default function EditableInput<T extends string | number>({
         setLoading(true);
         try {
             await onSave(rowId, field, finalValue);
+        } catch (error) {
+            console.error("Failed to save", error);
         } finally {
             setLoading(false);
             setIsEditing(false);
@@ -71,12 +99,18 @@ export default function EditableInput<T extends string | number>({
         return (
             <input
                 autoFocus
-                inputMode={isNumberField ? "numeric" : "text"}
+                // Use "tel" for phone numbers (better mobile keyboard), "numeric" for money
+                inputMode={isNumeric ? (isCurrency ? "numeric" : "tel") : "text"}
                 value={localValue}
                 onChange={(e) => {
-                    const raw = e.target.value;
+                    let raw = e.target.value;
+                    // Strict number check if isNumeric is on
+                    if (isNumeric || isCurrency) {
+                        raw = raw.replace(/\D/g, ""); // Remove non-digits
+                    }
+
                     setLocalValue(
-                        isNumberField ? formatThousands(raw) : raw
+                        isCurrency ? formatThousands(raw) : raw
                     );
                 }}
                 onBlur={handleSave}
@@ -84,24 +118,28 @@ export default function EditableInput<T extends string | number>({
                     if (e.key === "Enter") handleSave();
                     if (e.key === "Escape") {
                         setIsEditing(false);
+                        setLocalValue(value !== null ? String(value) : "");
                     }
                 }}
-                className="w-full border-r px-4 text-[10px] focus:outline-none"
+                className="w-full border-r rounded px-2 py-1 text-[10px] focus:outline-none focus:ring-1 focus:ring-blue-500"
             />
         );
     }
 
-    const displayValue =
-        isNumberField && typeof value === "number"
-            ? formatRupiah(value)
-            : value ?? "-";
+    // --- DISPLAY LOGIC ---
+    let displayValue: string | number = value ?? "-";
+
+    if (value !== null && isCurrency) {
+        displayValue = formatRupiah(Number(value));
+    }
 
     return (
         <div
-            onClick={() => setIsEditing(true)}
-            className={`cursor-pointer hover:bg-gray-100 text-[10px] px-4 border-r py-1 items-end flex ${className}`}
+            onClick={() => !loading && setIsEditing(true)}
+            className={`cursor-pointer hover:bg-gray-100 text-[10px] px-2 py-1 min-h-6 flex items-center border-r ${isCurrency ? "justify-end text-right" : "justify-start text-left"
+                } ${className} ${loading ? "opacity-50 cursor-not-allowed" : ""}`}
         >
-            {loading ? "Saving..." : displayValue}
+            {loading ? "..." : displayValue}
         </div>
     );
 }

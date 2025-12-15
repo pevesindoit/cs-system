@@ -23,7 +23,7 @@ export default function Cs() {
         reason: "",
         user_id: "",
         created_at: "",
-        nomor_hp: ""
+        nomor_hp: null
     });
     const [platforms, setPlatforms] = useState<SelectItemData[]>([]);
     const [channel, setChannel] = useState<SelectItemDataInt[]>([]);
@@ -52,7 +52,7 @@ export default function Cs() {
         branch_id: "",
         reason: "",
         user_id: "",
-        nomor_hp: "",
+        nomor_hp: null,
         created_at: date, // 👈 KEEP DATE
     });
 
@@ -241,7 +241,8 @@ export default function Cs() {
                         <div className="border-r px-1">
                             <input
                                 name="nomor_hp"
-                                value={formData.nomor_hp}
+                                type="number"
+                                value={formData.nomor_hp ?? ""}
                                 onChange={handleChange}
                                 className="w-full h-6! px-1 bg-transparent outline-none focus:bg-gray-50"
                             />

@@ -70,10 +70,11 @@ export default function LeadTableGrid({ data,
                         onSave={handleSave}
                     />
 
-                    <EditableInput<string>
+                    <EditableInput<number>
                         value={item.nomor_hp}
                         rowId={item.id}
                         field="nomor_hp"
+                        isNumeric={true}
                         onSave={handleSave}
                     />
 
@@ -135,6 +136,8 @@ export default function LeadTableGrid({ data,
                         field="nominal"
                         parseValue={(v) => Number(v)}
                         onSave={handleSave}
+                        isNumeric={true}
+                        isCurrency={true}
                     />
 
                     <EditableSelect<number>

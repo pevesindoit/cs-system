@@ -52,7 +52,7 @@ interface leadsType {
   reason: string;
   user_id: string;
   created_at: string;
-  nomor_hp: string;
+  nomor_hp: number | null;
 }
 
 interface leadsTypeError {
@@ -88,7 +88,7 @@ interface leadsTypeError {
   keterangan_leads_id: number;
   pic_id: number;
   branch_id: string;
-  nomor_hp: string;
+  nomor_hp: number | null;
   created_at: string;
 }
 

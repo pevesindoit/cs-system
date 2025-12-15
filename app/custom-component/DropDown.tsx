@@ -20,7 +20,7 @@ interface CustomSelectProps {
     items: SelectItemData[];       // The dynamic list of options
     placeholder?: string;          // Optional placeholder text
     label?: string;
-    className: string;            // Optional group label (e.g., "Fruits")
+    className?: string;            // Optional group label (e.g., "Fruits")
     onValueChange: (value: string) => void; // Callback to send value to parent
 }
 

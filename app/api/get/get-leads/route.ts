@@ -3,7 +3,6 @@ import supabase from "@/lib/db";
 
 export async function POST(req: NextRequest) {
   const { user_id } = await req.json();
-  console.log(user_id, "ini leads user_id");
 
   try {
     const { data, error } = await supabase

@@ -61,6 +61,8 @@ export default function Login() {
             refresh_token: session.refresh_token,
         });
 
+
+
         const { data, error } = await supabaseBrowser
             .from("users")
             .select("type_id, type(name)")
@@ -90,10 +92,10 @@ export default function Login() {
         setLoading(false);
     };
 
-    // const handleLogout = async () => {
-    //     const { error } = await supabaseBrowser.auth.signOut();
-    //     if (!error) router.push("/login");
-    // };
+    const handleLogout = async () => {
+        const { error } = await supabaseBrowser.auth.signOut();
+        if (!error) router.push("/");
+    };
 
     return (
         <Card className="w-full max-w-sm">
@@ -126,13 +128,13 @@ export default function Login() {
                     {loading ? "Logging in..." : "Login"}
                 </Button>
 
-                {/* <Button
+                <Button
                     onClick={handleLogout}
                     variant="outline"
                     className="w-full"
                 >
                     Logout
-                </Button> */}
+                </Button>
             </CardContent >
         </Card >
     );

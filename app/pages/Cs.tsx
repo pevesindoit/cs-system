@@ -8,7 +8,6 @@ import { useRouter } from "next/navigation";
 import { supabaseBrowser } from "@/lib/supabaseBrowser";
 import { DropDownGrid } from "../custom-component/DropdownGrid";
 import { DropDownGridInt } from "../custom-component/DropDownGridInt";
-import EditableDate from "../custom-component/table/EditableDate";
 
 export default function Cs() {
     const [formData, setFormData] = useState<leadsType>({
@@ -23,7 +22,8 @@ export default function Cs() {
         branch_id: "",
         reason: "",
         user_id: "",
-        created_at: ""
+        created_at: "",
+        nomor_hp: ""
     });
     const [platforms, setPlatforms] = useState<SelectItemData[]>([]);
     const [channel, setChannel] = useState<SelectItemDataInt[]>([]);
@@ -52,61 +52,70 @@ export default function Cs() {
         branch_id: "",
         reason: "",
         user_id: "",
+        nomor_hp: "",
         created_at: date, // 👈 KEEP DATE
     });
 
 
     useEffect(() => {
         const fetchLeads = async () => {
-            const { data } = await supabaseBrowser.auth.getUser();
-            if (!data?.user) {
-                router.push("/login");
-                return;
+            try {
+                const { data } = await supabaseBrowser.auth.getUser();
+                if (!data?.user) {
+                    router.push("/login");
+                    return;
+                }
+                const res = await getLeads(data?.user?.id); // <-- Create if not exist
+                setLeads(res?.data.data || []);
+            } catch (error) {
+                console.log(error)
             }
-            const res = await getLeads(data?.user?.id); // <-- Create if not exist
-            setLeads(res?.data.data || []);
+
         };
         fetchLeads();
     }, [router]);
 
     useEffect(() => {
         const fetchPlatforms = async () => {
-            const res = await getPlatforms();
-            const rawData = res?.data || [];
+            try {
+                const res = await getPlatforms();
+                const rawData = res?.data || [];
 
-            // Fixed: Use TypeType (or any) here, not BranchType
-            const formattedListPlatform = rawData.platform.map((item: itemType) => ({
-                value: item.id,
-                label: item.name
-            }));
+                // Fixed: Use TypeType (or any) here, not BranchType
+                const formattedListPlatform = rawData.platform.map((item: itemType) => ({
+                    value: item.id,
+                    label: item.name
+                }));
 
-            const formattedListChannel = rawData.channel.map((item: itemType) => ({
-                value: item.id,
-                label: item.name
-            }));
+                const formattedListChannel = rawData.channel.map((item: itemType) => ({
+                    value: item.id,
+                    label: item.name
+                }));
 
-            const formattedListketeranganLeads = rawData.keteranganLeads.map((item: itemType) => ({
-                value: item.id,
-                label: item.name
-            }));
+                const formattedListketeranganLeads = rawData.keteranganLeads.map((item: itemType) => ({
+                    value: item.id,
+                    label: item.name
+                }));
 
-            const formattedListPic = rawData.pic.map((item: itemType) => ({
-                value: item.id,
-                label: item.name
-            }));
+                const formattedListPic = rawData.pic.map((item: itemType) => ({
+                    value: item.id,
+                    label: item.name
+                }));
 
-            const formattedListBranch = rawData.branch.map((item: itemType) => ({
-                value: String(item.id),
-                label: item.name
-            }));
+                const formattedListBranch = rawData.branch.map((item: itemType) => ({
+                    value: String(item.id),
+                    label: item.name
+                }));
 
-            setPlatforms(formattedListPlatform);
-            setChannel(formattedListChannel);
-            setKeteranganLeads(formattedListketeranganLeads);
-            setPic(formattedListPic);
-            setBranch(formattedListBranch);
+                setPlatforms(formattedListPlatform);
+                setChannel(formattedListChannel);
+                setKeteranganLeads(formattedListketeranganLeads);
+                setPic(formattedListPic);
+                setBranch(formattedListBranch);
+            } catch (error) {
+                console.log(error)
+            }
         };
-
         fetchPlatforms();
     }, []);
 
@@ -126,56 +135,64 @@ export default function Cs() {
 
 
     const addLeads = async () => {
-        const finalData = {
-            ...formData,
-            user_id: user,
-        };
+        try {
+            const finalData = {
+                ...formData,
+                user_id: user,
+            };
 
-        const res = await addLead(finalData);
+            const res = await addLead(finalData);
 
-        setLeads(res?.data.allLeads);
+            setLeads(res?.data.allLeads);
 
-        // ✅ remember date
-        localStorage.setItem("last_lead_date", formData.created_at);
+            // ✅ remember date
+            localStorage.setItem("last_lead_date", formData.created_at);
 
-        // ✅ reset form but keep date
-        setFormData(resetFormExceptDate(formData.created_at));
+            // ✅ reset form but keep date
+            setFormData(resetFormExceptDate(formData.created_at));
+        } catch (error) {
+            console.log(error)
+        }
+
     };
 
 
     useEffect(() => {
         async function loadUser() {
-            const { data } = await supabaseBrowser.auth.getUser();
+            try {
+                const { data } = await supabaseBrowser.auth.getUser();
 
-            if (!data?.user) {
-                router.push("/login");
-                return;
+                if (!data?.user) {
+                    router.push("/login");
+                    return;
+                }
+                setUser(data.user.id);
+            } catch (error) {
+                console.log(error)
             }
-
-            setUser(data.user.id);
         }
-
         loadUser();
     }, [router]);
 
 
     return (
         <div className="space-y-0 py-3 pr-3">
-            <div className="border rounded-md bg-white text-[10px] overflow-x-auto">
-                <div className="min-w-[900px]">
+            <div className="border rounded-md bg-white text-[10px] overflow-x-auto ">
+                <div className="">
 
                     {/* HEADER */}
-                    <div className="grid grid-cols-12 bg-gray-50 border-b">
+                    <div className="grid grid-cols-13 bg-gray-50 border-b">
                         {[
-                            "tanggal",
-                            "Nama Customer",
+                            "Tanggal",
+                            "Nama",
+                            "No HP",
                             "Alamat",
                             "Channel",
                             "Platform",
                             "Keterangan Leads",
                             "Status",
                             "Nominal",
-                            "Pic",
+                            "PIC",
                             "Cabang",
                             "Keterangan",
                             "Action",
@@ -190,7 +207,7 @@ export default function Cs() {
                     </div>
 
                     {/* INPUT ROW */}
-                    <div className="grid grid-cols-12 border-b">
+                    <div className="grid grid-cols-13 border-b">
                         {/* Nama */}
                         {/* Date */}
                         <div className="border-r px-1 flex ">
@@ -216,6 +233,15 @@ export default function Cs() {
                             <input
                                 name="name"
                                 value={formData.name}
+                                onChange={handleChange}
+                                className="w-full h-6! px-1 bg-transparent outline-none focus:bg-gray-50"
+                            />
+                        </div>
+
+                        <div className="border-r px-1">
+                            <input
+                                name="nomor_hp"
+                                value={formData.nomor_hp}
                                 onChange={handleChange}
                                 className="w-full h-6! px-1 bg-transparent outline-none focus:bg-gray-50"
                             />

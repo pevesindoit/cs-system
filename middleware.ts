@@ -3,37 +3,44 @@ import { NextResponse, NextRequest } from "next/server";
 
 export function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
-
-  // Ambil cookie yang dibutuhkan
-  const accessToken = request.cookies.get("sb-access-token")?.value;
-  const refreshToken = request.cookies.get("sb-refresh-token")?.value;
   const userType = request.cookies.get("user-type")?.value;
 
-  console.log(accessToken, refreshToken, userType, "inimi");
-  // Jika token tidak ada, redirect ke halaman utama
-  if (!accessToken || !refreshToken) {
-    return NextResponse.redirect(new URL("/", request.url));
+  // 1. MANAGER SUPER-ACCESS:
+  // If user is manager, allow access to EVERYTHING immediately.
+  if (userType === "manager") {
+    return NextResponse.next();
   }
 
-  // Batasi akses berdasarkan user-type
-  if (pathname.startsWith("/hrd") && userType !== "hrd") {
+  // Get the previous page URL for redirection
+  const referer = request.headers.get("referer");
+
+  const redirectBack = () => {
+    if (referer) {
+      return NextResponse.redirect(referer);
+    }
     return NextResponse.redirect(new URL("/", request.url));
+  };
+
+  // 2. RESTRICT SPECIFIC ROUTES for other users:
+
+  // Protect /cs routes: Only 'cs' (and 'manager') can enter.
+  // Since we handled manager above, we just check if it's NOT 'cs'.
+  if (pathname.startsWith("/cs") && userType !== "cs") {
+    return redirectBack();
   }
-  if (pathname.startsWith("/halaman-driver") && userType !== "driver") {
-    return NextResponse.redirect(new URL("/", request.url));
-  }
-  if (pathname.startsWith("/atur-pengantaran") && userType !== "gudang") {
-    return NextResponse.redirect(new URL("/", request.url));
-  }
-  if (pathname.startsWith("/sales") && userType !== "sales") {
-    return NextResponse.redirect(new URL("/", request.url));
+
+  // Protect /manager AND /dashboard routes:
+  // Since 'manager' is handled at the very top, anyone reaching this code block is NOT a manager.
+  // Therefore, we block them from accessing /manager OR /dashboard.
+  if (pathname.startsWith("/manager") || pathname.startsWith("/dashboard")) {
+    return redirectBack();
   }
 
   // Default allow
   return NextResponse.next();
 }
 
-// Konfigurasi route yang dilindungi middleware
 export const config = {
-  matcher: ["/atur-pengantaran", "/halaman-driver", "/hrd", "/sales"],
+  // Don't forget to add "/dashboard/:path*" here!
+  matcher: ["/cs/:path*", "/manager/:path*", "/dashboard/:path*"],
 };

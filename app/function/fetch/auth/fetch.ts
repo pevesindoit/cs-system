@@ -17,3 +17,11 @@ export const login = async (payload: loginType) => {
     console.log("Failed to fetch organisations", error);
   }
 };
+
+export const logOut = async () => {
+  try {
+    return await axios.post("/api/auth/logout");
+  } catch (error) {
+    console.log("Failed to fetch organisations", error);
+  }
+};

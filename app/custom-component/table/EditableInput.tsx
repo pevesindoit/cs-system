@@ -99,7 +99,7 @@ export default function EditableInput<T extends string | number>({
     return (
         <div
             onClick={() => setIsEditing(true)}
-            className={`cursor-pointer hover:bg-gray-100 text-[10px] px-4 border-r py-1 ${className}`}
+            className={`cursor-pointer hover:bg-gray-100 text-[10px] px-4 border-r py-1 items-end flex ${className}`}
         >
             {loading ? "Saving..." : displayValue}
         </div>

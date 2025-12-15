@@ -42,7 +42,12 @@ export default function SideBar() {
 
     const handleLogout = async () => {
         const { error } = await supabaseBrowser.auth.signOut();
-        if (!error) router.push("/login");
+
+        document.cookie = "user-type=; path=/; max-age=0";
+        document.cookie = "sb-access-token=; path=/; max-age=0";
+        document.cookie = "sb-refresh-token=; path=/; max-age=0";
+
+        router.push("/");
     };
 
     if (loading || !user) return null;

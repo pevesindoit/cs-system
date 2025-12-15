@@ -55,7 +55,7 @@ export default function LeadTableGrid({ data,
             {rows.map((item) => (
                 <div
                     key={item.id}
-                    className="grid grid-cols-12 border-b text-[10px]"
+                    className="grid grid-cols-13 border-b text-[10px]"
                 >
                     <EditableDate
                         value={item.created_at}
@@ -67,6 +67,13 @@ export default function LeadTableGrid({ data,
                         value={item.name}
                         rowId={item.id}
                         field="name"
+                        onSave={handleSave}
+                    />
+
+                    <EditableInput<string>
+                        value={item.nomor_hp}
+                        rowId={item.id}
+                        field="nomor_hp"
                         onSave={handleSave}
                     />
 

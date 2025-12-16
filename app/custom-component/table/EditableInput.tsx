@@ -136,7 +136,7 @@ export default function EditableInput<T extends string | number>({
     return (
         <div
             onClick={() => !loading && setIsEditing(true)}
-            className={`cursor-pointer hover:bg-gray-100 text-[10px] px-2 py-1 min-h-6 flex items-center border-r ${isCurrency ? "justify-end text-right" : "justify-start text-left"
+            className={`cursor-pointer hover:bg-gray-100 text-[10px] px-2 py-1 min-h-6 flex items-end border-r ${isCurrency ? "justify-end text-right" : "justify-start text-left"
                 } ${className} ${loading ? "opacity-50 cursor-not-allowed" : ""}`}
         >
             {loading ? "..." : displayValue}

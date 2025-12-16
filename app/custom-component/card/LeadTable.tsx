@@ -50,6 +50,8 @@ export default function LeadTableGrid({ data,
         await updateLead({ id, field, value });
     };
 
+    console.log(keteranganLeads, "ini platformya")
+
     return (
         <>
             {rows.map((item) => (
@@ -93,6 +95,7 @@ export default function LeadTableGrid({ data,
                         options={channels.map((c) => ({
                             label: c.label,
                             value: c.value,
+                            className: c.classname
                         }))}
                         onSave={handleSave}
                     />
@@ -104,6 +107,7 @@ export default function LeadTableGrid({ data,
                         options={platforms.map((c) => ({
                             label: c.label,
                             value: c.value,
+                            className: c.classname
                         }))}
                         onSave={handleSave}
                     />
@@ -115,6 +119,7 @@ export default function LeadTableGrid({ data,
                         options={keteranganLeads.map((c) => ({
                             label: c.label,
                             value: c.value,
+                            className: c.classname
                         }))}
                         onSave={handleSave}
                     />
@@ -126,6 +131,7 @@ export default function LeadTableGrid({ data,
                         options={status.map((c) => ({
                             label: c.label,
                             value: c.value,
+                            className: c.classname
                         }))}
                         onSave={handleSave}
                     />
@@ -147,6 +153,7 @@ export default function LeadTableGrid({ data,
                         options={pics.map((c) => ({
                             label: c.label,
                             value: c.value,
+                            className: c.classname
                         }))}
                         onSave={handleSave}
                     />
@@ -158,6 +165,7 @@ export default function LeadTableGrid({ data,
                         options={branches.map((c) => ({
                             label: c.label,
                             value: c.value,
+                            className: c.classname
                         }))}
                         onSave={handleSave}
                     />

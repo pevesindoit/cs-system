@@ -4,6 +4,12 @@ import { NextResponse, NextRequest } from "next/server";
 export function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
   const userType = request.cookies.get("user-type")?.value;
+  const userAccessToken = request.cookies.get("sb-access-token")?.value;
+  // const userRefreshToken = request.cookies.get("sb-refresh-token")?.value;
+
+  if (!userAccessToken) {
+    return NextResponse.redirect(new URL("/", request.url));
+  }
 
   // 1. MANAGER SUPER-ACCESS:
   // If user is manager, allow access to EVERYTHING immediately.

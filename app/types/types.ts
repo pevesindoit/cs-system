@@ -15,10 +15,12 @@ interface CostumerType {
 interface SelectItemData {
   value: string;
   label: string;
+  classname?: string;
 }
 interface SelectItemDataInt {
   value: number;
   label: string;
+  classname?: string;
 }
 
 interface SelectItemDataMap {
@@ -29,6 +31,7 @@ interface SelectItemDataMap {
 interface itemType {
   id: number;
   name: string;
+  classname?: string;
 }
 
 interface formType {

@@ -12,8 +12,6 @@ export async function GET() {
         supabase.from("branch").select("*"),
       ]);
 
-    console.log(keteranganLeadsRes, "ini keterangan");
-
     const errors =
       platformRes.error ||
       channelRes.error ||

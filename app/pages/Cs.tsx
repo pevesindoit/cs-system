@@ -34,9 +34,9 @@ export default function Cs() {
     const [user, setUser] = useState("")
 
     const status = [
-        { label: "Cosed", value: "closed" },
-        { label: "Followup", value: "followup" },
-        { label: "Los", value: "los" }
+        { label: "Cosed", value: "closed", classname: "bg-[#D7FFD3] text-[#372E2E]" },
+        { label: "Followup", value: "followup", classname: "bg-[#FDEBC3] text-[#372E2E]" },
+        { label: "Los", value: "los", classname: "bg-[#A6EEB9] text-[#372E2E]" }
     ]
     const [leads, setLeads] = useState<leadsTypeError[]>([]);
 
@@ -84,27 +84,33 @@ export default function Cs() {
                 // Fixed: Use TypeType (or any) here, not BranchType
                 const formattedListPlatform = rawData.platform.map((item: itemType) => ({
                     value: item.id,
-                    label: item.name
+                    label: item.name,
+                    classname: item.classname
                 }));
 
                 const formattedListChannel = rawData.channel.map((item: itemType) => ({
                     value: item.id,
-                    label: item.name
+                    label: item.name,
+                    classname: item.classname
                 }));
 
                 const formattedListketeranganLeads = rawData.keteranganLeads.map((item: itemType) => ({
                     value: item.id,
-                    label: item.name
+                    label: item.name,
+                    classname: item.classname
+
                 }));
 
                 const formattedListPic = rawData.pic.map((item: itemType) => ({
                     value: item.id,
-                    label: item.name
+                    label: item.name,
+                    classname: item.classname
                 }));
 
                 const formattedListBranch = rawData.branch.map((item: itemType) => ({
                     value: String(item.id),
-                    label: item.name
+                    label: item.name,
+                    classname: item.classname
                 }));
 
                 setPlatforms(formattedListPlatform);

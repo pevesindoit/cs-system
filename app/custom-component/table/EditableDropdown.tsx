@@ -1,10 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, CSSProperties } from "react";
 
-type Option<T extends string | number> = {
+// 1. Update the Option type to include an optional className
+export type Option<T extends string | number> = {
     label: string;
     value: T;
+    className?: string; // e.g., "bg-[#DEE3FC] text-[#372E2E]"
 };
 
 type EditableSelectProps<T extends string | number> = {
@@ -22,12 +24,26 @@ export default function EditableSelect<T extends string | number>({
     field,
     options,
     onSave,
-    className = "",
+    className,
 }: EditableSelectProps<T>) {
     const [isEditing, setIsEditing] = useState(false);
     const [loading, setLoading] = useState(false);
 
-    // 🔑 SELECT selalu string
+    // 2. HELPER: Converts your DB string into a Style Object
+    const parseColors = (clsString?: string): CSSProperties => {
+        if (!clsString) return {};
+
+        // Regex to extract hex codes from "bg-[#...]" and "text-[#...]"
+        const bgMatch = clsString.match(/bg-\[(#[a-fA-F0-9]+)\]/);
+        const textMatch = clsString.match(/text-\[(#[a-fA-F0-9]+)\]/);
+
+        return {
+            backgroundColor: bgMatch ? bgMatch[1] : undefined,
+            color: textMatch ? textMatch[1] : undefined,
+        };
+    };
+
+    // 🔑 SELECT always handles strings internally
     const [localValue, setLocalValue] = useState(
         value !== null ? String(value) : ""
     );
@@ -38,7 +54,7 @@ export default function EditableSelect<T extends string | number>({
             return;
         }
 
-        // 🔑 konversi balik ke T (NUMBER atau STRING)
+        // 🔑 Convert back to T (NUMBER or STRING)
         const newValue =
             typeof options[0]?.value === "number"
                 ? (Number(rawValue) as T)
@@ -58,7 +74,14 @@ export default function EditableSelect<T extends string | number>({
         }
     };
 
+    // Helper to get the option object of the currently selected local value
+    const getOptionByValue = (val: string | number | null) =>
+        options.find((o) => String(o.value) === String(val));
+
     if (isEditing) {
+        // Find the option currently selected in the dropdown to show its color while editing
+        const activeOption = getOptionByValue(localValue);
+
         return (
             <select
                 autoFocus
@@ -68,7 +91,9 @@ export default function EditableSelect<T extends string | number>({
                     handleSave(e.target.value);
                 }}
                 onBlur={() => setIsEditing(false)}
-                className="w-full border-r px-3 py-1 text-[10px] focus:outline-none"
+                // 3. APPLY STYLE OBJECT HERE (Fixes the type error)
+                style={parseColors(activeOption?.className)}
+                className={`w-full border-r px-3 py-1 text-[10px] focus:outline-none ${activeOption?.className || ""}`}
             >
                 <option value="" disabled>
                     Select...
@@ -77,7 +102,10 @@ export default function EditableSelect<T extends string | number>({
                 {options.map((opt) => (
                     <option
                         key={String(opt.value)}
-                        value={String(opt.value)} // 👈 selalu string
+                        value={String(opt.value)}
+                        // Note: 'style' on <option> only works in some browsers (like Chrome on Windows). 
+                        // It is often ignored on Mac/Mobile.
+                        style={parseColors(opt.className)}
                     >
                         {opt.label}
                     </option>
@@ -86,14 +114,19 @@ export default function EditableSelect<T extends string | number>({
         );
     }
 
-    // ❗ JANGAN tampilkan ID sebagai fallback
-    const currentLabel =
-        options.find((o) => o.value === value)?.label ?? "—";
+    // Find the option for the current saved value
+    const currentOption = getOptionByValue(value);
+    const currentLabel = currentOption?.label ?? "—";
+
+    // 4. PREPARE STYLE FOR VIEW MODE
+    const currentStyle = parseColors(currentOption?.className);
 
     return (
         <div
             onClick={() => setIsEditing(true)}
-            className={`cursor-pointer hover:bg-gray-100 text-[10px] px-4 border-r py-1 items-end flex ${className}`}
+            // 5. APPLY STYLE OBJECT HERE
+            style={currentStyle}
+            className={`cursor-pointer hover:opacity-80 text-[10px] px-4 border-r py-1 items-end flex transition-colors ${className}`}
         >
             {loading ? "Saving..." : currentLabel}
         </div>

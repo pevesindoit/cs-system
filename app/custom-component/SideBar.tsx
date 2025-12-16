@@ -50,8 +50,8 @@ export default function SideBar() {
         router.push("/");
     };
 
+    if (pathname === "/") return null
     if (loading || !user) return null;
-
     return (
         <div
             className={`${collapsed ? "w-[72px]" : "w-[20%]"

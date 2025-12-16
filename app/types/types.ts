@@ -23,6 +23,11 @@ interface SelectItemDataInt {
   classname?: string;
 }
 
+interface FilterNumber {
+  user_id: string;
+  number: number;
+}
+
 interface SelectItemDataMap {
   id: number;
   name: string;
@@ -55,7 +60,7 @@ interface leadsType {
   reason: string;
   user_id: string;
   created_at: string;
-  nomor_hp: number | null;
+  nomor_hp: string;
 }
 
 interface leadsTypeError {
@@ -91,7 +96,7 @@ interface leadsTypeError {
   keterangan_leads_id: number;
   pic_id: number;
   branch_id: string;
-  nomor_hp: number | null;
+  nomor_hp: string;
   created_at: string;
 }
 

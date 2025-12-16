@@ -1,13 +1,14 @@
 "use client"
 
 import { useEffect, useState } from "react";
-import { getLeads, getPlatforms } from "../function/fetch/get/fetch";
+import { getFilterSearch, getLeads, getPlatforms } from "../function/fetch/get/fetch";
 import { addLead } from "../function/fetch/add/fetch";
 import LeadTable from "../custom-component/card/LeadTable";
 import { useRouter } from "next/navigation";
 import { supabaseBrowser } from "@/lib/supabaseBrowser";
 import { DropDownGrid } from "../custom-component/DropdownGrid";
 import { DropDownGridInt } from "../custom-component/DropDownGridInt";
+import { SearchPopup } from "../custom-component/SearchPopup";
 
 export default function Cs() {
     const [formData, setFormData] = useState<leadsType>({
@@ -23,13 +24,14 @@ export default function Cs() {
         reason: "",
         user_id: "",
         created_at: "",
-        nomor_hp: null
+        nomor_hp: ""
     });
     const [platforms, setPlatforms] = useState<SelectItemData[]>([]);
     const [channel, setChannel] = useState<SelectItemDataInt[]>([]);
     const [keteranganLeads, setKeteranganLeads] = useState<SelectItemDataInt[]>([]);
     const [pic, setPic] = useState<SelectItemDataInt[]>([]);
     const [branch, setBranch] = useState<SelectItemData[]>([]);
+    const [searchQuery, setSearchQuery] = useState<number>()
     const router = useRouter();
     const [user, setUser] = useState("")
 
@@ -52,12 +54,13 @@ export default function Cs() {
         branch_id: "",
         reason: "",
         user_id: "",
-        nomor_hp: null,
+        nomor_hp: "",
         created_at: date, // 👈 KEEP DATE
     });
 
 
     useEffect(() => {
+        // Bungkus logika fetch dalam fungsi
         const fetchLeads = async () => {
             try {
                 const { data } = await supabaseBrowser.auth.getUser();
@@ -65,15 +68,36 @@ export default function Cs() {
                     router.push("/login");
                     return;
                 }
-                const res = await getLeads(data?.user?.id); // <-- Create if not exist
-                setLeads(res?.data.data || []);
-            } catch (error) {
-                console.log(error)
-            }
 
+                if (searchQuery) {
+                    const payload = {
+                        user_id: data?.user?.id,
+                        number: searchQuery
+                    };
+
+                    // PERBAIKAN: Payload dikirim langsung tanpa bungkus { data: payload }
+                    // Lihat poin no 2 di bawah kenapa ini diubah
+                    const res = await getFilterSearch(payload);
+                    setLeads(res?.data.data || []);
+                } else {
+                    const res = await getLeads(data?.user?.id);
+                    setLeads(res?.data.data || []);
+                }
+            } catch (error) {
+                console.log(error);
+            }
         };
-        fetchLeads();
-    }, [router]);
+
+        // --- LOGIKA DEBOUNCE ---
+        // Tunggu 500ms sebelum menjalankan fetchLeads
+        const timer = setTimeout(() => {
+            fetchLeads();
+        }, 500);
+
+        // Jika searchQuery berubah sebelum 500ms, batalkan timer sebelumnya
+        return () => clearTimeout(timer);
+
+    }, [router, searchQuery]);
 
     useEffect(() => {
         const fetchPlatforms = async () => {
@@ -180,9 +204,12 @@ export default function Cs() {
         loadUser();
     }, [router]);
 
-
     return (
-        <div className="space-y-0 py-3 pr-3">
+        <div className="space-y-0 py-3 pr-3 relative">
+            <SearchPopup
+                value={searchQuery}
+                onChange={setSearchQuery}
+            />
             <div className="border rounded-md bg-white text-[10px] overflow-x-auto ">
                 <div className="">
 

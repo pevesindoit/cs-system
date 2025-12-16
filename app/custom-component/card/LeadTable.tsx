@@ -72,7 +72,7 @@ export default function LeadTableGrid({ data,
                         onSave={handleSave}
                     />
 
-                    <EditableInput<number>
+                    <EditableInput<string>
                         value={item.nomor_hp}
                         rowId={item.id}
                         field="nomor_hp"

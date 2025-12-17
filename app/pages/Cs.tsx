@@ -246,7 +246,7 @@ export default function Cs() {
                     <tr className="border-b">
                         {/* Date (Sticky Column) */}
                         <td className="p-0 border-r bg-white z-10 align-middle sticky left-0">
-                            <div className="px-1 py-1">
+                            <div className="px-1 py-1 br">
                                 <input
                                     type="date"
                                     value={formData.created_at}

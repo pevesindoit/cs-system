@@ -7,6 +7,8 @@ import EditableSelect from "../table/EditableDropdown";
 import EditableDate from "../table/EditableDate";
 import { Button } from "@/components/ui/button";
 import { ModalFollowUp } from "../modal/ModalFollowUp";
+import { getFollowups } from "@/app/function/fetch/get/fetch";
+import FormatDate from "../formater/DateFormater";
 
 type LeadTableGridProps = {
     data: leadsTypeError[];
@@ -29,9 +31,12 @@ export default function LeadTableGrid({
 }: LeadTableGridProps) {
     const [rows, setRows] = useState<leadsTypeError[]>([]);
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [dataFollowUp, setDataFollowUp] = useState<dataType>()
     // 1. New State to track which ID is open
     const [expandedRowId, setExpandedRowId] = useState<string | null>(null);
+    const [followUpsData, setFollowUpsData] = useState<followUpsType[]>([])
 
+    console.log(followUpsData, "ini datanya")
     useEffect(() => {
         const fetchData = async () => {
             if (Array.isArray(data)) {
@@ -57,37 +62,45 @@ export default function LeadTableGrid({
     };
 
     // 2. Handler to toggle the view
-    const toggleExpand = (id: string) => {
+    const toggleExpand = async (id: string) => {
         setExpandedRowId((prev) => (prev === id ? null : id));
-
+        const res = await getFollowups(id)
+        setFollowUpsData(res?.data.data)
     };
 
     const addFollowup = async (id: string, nomor_hp: string) => {
-        console.log("okey", id)
-        console.log("nomor hp", nomor_hp)
+        const payload = {
+            id,
+            noted: nomor_hp
+        }
+        setDataFollowUp(payload)
         setIsModalOpen(true)
     }
 
-    const handleSendText = async (text: string) => {
-        console.log("Submitting:", text);
-        // Call your API here...
-
+    const handleSendText = async (data: followUpsType[]) => {
         // Close modal after success
         setIsModalOpen(false);
+        console.log(data, "ini hasilnya")
+        setFollowUpsData(data)
+
     };
     return (
         <>
-            <ModalFollowUp
-                isOpen={isModalOpen}
-                onClose={() => setIsModalOpen(false)}
-                onSubmit={handleSendText}
-                title="Add Note"
-                placeholder="Write a note about this lead..."
-            />
+            {isModalOpen && dataFollowUp && (
+                <ModalFollowUp
+                    isOpen={isModalOpen}
+                    onClose={() => setIsModalOpen(false)}
+                    onSubmit={handleSendText}
+                    title="Add Note"
+                    placeholder="Write a note about this lead..."
+                    data={dataFollowUp} // TypeScript sekarang yakin ini tidak undefined
+                />
+            )}
+
+
             {rows.map((item) => (
                 // 3. Wrapper Div (moved key here, moved border-b here)
                 <div key={item.id} className="flex flex-col border-b hover:bg-gray-50/50 transition-colors">
-
                     {/* Main Grid Row */}
                     <div className="grid grid-cols-13 text-[10px]">
                         <EditableDate
@@ -227,20 +240,24 @@ export default function LeadTableGrid({
                             <div className="p-4">
                                 <button onClick={() => addFollowup(item.id, item.nomor_hp)} className="text-[10px] px-3 py-1 rounded border transition-all">Followup</button>
                             </div>
-                            <div className="grid grid-cols-13 text-[10px]">
+                            <div className="grid grid-cols-13 text-[10px] bg-gray-100">
                                 {/* Takes 1 column by default */}
-                                <div className="px-2 py-1">Tgl Followup</div>
-
+                                <div className="px-2 py-1 col-span-3">Tgl Followup</div>
                                 {/* Spans the remaining 12 columns */}
-                                <div className="px-2 py-1 col-span-12">Keterangan</div>
+                                <div className="px-2 py-1 col-span-10">Keterangan</div>
                             </div>
-                            <div className="grid grid-cols-13 text-[10px]">
-                                {/* Takes 1 column by default */}
-                                <div className="px-2 py-1">Tgl Followup</div>
-
-                                {/* Spans the remaining 12 columns */}
-                                <div className="px-2 py-1 col-span-12">Keterangan</div>
-                            </div>
+                            {
+                                followUpsData.map((item: followUpsType, index: number) => (
+                                    <div className="grid grid-cols-13 text-[10px]" key={index}>
+                                        {/* Takes 1 column by default */}
+                                        <div className="px-2 py-1 col-span-3">
+                                            <FormatDate value={item.created_at} />
+                                        </div>
+                                        {/* Spans the remaining 12 columns */}
+                                        <div className="px-2 py-1 col-span-10">{item.note}</div>
+                                    </div>
+                                ))
+                            }
                         </div>
                     )}
                 </div >

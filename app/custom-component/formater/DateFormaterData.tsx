@@ -1,18 +1,14 @@
 "use client";
 
 interface FormatDateProps {
-    value: string;
-    showTime?: boolean;
+    value: string;        // the raw timestamp
+    showTime?: boolean;   // choose to show time or not
 }
 
 export default function FormatDate({ value, showTime = true }: FormatDateProps) {
-    // Cek jika kosong
     if (!value) return <span>-</span>;
 
     const date = new Date(value);
-
-    // Cek jika tanggal tidak valid (misal: "abc")
-    if (isNaN(date.getTime())) return <span>Invalid Date</span>;
 
     const formatted = date.toLocaleString("id-ID", {
         day: "2-digit",
@@ -24,5 +20,5 @@ export default function FormatDate({ value, showTime = true }: FormatDateProps) 
         }),
     });
 
-    return <span>{formatted}</span>;
+    return <span className="">{formatted}</span>;
 }

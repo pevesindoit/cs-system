@@ -25,3 +25,12 @@ export const addAdss = async (data: adsType) => {
     console.log("Failed to fetch organisations", error);
   }
 };
+
+export const addFollowups = async (data: dataType) => {
+  try {
+    const res = await axios.post("/api/add/add-followup", data);
+    return res;
+  } catch (error) {
+    console.log("Failed to fetch organisations", error);
+  }
+};

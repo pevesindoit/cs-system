@@ -127,3 +127,14 @@ interface dashboardPayloadType {
   start_date: string;
   end_date: string;
 }
+
+interface dataType {
+  id: string;
+  noted: string;
+}
+
+interface followUpsType {
+  note: string;
+  leads_id: string;
+  created_at: string;
+}

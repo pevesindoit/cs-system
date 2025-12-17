@@ -3,14 +3,18 @@
 import { useState } from "react";
 import { X } from "lucide-react";
 import { Button } from "@/components/ui/button"; // Using your existing Button component
+import { addFollowups } from "@/app/function/fetch/add/fetch";
+
+
 
 interface TextModalProps {
     isOpen: boolean;
     onClose: () => void;
-    onSubmit: (text: string) => void;
+    onSubmit: (data: followUpsType[]) => void;
     title?: string;
     placeholder?: string;
     isLoading?: boolean;
+    data: dataType;
 }
 
 export function ModalFollowUp({
@@ -20,14 +24,21 @@ export function ModalFollowUp({
     title = "Send Message",
     placeholder = "Type your message here...",
     isLoading = false,
+    data
 }: TextModalProps) {
     const [text, setText] = useState("");
 
     if (!isOpen) return null;
 
-    const handleSubmit = () => {
+    const handleSubmit = async () => {
         if (!text.trim()) return;
-        onSubmit(text);
+        console.log(text, data.id, "ini dimodalnya")
+        const payload = {
+            id: data.id,
+            noted: text
+        }
+        const res = await addFollowups(payload)
+        onSubmit(res?.data.allLeads);
         setText(""); // Optional: clear text after submit
     };
 

@@ -205,16 +205,16 @@ export default function Cs() {
     }, [router]);
 
     return (
-        <div className="space-y-0 py-3 pr-3 relative">
+        <div className="flex w-full py-3 pr-3 pl-3 md:pl-0 relative gap-3 overflow-x-auto md:overflow-x-visible no-scrollbar min-w-max">
             <SearchPopup
                 value={searchQuery}
                 onChange={setSearchQuery}
             />
-            <div className="border rounded-md bg-white text-[10px] overflow-x-auto ">
-                <div className="">
+            <table className="border rounded-md text-[10px] min-w-max bg-yellow-200">
 
-                    {/* HEADER */}
-                    <div className="grid grid-cols-13 bg-gray-50 border-b">
+                {/* HEADER */}
+                <thead className="bg-gray-50 border-b">
+                    <tr>
                         {[
                             "Tanggal",
                             "Nama",
@@ -230,176 +230,205 @@ export default function Cs() {
                             "Keterangan",
                             "Action",
                         ].map((h, i) => (
-                            <div
+                            <th
                                 key={i}
-                                className="px-2 py-2 font-medium border-r last:border-r-0"
+                                scope="col"
+                                className="px-2 py-2 font-medium text-left border-r last:border-r-0 whitespace-nowrap"
                             >
                                 {h}
-                            </div>
+                            </th>
                         ))}
-                    </div>
+                    </tr>
+                </thead>
 
-                    {/* INPUT ROW */}
-                    <div className="grid grid-cols-13 border-b">
+                {/* INPUT ROW */}
+                <tbody className="bg-white">
+                    <tr className="border-b">
+                        {/* Date (Sticky Column) */}
+                        <td className="p-0 border-r bg-white z-10 align-middle sticky left-0">
+                            <div className="px-1 py-1">
+                                <input
+                                    type="date"
+                                    value={formData.created_at}
+                                    onChange={(e) => {
+                                        const value = e.target.value;
+                                        setFormData((prev) => ({
+                                            ...prev,
+                                            created_at: value,
+                                        }));
+                                        localStorage.setItem("last_lead_date", value);
+                                    }}
+                                    className="w-full bg-transparent outline-none focus:bg-gray-50 pl-1"
+                                />
+                            </div>
+                        </td>
+
                         {/* Nama */}
-                        {/* Date */}
-                        <div className="border-r px-1 flex ">
-                            <input
-                                type="date"
-                                value={formData.created_at}
-                                onChange={(e) => {
-                                    const value = e.target.value;
+                        <td className="p-0 border-r align-middle sticky left-0">
+                            <div className="px-1">
+                                <input
+                                    name="name"
+                                    value={formData.name}
+                                    onChange={handleChange}
+                                    className="w-full h-8 px-1 bg-transparent outline-none focus:bg-gray-50"
+                                />
+                            </div>
+                        </td>
 
-                                    setFormData((prev) => ({
-                                        ...prev,
-                                        created_at: value,
-                                    }));
-
-                                    // remember last date
-                                    localStorage.setItem("last_lead_date", value);
-                                }}
-                                className="w-full px-1 bg-transparent outline-none focus:bg-gray-50"
-                            />
-                        </div>
-
-                        <div className="border-r px-1">
-                            <input
-                                name="name"
-                                value={formData.name}
-                                onChange={handleChange}
-                                className="w-full h-6! px-1 bg-transparent outline-none focus:bg-gray-50"
-                            />
-                        </div>
-
-                        <div className="border-r px-1">
-                            <input
-                                name="nomor_hp"
-                                type="number"
-                                value={formData.nomor_hp ?? ""}
-                                onChange={handleChange}
-                                className="w-full h-6! px-1 bg-transparent outline-none focus:bg-gray-50"
-                            />
-                        </div>
+                        {/* No HP */}
+                        <td className="p-0 border-r align-middle">
+                            <div className="px-1">
+                                <input
+                                    name="nomor_hp"
+                                    type="number"
+                                    value={formData.nomor_hp ?? ""}
+                                    onChange={handleChange}
+                                    className="w-full h-8 px-1 bg-transparent outline-none focus:bg-gray-50"
+                                />
+                            </div>
+                        </td>
 
                         {/* Address */}
-                        <div className="border-r px-1">
-                            <input
-                                name="address"
-                                value={formData.address}
-                                onChange={handleChange}
-                                className="w-full h-6! px-1 bg-transparent outline-none focus:bg-gray-50"
-                            />
-                        </div>
+                        <td className="p-0 border-r align-middle">
+                            <div className="px-1">
+                                <input
+                                    name="address"
+                                    value={formData.address}
+                                    onChange={handleChange}
+                                    className="w-full h-8 px-1 bg-transparent outline-none focus:bg-gray-50"
+                                />
+                            </div>
+                        </td>
 
                         {/* Channel */}
-                        <div className="border-r px-1">
-                            <DropDownGridInt
-                                items={channel}
-                                onValueChange={(value) =>
-                                    setFormData((prev) => ({ ...prev, channel_id: value }))
-                                }
-                            />
-                        </div>
+                        <td className="p-0 border-r align-middle">
+                            <div className="px-1">
+                                <DropDownGridInt
+                                    items={channel}
+                                    onValueChange={(value) =>
+                                        setFormData((prev) => ({ ...prev, channel_id: value }))
+                                    }
+                                />
+                            </div>
+                        </td>
 
                         {/* Platform */}
-                        <div className="border-r px-1">
-                            <DropDownGrid
-                                items={platforms}
-                                onValueChange={(value) =>
-                                    setFormData((prev) => ({ ...prev, platform_id: value }))
-                                }
-                            />
-                        </div>
+                        <td className="p-0 border-r align-middle">
+                            <div className="px-1">
+                                <DropDownGrid
+                                    items={platforms}
+                                    onValueChange={(value) =>
+                                        setFormData((prev) => ({ ...prev, platform_id: value }))
+                                    }
+                                />
+                            </div>
+                        </td>
 
                         {/* Keterangan Leads */}
-                        <div className="border-r px-1">
-                            <DropDownGridInt
-                                items={keteranganLeads}
-                                onValueChange={(value) =>
-                                    setFormData((prev) => ({
-                                        ...prev,
-                                        keterangan_leads_id: value, // ✅ number → number
-                                    }))
-                                }
-                            />
-                        </div>
+                        <td className="p-0 border-r align-middle">
+                            <div className="px-1">
+                                <DropDownGridInt
+                                    items={keteranganLeads}
+                                    onValueChange={(value) =>
+                                        setFormData((prev) => ({
+                                            ...prev,
+                                            keterangan_leads_id: value,
+                                        }))
+                                    }
+                                />
+                            </div>
+                        </td>
+
                         {/* Status */}
-                        <div className="border-r px-1">
-                            <DropDownGrid
-                                items={status}
-                                onValueChange={(value) =>
-                                    setFormData((prev) => ({ ...prev, status: value }))
-                                }
-                            />
-                        </div>
+                        <td className="p-0 border-r align-middle">
+                            <div className="px-1">
+                                <DropDownGrid
+                                    items={status}
+                                    onValueChange={(value) =>
+                                        setFormData((prev) => ({ ...prev, status: value }))
+                                    }
+                                />
+                            </div>
+                        </td>
 
                         {/* Nominal */}
-                        <div className="border-r px-1">
-                            <input
-                                type="number"
-                                name="nominal"
-                                value={formData.nominal ?? ""}
-                                onChange={handleChange}
-                                className="w-full h-6! min-h-6 px-1 bg-transparent outline-none focus:bg-gray-50"
-                            />
-                        </div>
-                        {/* pic */}
-                        <div className="border-r px-1">
-                            <DropDownGridInt
-                                items={pic}
-                                onValueChange={(value) =>
-                                    setFormData((prev) => ({
-                                        ...prev,
-                                        pic_id: value, // ✅ number → number
-                                    }))
-                                }
-                            />
-                        </div>
-                        {/* branch */}
-                        <div className="border-r px-1">
-                            <DropDownGrid
-                                items={branch}
-                                onValueChange={(value) =>
-                                    setFormData((prev) => ({ ...prev, branch_id: value }))
-                                }
-                            />
-                        </div>
+                        <td className="p-0 border-r align-middle">
+                            <div className="px-1">
+                                <input
+                                    type="number"
+                                    name="nominal"
+                                    value={formData.nominal ?? ""}
+                                    onChange={handleChange}
+                                    className="w-full h-8 px-1 bg-transparent outline-none focus:bg-gray-50"
+                                />
+                            </div>
+                        </td>
+
+                        {/* PIC */}
+                        <td className="p-0 border-r align-middle">
+                            <div className="px-1">
+                                <DropDownGridInt
+                                    items={pic}
+                                    onValueChange={(value) =>
+                                        setFormData((prev) => ({
+                                            ...prev,
+                                            pic_id: value,
+                                        }))
+                                    }
+                                />
+                            </div>
+                        </td>
+
+                        {/* Branch */}
+                        <td className="p-0 border-r align-middle">
+                            <div className="px-1">
+                                <DropDownGrid
+                                    items={branch}
+                                    onValueChange={(value) =>
+                                        setFormData((prev) => ({ ...prev, branch_id: value }))
+                                    }
+                                />
+                            </div>
+                        </td>
 
                         {/* Reason */}
-                        <div className="border-r px-1">
-                            <input
-                                name="reason"
-                                value={formData.reason}
-                                onChange={handleChange}
-                                className="w-full h-6! min-h-6 px-1 bg-transparent outline-none focus:bg-gray-50"
-                            />
-                        </div>
+                        <td className="p-0 border-r align-middle">
+                            <div className="px-1">
+                                <input
+                                    name="reason"
+                                    value={formData.reason}
+                                    onChange={handleChange}
+                                    className="w-full h-8 px-1 bg-transparent outline-none focus:bg-gray-50"
+                                />
+                            </div>
+                        </td>
 
                         {/* Action */}
-                        <div className="flex justify-center items-center px-1 hover:bg-gray-100">
-                            <button
-                                onClick={addLeads}
-                                className="text-[10px]"
-                            >
-                                tambah
-                            </button>
-                        </div>
-                    </div>
+                        <td className="p-0 text-center align-middle">
+                            <div className="flex justify-center items-center h-full hover:bg-gray-100">
+                                <button
+                                    onClick={addLeads}
+                                    className="text-[10px] w-full h-full py-2"
+                                >
+                                    tambah
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
 
-                    {/* DATA ROWS */}
-                    <LeadTable
-                        data={leads}
-                        channels={channel}
-                        platforms={platforms}
-                        pics={pic}
-                        branches={branch}
-                        keteranganLeads={keteranganLeads}
-                        status={status}
-                    />
-
-                </div>
-            </div>
-        </div>
+                {/* DATA ROWS */}
+                <LeadTable
+                    data={leads}
+                    channels={channel}
+                    platforms={platforms}
+                    pics={pic}
+                    branches={branch}
+                    keteranganLeads={keteranganLeads}
+                    status={status}
+                />
+            </table >
+        </div >
 
     )
 }

@@ -26,12 +26,13 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased flex bg-[#F8F8F8]`}
-      >
+      <body className={`${geistSans.variable} ${geistMono.variable} antialiased bg-[#F8F8F8] flex flex-col md:flex-row h-screen overflow-hidden`}>
         <AuthProvider>
+          {/* Sidebar handles its own width responsiveness now */}
           <SideBar />
-          <div className="w-full">
+
+          {/* Content Area */}
+          <div className="w-full flex-1 overflow-auto">
             {children}
           </div>
         </AuthProvider>

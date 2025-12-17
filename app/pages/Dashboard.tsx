@@ -63,8 +63,8 @@ export default function Dashboard() {
 
                 {/* Single Date Picker Component */}
                 <DateRangePicker onChange={setRange} />
-                <div className="pt-4 grid grid-cols-[60%_37%] gap-6">
-                    <div className="grid grid-cols-2 gap-8">
+                <div className="pt-4 md:grid md:grid-cols-[60%_37%] md:gap-6 space-y-3">
+                    <div className="md:grid md:grid-cols-2 md:gap-8 space-y-3">
                         <DashboardCard
                             label="Total Revenue"
                             value={revenue}

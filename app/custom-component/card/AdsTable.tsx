@@ -12,12 +12,10 @@ import FormatDate from "../formater/DateFormater";
 
 export default function AdsTable({ data }: { data: adsTypeError[] }) {
 
-    console.log(data, "ini didalam komponent");
-
     const safeData = Array.isArray(data) ? data : [];
 
     return (
-        <div className="border rounded-[5px] h-full py-10 px-9 bg-[#FEFEFE] grid grid-cols-1 gap-8">
+        <div className="border rounded-[5px] h-full py-10 px-9 bg-[#FEFEFE] grid grid-cols-1 gap-8 text-[.7rem]">
             <Table>
                 <TableCaption>Leads terbaru kamu.</TableCaption>
 

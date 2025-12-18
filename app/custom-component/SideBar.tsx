@@ -117,7 +117,7 @@ export default function SideBar() {
         <>
             {/* ================= MOBILE VIEW (Visible on small screens) ================= */}
             <div className="md:hidden fixed top-0 left-0 right-0 z-50 bg-white border-b px-4 py-3 flex items-center justify-between">
-                <div className="font-bold text-lg">App Name</div>
+                <div className="font-bold text-lg">Pevesindo</div>
                 <button onClick={() => setMobileMenuOpen(true)} className="p-2 hover:bg-gray-100 rounded-md">
                     <Menu size={24} />
                 </button>

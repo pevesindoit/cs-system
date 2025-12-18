@@ -9,8 +9,28 @@ import { supabaseBrowser } from "@/lib/supabaseBrowser";
 import { DropDownGrid } from "../custom-component/DropdownGrid";
 import { DropDownGridInt } from "../custom-component/DropDownGridInt";
 import { SearchPopup } from "../custom-component/SearchPopup";
+import { GetToday } from "../function/template/GetToday";
 
 export default function Cs() {
+    const [user, setUser] = useState("")
+    const router = useRouter();
+    useEffect(() => {
+        async function loadUser() {
+            try {
+                const { data } = await supabaseBrowser.auth.getUser();
+
+                if (!data?.user) {
+                    router.push("/login");
+                    return;
+                }
+                setUser(data.user.id);
+            } catch (error) {
+                console.log(error)
+            }
+        }
+        loadUser();
+    }, [router]);
+
     const [formData, setFormData] = useState<leadsType>({
         name: "",
         address: "",
@@ -22,8 +42,8 @@ export default function Cs() {
         pic_id: null,
         branch_id: "",
         reason: "",
-        user_id: "",
-        created_at: "",
+        user_id: user,
+        created_at: GetToday(),
         nomor_hp: ""
     });
     const [platforms, setPlatforms] = useState<SelectItemData[]>([]);
@@ -32,8 +52,7 @@ export default function Cs() {
     const [pic, setPic] = useState<SelectItemDataInt[]>([]);
     const [branch, setBranch] = useState<SelectItemData[]>([]);
     const [searchQuery, setSearchQuery] = useState<number>()
-    const router = useRouter();
-    const [user, setUser] = useState("")
+
 
     const status = [
         { label: "Cosed", value: "closed", classname: "bg-[#D7FFD3] text-[#372E2E]" },
@@ -104,7 +123,6 @@ export default function Cs() {
             try {
                 const res = await getPlatforms();
                 const rawData = res?.data || [];
-
                 // Fixed: Use TypeType (or any) here, not BranchType
                 const formattedListPlatform = rawData.platform.map((item: itemType) => ({
                     value: item.id,
@@ -186,24 +204,6 @@ export default function Cs() {
 
     };
 
-
-    useEffect(() => {
-        async function loadUser() {
-            try {
-                const { data } = await supabaseBrowser.auth.getUser();
-
-                if (!data?.user) {
-                    router.push("/login");
-                    return;
-                }
-                setUser(data.user.id);
-            } catch (error) {
-                console.log(error)
-            }
-        }
-        loadUser();
-    }, [router]);
-
     return (
         <div className="flex w-full py-3 pr-3 pl-3 md:pl-0 relative gap-3 overflow-x-auto md:overflow-x-visible no-scrollbar min-w-max">
             <SearchPopup
@@ -246,7 +246,7 @@ export default function Cs() {
                     <tr className="border-b">
                         {/* Date (Sticky Column) */}
                         <td className="p-0 border-r bg-white z-10 align-middle sticky left-0">
-                            <div className="px-1 py-1 br">
+                            <div className="px-1 py-1">
                                 <input
                                     type="date"
                                     value={formData.created_at}
@@ -264,7 +264,7 @@ export default function Cs() {
                         </td>
 
                         {/* Nama */}
-                        <td className="p-0 border-r align-middle sticky left-0">
+                        <td className="p-0 border-r align-middle">
                             <div className="px-1">
                                 <input
                                     name="name"

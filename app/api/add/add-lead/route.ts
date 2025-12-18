@@ -6,10 +6,8 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const { name, user_id, ...rest } = body;
 
-    console.log(body, "ini bodynya");
-
     // Validate required fields
-    if (!name || !user_id) {
+    if (!user_id) {
       return NextResponse.json(
         { error: "Missing required fields: name or user_id" },
         { status: 400 }

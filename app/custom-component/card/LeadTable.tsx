@@ -6,7 +6,6 @@ import EditableInput from "../table/EditableInput";
 import { useEffect, useState, Fragment } from "react";
 import EditableSelect from "../table/EditableDropdown";
 import EditableDate from "../table/EditableDate";
-import { Button } from "@/components/ui/button";
 import { ModalFollowUp } from "../modal/ModalFollowUp";
 import { getFollowups } from "@/app/function/fetch/get/fetch";
 import FormatDate from "../formater/DateFormater";
@@ -34,11 +33,9 @@ export default function LeadTableGrid({
     const [rows, setRows] = useState<leadsTypeError[]>([]);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [dataFollowUp, setDataFollowUp] = useState<dataType>()
-    // 1. New State to track which ID is open
     const [expandedRowId, setExpandedRowId] = useState<string | null>(null);
     const [followUpsData, setFollowUpsData] = useState<followUpsType[]>([])
 
-    console.log(followUpsData, "ini datanya")
     useEffect(() => {
         const fetchData = async () => {
             if (Array.isArray(data)) {
@@ -82,15 +79,14 @@ export default function LeadTableGrid({
     const handleSendText = async (data: followUpsType[]) => {
         // Close modal after success
         setIsModalOpen(false);
-        console.log(data, "ini hasilnya")
         setFollowUpsData(data)
 
     };
+
+    console.log(channels,)
+
     return (
         <>
-            {/* NOTE: Ideally, Modals should be placed outside the <table> structure 
-      to ensure valid HTML, but keeping it here for your logic flow.
-    */}
             {isModalOpen && dataFollowUp && (
                 <ModalFollowUp
                     isOpen={isModalOpen}
@@ -109,8 +105,8 @@ export default function LeadTableGrid({
                         <tr className="hover:bg-gray-50/50 transition-colors border-b group">
 
                             {/* Date (Sticky Column) */}
-                            <td className="p-0 border-r sticky left-0 bg-white z-10 align-middle group-hover:bg-gray-50">
-                                <div className="px-1 py-1">
+                            <td className="p-0 sticky left-0 z-10 align-middle group-hover:bg-gray-50">
+                                <div className="px-1 py-1 border-r bg-white">
                                     <EditableDate
                                         value={item.created_at}
                                         rowId={item.id}

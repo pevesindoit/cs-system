@@ -34,13 +34,13 @@ export default function Cs() {
     const [formData, setFormData] = useState<leadsType>({
         name: "",
         address: "",
-        channel_id: null,
-        platform_id: "",
-        keterangan_leads_id: null,
-        status: "",
+        channel_id: 5,
+        platform_id: "33d30171-5646-4231-af2d-1650ca595e39",
+        keterangan_leads_id: 1,
+        status: "hold",
         nominal: null,
-        pic_id: null,
-        branch_id: "",
+        pic_id: 1,
+        branch_id: "d1382b33-9052-4469-a394-8dd99457d1be",
         reason: "",
         user_id: user,
         created_at: GetToday(),
@@ -57,7 +57,10 @@ export default function Cs() {
     const status = [
         { label: "Cosed", value: "closed", classname: "bg-[#D7FFD3] text-[#372E2E]" },
         { label: "Followup", value: "followup", classname: "bg-[#FDEBC3] text-[#372E2E]" },
-        { label: "Los", value: "los", classname: "bg-[#A6EEB9] text-[#372E2E]" }
+        { label: "Los", value: "los", classname: "bg-[#A6EEB9] text-[#372E2E]" },
+        { label: "Hold", value: "hold", classname: "bg-[#E1C3FD] text-[#372E2E]" },
+        { label: "Warm", value: "warm", classname: "bg-[#FAFCDE] text-[#372E2E]" },
+        { label: "Hot", value: "hot", classname: "bg-[#FDCBF1] text-[#372E2E]" }
     ]
     const [leads, setLeads] = useState<leadsTypeError[]>([]);
 
@@ -243,10 +246,10 @@ export default function Cs() {
 
                 {/* INPUT ROW */}
                 <tbody className="bg-white">
-                    <tr className="border-b">
+                    <tr className="border-b ">
                         {/* Date (Sticky Column) */}
-                        <td className="p-0 border-r bg-white z-10 align-middle sticky left-0">
-                            <div className="px-1 py-1">
+                        <td className="p-0 bg-white z-10 align-middle sticky left-0">
+                            <div className="px-1 py-1 border-r">
                                 <input
                                     type="date"
                                     value={formData.created_at}

@@ -70,7 +70,7 @@ export default function EditableDate({
     return (
         <div
             onClick={() => setIsEditing(true)}
-            className={`cursor-pointer hover:bg-gray-100 text-[10px] px-3 py-1 border-r items-end flex ${className}`}
+            className={`cursor-pointer hover:bg-gray-100 text-[10px] px-3 py-1 items-end flex ${className}`}
         >
             {loading ? "Saving..." : value ? formatDate(value) : "-"}
         </div>

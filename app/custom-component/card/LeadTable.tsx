@@ -98,11 +98,11 @@ export default function LeadTableGrid({
                 />
             )}
 
-            <tbody className="bg-white">
+            <tbody className="bg-white ">
                 {rows.map((item) => (
                     <Fragment key={item.id}>
                         {/* 1. Main Data Row */}
-                        <tr className="hover:bg-gray-50/50 transition-colors border-b group">
+                        <tr className="hover:bg-gray-100 transition-colors border-b group ">
 
                             {/* Date (Sticky Column) */}
                             <td className="p-0 sticky left-0 z-10 align-middle group-hover:bg-gray-50">

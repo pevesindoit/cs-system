@@ -19,8 +19,11 @@ export function SearchPopup({ value, onChange }: SearchPopupProps) {
     React.useEffect(() => {
         if (isOpen) {
             inputRef.current?.focus()
+        } else {
+            // ✅ CORRECT: When closed, reset value to undefined (show all data)
+            onChange(undefined)
         }
-    }, [isOpen])
+    }, [isOpen, onChange])
 
     const handleKeyDown = (e: React.KeyboardEvent) => {
         if (e.key === "Escape") {

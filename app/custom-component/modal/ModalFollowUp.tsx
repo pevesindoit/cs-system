@@ -4,6 +4,7 @@ import { useState } from "react";
 import { X } from "lucide-react";
 import { Button } from "@/components/ui/button"; // Using your existing Button component
 import { addFollowups } from "@/app/function/fetch/add/fetch";
+import { createPortal } from "react-dom";
 
 
 
@@ -42,9 +43,9 @@ export function ModalFollowUp({
         setText(""); // Optional: clear text after submit
     };
 
-    return (
+    return createPortal(
         // 1. Overlay (Backdrop)
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+        <div className="inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 sticky left-0">
 
             {/* 2. Modal Container */}
             <div className="w-full max-w-md bg-white rounded-lg shadow-xl border overflow-hidden animate-in fade-in zoom-in-95 duration-200">
@@ -86,6 +87,7 @@ export function ModalFollowUp({
                 </div>
 
             </div>
-        </div>
+        </div>,
+        document.body
     );
 }

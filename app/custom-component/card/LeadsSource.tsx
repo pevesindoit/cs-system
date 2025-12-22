@@ -11,6 +11,7 @@ interface LeadsSourceProps {
 }
 
 export default function LeadsSource({ data }: LeadsSourceProps) {
+    console.log("ini yang didininya", data)
     return (
         <CardSpace>
             <div className="space-y-3 text-[.7rem]">

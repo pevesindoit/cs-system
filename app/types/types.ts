@@ -57,10 +57,27 @@ interface leadsType {
   nominal: number | null;
   pic_id: number | null;
   branch_id: string;
+  pic_name?: {
+    name: string;
+  } | null;
+  branch_name?: {
+    name: string;
+  } | null;
   reason: string;
   user_id: string;
   created_at: string;
   nomor_hp: string;
+}
+
+interface leadsDataType {
+  channel_id: number | null;
+  platform_id: string; // 👈 FIXED
+  keterangan_leads_id: number | null;
+  status: string;
+  pic_id: number | null;
+  branch_id: string;
+  user_id: string;
+  created_at: string;
 }
 
 interface leadsTypeError {
@@ -128,6 +145,13 @@ interface dashboardPayloadType {
   end_date: string;
 }
 
+interface dashboardFilterType {
+  start_date: string;
+  end_date: string;
+  branch: string;
+  cs: string;
+}
+
 interface dataType {
   id: string;
   noted: string;
@@ -138,3 +162,8 @@ interface followUpsType {
   leads_id: string;
   created_at: string;
 }
+
+export type ChartDataItem = {
+  date: string; // YYYY-MM-DD
+  count: number;
+};

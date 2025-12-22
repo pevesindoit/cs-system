@@ -52,8 +52,6 @@ export async function POST(req: NextRequest) {
 
     // ======== LEADS SOURCE COUNT (GROUPING) ============
 
-    // ======== LEADS SOURCE COUNT (GROUPING) ============
-
     const lead_sources: LeadSourcesType = {};
 
     // Step 1: Count leads per platform

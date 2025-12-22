@@ -7,6 +7,7 @@ import { getDashboardData } from "../function/fetch/get/fetch";
 import DateRangePicker from "../custom-component/DateRangePicker";
 import { Calculator, Divide, DollarSign, TrendingUp } from "lucide-react";
 import LeadsSource from "../custom-component/card/LeadsSource";
+import { LeadsTableManager } from "../custom-component/table/LeadsTableManager";
 
 const GetDefaultate = () => {
     const today = new Date();
@@ -63,34 +64,36 @@ export default function Dashboard() {
 
                 {/* Single Date Picker Component */}
                 <DateRangePicker onChange={setRange} />
-                <div className="pt-4 md:grid md:grid-cols-[60%_37%] md:gap-6 space-y-3">
-                    <div className="md:grid md:grid-cols-2 md:gap-8 space-y-3">
-                        <DashboardCard
-                            label="Total Revenue"
-                            value={revenue}
-                            subLabel="Dari Closing"
-                            icon={<DollarSign size={30} />}>
-                        </DashboardCard>
-                        <DashboardCard
-                            label="Total Pengeluaran Iklan"
-                            value={adsSpend}
-                            subLabel="Dari Semua  Platform"
-                            icon={<Calculator size={30} />}>
-                        </DashboardCard>
-                        <DashboardCard
-                            label="ROAS"
-                            value={adsRoas}
-                            subLabel="Revenue / Spending"
-                            icon={<Divide size={30} />}>
-                        </DashboardCard>
-                        <DashboardCard
-                            label="Convertion Rate"
-                            value={adsConvertionRate}
-                            subLabel="1 dari 4 leads"
-                            icon={<TrendingUp size={30} />}>
-                        </DashboardCard>
+                <div className="space-y-8">
+                    <div className="pt-4 md:grid md:grid-cols-[60%_37%] md:gap-6 space-x-2">
+                        <div className="md:grid md:grid-cols-2 md:gap-8">
+                            <DashboardCard
+                                label="Total Revenue"
+                                value={revenue}
+                                subLabel="Dari Closing"
+                                icon={<DollarSign size={30} />}>
+                            </DashboardCard>
+                            <DashboardCard
+                                label="Total Pengeluaran Iklan"
+                                value={adsSpend}
+                                subLabel="Dari Semua  Platform"
+                                icon={<Calculator size={30} />}>
+                            </DashboardCard>
+                            <DashboardCard
+                                label="ROAS"
+                                value={adsRoas}
+                                subLabel="Revenue / Spending"
+                                icon={<Divide size={30} />}>
+                            </DashboardCard>
+                            <DashboardCard
+                                label="Convertion Rate"
+                                value={adsConvertionRate}
+                                subLabel="1 dari 4 leads"
+                                icon={<TrendingUp size={30} />}>
+                            </DashboardCard>
+                        </div>
+                        <LeadsSource data={leadsSource} />
                     </div>
-                    <LeadsSource data={leadsSource} />
                 </div>
             </div>
         </div >

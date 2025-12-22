@@ -214,7 +214,6 @@ export default function Cs() {
                 onChange={setSearchQuery}
             />
             <table className="border rounded-md text-[10px] min-w-max bg-yellow-200">
-
                 {/* HEADER */}
                 <thead className="bg-gray-50 border-b">
                     <tr>
@@ -432,6 +431,5 @@ export default function Cs() {
                 />
             </table >
         </div >
-
     )
 }

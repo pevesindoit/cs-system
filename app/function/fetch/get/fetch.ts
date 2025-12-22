@@ -71,9 +71,27 @@ export const getDashboardData = async (data: dashboardPayloadType) => {
   }
 };
 
+export const getFilterData = async (data: dashboardFilterType) => {
+  try {
+    const res = await axios.post("/api/get/get-data-filter", { data });
+    return res;
+  } catch (error) {
+    console.log("Failed to fetch organisations", error);
+  }
+};
+
 export const getFollowups = async (leads_id: string) => {
   try {
     const res = await axios.post("/api/get/get-followups", { leads_id });
+    return res;
+  } catch (error) {
+    console.log("Failed to fetch organisations", error);
+  }
+};
+
+export const getCs = async () => {
+  try {
+    const res = await axios.get("/api/get/get-cs");
     return res;
   } catch (error) {
     console.log("Failed to fetch organisations", error);

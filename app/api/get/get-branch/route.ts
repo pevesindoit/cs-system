@@ -8,7 +8,6 @@ export async function GET() {
       console.error("Supabase Error:", error);
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
-    console.log(data);
     return NextResponse.json({ data }, { status: 200 });
   } catch (err) {
     console.error("Server Error:", err);

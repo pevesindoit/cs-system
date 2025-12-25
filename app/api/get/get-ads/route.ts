@@ -6,7 +6,7 @@ export async function POST(req: NextRequest) {
   try {
     const { data, error } = await supabase
       .from("ads")
-      .select("*, platform:platform_id(name)")
+      .select("*, platform:platform_id(name), branch:branch_id(name)")
       .eq("ads_manager_id", user_id) // <-- filter by user id
       .order("created_at", { ascending: false });
 

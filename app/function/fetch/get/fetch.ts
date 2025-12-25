@@ -1,3 +1,9 @@
+import {
+  dashboardFilterType,
+  dashboardPayloadType,
+  FilterNumber,
+  ReportItem,
+} from "@/app/types/types";
 import axios from "axios";
 
 export const getType = async () => {
@@ -92,6 +98,14 @@ export const getFollowups = async (leads_id: string) => {
 export const getCs = async () => {
   try {
     const res = await axios.get("/api/get/get-cs");
+    return res;
+  } catch (error) {
+    console.log("Failed to fetch organisations", error);
+  }
+};
+export const getReport = async (data: ReportItem) => {
+  try {
+    const res = await axios.post("/api/get/get-report", data);
     return res;
   } catch (error) {
     console.log("Failed to fetch organisations", error);

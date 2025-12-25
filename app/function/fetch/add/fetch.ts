@@ -1,3 +1,4 @@
+import { adsType, CostumerType, dataType } from "@/app/types/types";
 import axios from "axios";
 
 export const addCostumer = async (data: CostumerType) => {

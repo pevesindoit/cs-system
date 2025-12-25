@@ -10,7 +10,8 @@ import {
     ChevronRight,
     Menu, // Import Menu icon
     X,
-    List   // Import Close icon
+    List,   // Import Close icon
+    ClipboardPlus
 } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -41,6 +42,7 @@ export default function SideBar() {
         {
             group: "Admin",
             items: [
+                { link: "/report", icon: <ClipboardPlus size={16} />, text: "Report" },
                 { link: "/dashboard", icon: <LayoutDashboard size={16} />, text: "Dashboard" },
                 { link: "/cs", icon: <Users size={16} />, text: "CS" },
                 { link: "/manager", icon: <CircleDollarSign size={16} />, text: "Manager" },

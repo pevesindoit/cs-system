@@ -8,6 +8,7 @@ import { supabaseBrowser } from "@/lib/supabaseBrowser";
 import { useRouter } from "next/navigation";
 import { DropDownLeads } from "../custom-component/DropDownLeads";
 import { ChartCard } from "../custom-component/table/ChartCard";
+import { itemType } from "@/app/types/types"
 
 const GetDefaultate = () => {
     const today = new Date();
@@ -89,8 +90,6 @@ export function LeadsPage() {
         }
         fetchFilter()
     }, [range, cs, branch])
-
-    console.log(chart, "inimi totalnya")
 
     return (
         <div className="space-y-7">

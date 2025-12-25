@@ -38,7 +38,7 @@ export async function POST(req: NextRequest) {
     // Fetch updated list
     const { data: allLeads, error: fetchError } = await supabase
       .from("ads")
-      .select("*, platform:platform_id(name)")
+      .select("*, platform:platform_id(name), branch:branch_id(name)")
       .eq("ads_manager_id", ads_manager_id)
       .order("created_at", { ascending: false });
 

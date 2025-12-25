@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react";
-import { getAds, getPlatforms } from "../function/fetch/get/fetch";
+import { getAds, getCs, getPlatforms } from "../function/fetch/get/fetch";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import H1 from "../custom-component/H1";
@@ -11,18 +11,21 @@ import { addAdss } from "../function/fetch/add/fetch";
 import { useRouter } from "next/navigation";
 import { supabaseBrowser } from "@/lib/supabaseBrowser";
 import AdsTable from "../custom-component/card/AdsTable";
+import { adsType, adsTypeError, itemType } from "../types/types";
 
 export default function Manager() {
     const [formData, setFormData] = useState<adsType>({
         platform_id: "",
         daily_spend: "",
+        branch_id: "",
         ads_manager_id: "",
         name: ""
     });
 
-    const [platforms, setPlatforms] = useState<SelectItemData[]>([]);
     const [user, setUser] = useState("")
     const [ads, setAds] = useState<adsTypeError[]>([]);
+    const [branchs, setBranchs] = useState([]);
+    const [platforms, setPlatforms] = useState([]);
     const router = useRouter();
 
     useEffect(() => {
@@ -95,6 +98,26 @@ export default function Manager() {
         loadUser();
     }, [router]);
 
+    useEffect(() => {
+        const fetch = async () => {
+            const res = await getCs()
+            const rawData = res?.data
+            const formattedListPlatform = rawData.platform.map((item: itemType) => ({
+                value: item.id,
+                label: item.name,
+                classname: item.classname
+            }));
+            const formattedListBranch = rawData.branch.map((item: itemType) => ({
+                value: item.id,
+                label: item.name,
+                classname: item.classname
+            }));
+            setPlatforms(formattedListPlatform)
+            setBranchs(formattedListBranch)
+        }
+        fetch()
+    }, [])
+
     return (
         <div className="space-y-7">
             <div className="border rounded-[5px] h-full py-10 px-9 bg-[#FEFEFE] grid grid-cols-1 gap-8">
@@ -113,6 +136,15 @@ export default function Manager() {
                             setFormData((prev) => ({ ...prev, platform_id: value }))
                         }
                     />
+                </div>
+                <div className="space-y-2">
+                    <Label className="font-normal">Cabang</Label>
+                    <DropDown
+                        items={branchs}
+                        onValueChange={(value: string) => {
+                            setFormData((prev) => ({ ...prev, branch_id: value }))
+                        }}
+                        placeholder="Select status..." />
                 </div>
                 <div className="space-y-2">
                     <Label className="font-normal">Daily Spend (RP)</Label>

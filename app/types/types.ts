@@ -1,45 +1,45 @@
-interface TypeType {
+export interface TypeType {
   id: number;
   name: string;
 }
 
-interface BranchType {
+export interface BranchType {
   id: string;
   name: string;
 }
 
-interface CostumerType {
+export interface CostumerType {
   name: string;
 }
 
-interface SelectItemData {
+export interface SelectItemData {
   value: string;
   label: string;
   classname?: string;
 }
-interface SelectItemDataInt {
+export interface SelectItemDataInt {
   value: number;
   label: string;
   classname?: string;
 }
 
-interface FilterNumber {
+export interface FilterNumber {
   user_id: string;
   number: number;
 }
 
-interface SelectItemDataMap {
+export interface SelectItemDataMap {
   id: number;
   name: string;
 }
 
-interface itemType {
+export interface itemType {
   id: number;
   name: string;
   classname?: string;
 }
 
-interface formType {
+export interface formType {
   email: string;
   password: string;
   cabang: string;
@@ -47,7 +47,7 @@ interface formType {
   nama: string;
 }
 
-interface leadsType {
+export interface leadsType {
   name: string;
   address: string;
   channel_id: number | null;
@@ -69,7 +69,7 @@ interface leadsType {
   nomor_hp: string;
 }
 
-interface leadsDataType {
+export interface leadsDataType {
   channel_id: number | null;
   platform_id: string; // 👈 FIXED
   keterangan_leads_id: number | null;
@@ -80,7 +80,7 @@ interface leadsDataType {
   created_at: string;
 }
 
-interface leadsTypeError {
+export interface leadsTypeError {
   address: string;
   id: string;
   platform: {
@@ -117,8 +117,12 @@ interface leadsTypeError {
   created_at: string;
 }
 
-interface adsTypeError {
+export interface adsTypeError {
   platform: {
+    name: string;
+    id?: string;
+  } | null;
+  branch: {
     name: string;
     id?: string;
   } | null;
@@ -128,36 +132,37 @@ interface adsTypeError {
   created_at: string;
 }
 
-interface adsType {
+export interface adsType {
   platform_id: string;
   daily_spend: number | "";
   name: string;
+  branch_id: string;
   ads_manager_id: string;
 }
 
-interface loginType {
+export interface loginType {
   email: string;
   password: string;
 }
 
-interface dashboardPayloadType {
+export interface dashboardPayloadType {
   start_date: string;
   end_date: string;
 }
 
-interface dashboardFilterType {
+export interface dashboardFilterType {
   start_date: string;
   end_date: string;
   branch: string;
   cs: string;
 }
 
-interface dataType {
+export interface dataType {
   id: string;
   noted: string;
 }
 
-interface followUpsType {
+export interface followUpsType {
   note: string;
   leads_id: string;
   created_at: string;
@@ -166,4 +171,14 @@ interface followUpsType {
 export type ChartDataItem = {
   date: string; // YYYY-MM-DD
   count: number;
+};
+
+export type ReportItem = {
+  start_date?: string;
+  end_date?: string;
+  platform_id?: string;
+  target_lead?: string;
+  target_omset?: string;
+  perweak?: string;
+  perday?: string;
 };

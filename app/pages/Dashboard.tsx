@@ -7,7 +7,6 @@ import { getDashboardData } from "../function/fetch/get/fetch";
 import DateRangePicker from "../custom-component/DateRangePicker";
 import { Calculator, Divide, DollarSign, TrendingUp } from "lucide-react";
 import LeadsSource from "../custom-component/card/LeadsSource";
-import { LeadsTableManager } from "../custom-component/table/LeadsTableManager";
 
 const GetDefaultate = () => {
     const today = new Date();

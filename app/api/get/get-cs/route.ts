@@ -4,16 +4,18 @@ import { NextResponse } from "next/server";
 export async function GET() {
   try {
     // Run all queries in parallel for better performance
-    const [csRes, branchRes] = await Promise.all([
+    const [csRes, branchRes, platformRes] = await Promise.all([
       // 1. Get Users (CS) where type_id is 1
       supabase.from("users").select("*").eq("type_id", 1),
 
       // 2. Get Branches
       supabase.from("branch").select("*"),
+      // 2. Get Branches
+      supabase.from("platform").select("*"),
     ]);
 
     // Check for errors in any of the requests
-    const errors = csRes.error || branchRes.error;
+    const errors = csRes.error || branchRes.error || platformRes.error;
 
     if (errors) {
       console.error("Supabase Error:", errors);
@@ -25,6 +27,7 @@ export async function GET() {
       {
         cs: csRes.data,
         branch: branchRes.data,
+        platform: platformRes.data,
       },
       { status: 200 }
     );

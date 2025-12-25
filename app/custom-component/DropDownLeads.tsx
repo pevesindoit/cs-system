@@ -36,9 +36,7 @@ export function DropDownLeads({
             <SelectTrigger
                 className={`h-6! min-h-6
           w-full
-          border-none shadow-none
-          text-[10px]
-          focus:ring-0 focus:bg-gray-50 bg-white rounded-md py-[1rem] px-[1rem]
+           bg-white rounded-md py-4 px-4
           ${className}
         `}
             >

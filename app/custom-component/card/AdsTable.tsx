@@ -9,10 +9,13 @@ import {
     TableRow,
 } from "@/components/ui/table";
 import FormatDate from "../formater/DateFormater";
+import { adsTypeError } from "@/app/types/types";
 
 export default function AdsTable({ data }: { data: adsTypeError[] }) {
 
     const safeData = Array.isArray(data) ? data : [];
+
+    console.log(safeData, "inimi kapang")
 
     return (
         <div className="border rounded-[5px] h-full py-10 px-9 bg-[#FEFEFE] grid grid-cols-1 gap-8 text-[.7rem]">
@@ -24,6 +27,7 @@ export default function AdsTable({ data }: { data: adsTypeError[] }) {
                         <TableHead>Date</TableHead>
                         <TableHead>Campaign</TableHead>
                         <TableHead>Platform</TableHead>
+                        <TableHead>Branch</TableHead>
                         <TableHead>Cost</TableHead>
                     </TableRow>
                 </TableHeader>
@@ -34,6 +38,7 @@ export default function AdsTable({ data }: { data: adsTypeError[] }) {
                             <TableCell className="font-medium"><FormatDate value={item.created_at} /></TableCell>
                             <TableCell>{item.name}</TableCell>
                             <TableCell>{item.platform?.name}</TableCell>
+                            <TableCell>{item.branch?.name}</TableCell>
                             <TableCell>
                                 Rp {Number(item.daily_spend).toLocaleString("id-ID")}
                             </TableCell>

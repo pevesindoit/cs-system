@@ -53,5 +53,6 @@ export const config = {
     "/manager/:path*",
     "/dashboard/:path*",
     "/leads/:path*",
+    "/report/:path*",
   ],
 };

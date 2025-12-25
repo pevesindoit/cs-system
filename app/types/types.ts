@@ -177,8 +177,9 @@ export type ReportItem = {
   start_date?: string;
   end_date?: string;
   platform_id?: string;
-  target_lead?: string;
-  target_omset?: string;
+  target_lead?: number;
+  target_omset?: number;
   perweak?: string;
   perday?: string;
+  branch_id?: string;
 };

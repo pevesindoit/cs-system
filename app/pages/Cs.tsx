@@ -10,6 +10,7 @@ import { DropDownGrid } from "../custom-component/DropdownGrid";
 import { DropDownGridInt } from "../custom-component/DropDownGridInt";
 import { SearchPopup } from "../custom-component/SearchPopup";
 import { GetToday } from "../function/template/GetToday";
+import { itemType, leadsType, leadsTypeError, SelectItemData, SelectItemDataInt } from "../types/types";
 
 export default function Cs() {
     const [user, setUser] = useState("")

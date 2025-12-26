@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/card"
 import { useRouter } from "next/navigation";
 import { supabaseBrowser } from "@/lib/supabaseBrowser";
+import { loginType } from "../types/types";
 // adjust your path
 
 interface TypeRow {
@@ -61,6 +62,8 @@ export default function Login() {
             refresh_token: session.refresh_token,
         });
 
+        console.log(session)
+
 
 
         const { data, error } = await supabaseBrowser
@@ -84,6 +87,8 @@ export default function Login() {
         await supabaseBrowser.auth.updateUser({
             data: { type: userType },
         });
+
+        if (!userType) return
 
         if (userType === "cs") router.push("/cs");
         else if (userType === "manager") router.push("/manager");

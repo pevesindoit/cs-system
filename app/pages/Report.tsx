@@ -4,10 +4,12 @@ import { useEffect, useState } from "react";
 import H1 from "../custom-component/H1";
 import { getCs, getReport } from "../function/fetch/get/fetch";
 import DateRangePicker from "../custom-component/DateRangePicker";
-import { itemType, ReportItem } from "../types/types";
+import { itemType, ReportItem, ReportSummaryData } from "../types/types";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button"; // Assuming you have a Button component
 import { DropDown } from "../custom-component/DropDown";
+import { ReportSummary } from "../custom-component/table/ReportSummary";
+import { ReportDetail } from "../custom-component/table/ReportDetail";
 
 // 1. Define Types for cleaner code
 type FormDataType = {
@@ -46,8 +48,9 @@ export default function Report() {
         branch_id: ""
     });
 
-    const [reportData, setReportData] = useState([]);
+    const [reportData, setReportData] = useState<ReportSummaryData | null>(null);
     const [reportSummary, setReportSummary] = useState([]);
+    const [reportDetail, setReportDetail] = useState([]);
     const [loading, setLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
     const [branchs, setBranchs] = useState([]);
@@ -81,7 +84,9 @@ export default function Report() {
                 setReportSummary(res?.data?.data?.summary);
 
                 if (res?.data) {
-                    setReportData(res.data.data);
+                    setReportData(res.data.data.summary);
+                    setReportDetail(res.data.data.daily_breakdown);
+
                 }
             } catch (error) {
                 console.error("Error fetching report:", error);
@@ -115,13 +120,11 @@ export default function Report() {
 
         try {
             const res = await getReport(formData);
-            console.log(res, "ini hasilnya")
-            await new Promise(resolve => setTimeout(resolve, 1000));
-            alert("Data saved successfully!");
+            setReportData(res?.data?.data?.summary);
+            setReportDetail(res?.data?.data?.daily_breakdown);
 
         } catch (error) {
             console.error("Failed to save:", error);
-            alert("Failed to save data");
         } finally {
             setIsSaving(false);
         }
@@ -147,12 +150,12 @@ export default function Report() {
         fetch()
     }, [])
 
+    console.log(reportData, "inimi")
     if (loading) return <div>Loading Report...</div>;
 
     return (
         <div className="space-y-6">
-            <H1>Performance Report</H1>
-
+            <H1>Manager Report</H1>
             <div className="flex flex-col gap-4">
                 {/* Date Picker (Updates Range & FormData) */}
                 <DateRangePicker onChange={setRange} />
@@ -215,7 +218,8 @@ export default function Report() {
             {/* --- REPORT DISPLAY --- */}
             <div className="border rounded-[5px] h-full py-10 px-9 bg-[#FEFEFE] gap-8">
                 {/* Your report visualization goes here */}
-                <pre>{JSON.stringify(reportSummary, null, 2)}</pre>
+                <ReportDetail data={reportDetail} />
+                <ReportSummary data={reportData} />
             </div>
         </div>
     );

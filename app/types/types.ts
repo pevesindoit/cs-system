@@ -183,3 +183,31 @@ export type ReportItem = {
   perday?: string;
   branch_id?: string;
 };
+
+export type ReportSummaryData = {
+  actual_lead: number;
+  ads_vs_omset: string; // e.g., "18.03%"
+  budget: number;
+  closing: number;
+  closing_rate: string; // e.g., "59.09%"
+  // date_range: DateRange;
+  omset: number;
+  target_lead: number;
+  target_omset: number;
+  target_vs_actual_leads: string; // e.g., "0.00%"
+  target_vs_actual_omset: string; // e.g., "0.00%"
+  total_spend: number;
+  warm_leads: number;
+};
+
+export type DailyReportItem = {
+  date: string; // "2025-12-01"
+  budget: number;
+  total_spend: number;
+  actual_lead: number;
+  warm_leads: number;
+  closing: number;
+  closing_rate: string; // "50.00%"
+  omset: number;
+  ads_vs_omset: string; // "15.00%"
+};

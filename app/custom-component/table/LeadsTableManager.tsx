@@ -1,3 +1,5 @@
+import { leadsType } from "@/app/types/types"
+
 type leadDataType = {
     data: leadsType[]
 }

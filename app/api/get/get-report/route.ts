@@ -7,6 +7,7 @@ interface AdData {
   daily_spend: number;
   created_at: string;
   platform_id?: string;
+  branch_id?: string;
 }
 
 interface LeadData {
@@ -14,6 +15,7 @@ interface LeadData {
   status: string;
   created_at: string;
   platform_id?: string;
+  branch_id?: string;
 }
 
 interface DailyBucket {
@@ -30,8 +32,14 @@ export async function POST(req: NextRequest) {
       body = await req.json();
     } catch (e) {}
 
-    const { start_date, end_date, platform_id, target_lead, target_omset } =
-      body as ReportItem;
+    const {
+      start_date,
+      end_date,
+      platform_id,
+      target_lead,
+      target_omset,
+      branch_id, // <--- Extracted here
+    } = body as ReportItem;
 
     // Date Defaults
     const now = new Date();
@@ -48,19 +56,26 @@ export async function POST(req: NextRequest) {
     // Queries
     let adsQuery = supabase
       .from("ads")
-      .select("daily_spend, platform_id, created_at")
+      .select("daily_spend, platform_id, created_at, branch_id") // Added branch_id to select
       .gte("created_at", start)
       .lte("created_at", end);
 
     let leadsQuery = supabase
       .from("leads")
-      .select("nominal, status, platform_id, created_at")
+      .select("nominal, status, platform_id, created_at, branch_id") // Added branch_id to select
       .gte("created_at", start)
       .lte("created_at", end);
 
+    // --- FILTER: PLATFORM ---
     if (platform_id) {
       adsQuery = adsQuery.eq("platform_id", platform_id);
       leadsQuery = leadsQuery.eq("platform_id", platform_id);
+    }
+
+    // --- FILTER: BRANCH (NEW) ---
+    if (branch_id) {
+      adsQuery = adsQuery.eq("branch_id", branch_id);
+      leadsQuery = leadsQuery.eq("branch_id", branch_id);
     }
 
     const [adsRes, leadsRes] = await Promise.all([adsQuery, leadsQuery]);

@@ -65,7 +65,7 @@ export function ReportSummary({ data }: { data: ReportSummaryData | null }) {
     const getAchievementColor = (val: number) => val >= 100 ? 'text-green-600' : 'text-yellow-600';
 
     return (
-        <div className="w-full mx-auto p-4">
+        <div className="w-full mx-auto py-5">
             <h3 className="text-xl font-bold mb-6 text-gray-800">Performance Overview</h3>
 
             <div className="space-y-6">

@@ -130,7 +130,7 @@ export default function InputAdvertiser({ onAddData }: InputProps) {
     console.log(formData, "ini data formya")
 
     return (
-        <tr className="border-b-[2px] bg-white">
+        <tr className="border-b-2 bg-white">
             {/* 1. TANGGAL */}
             <td className="p-0 bg-white z-10 align-middle sticky left-0 border-r">
                 <div className="px-1 py-1">

@@ -4,7 +4,7 @@ import { NextResponse } from "next/server";
 export async function GET() {
   try {
     // Run all queries in parallel for better performance
-    const [csRes, branchRes, platformRes] = await Promise.all([
+    const [csRes, branchRes, platformRes, advertiserRes] = await Promise.all([
       // 1. Get Users (CS) where type_id is 1
       supabase.from("users").select("*").eq("type_id", 1),
 
@@ -12,10 +12,15 @@ export async function GET() {
       supabase.from("branch").select("*"),
       // 2. Get Branches
       supabase.from("platform").select("*"),
+      supabase.from("ads_platform").select("*"),
     ]);
 
     // Check for errors in any of the requests
-    const errors = csRes.error || branchRes.error || platformRes.error;
+    const errors =
+      csRes.error ||
+      branchRes.error ||
+      platformRes.error ||
+      advertiserRes.error;
 
     if (errors) {
       console.error("Supabase Error:", errors);
@@ -28,6 +33,7 @@ export async function GET() {
         cs: csRes.data,
         branch: branchRes.data,
         platform: platformRes.data,
+        ads_platform: advertiserRes.data,
       },
       { status: 200 }
     );

@@ -211,3 +211,18 @@ export type DailyReportItem = {
   omset: number;
   ads_vs_omset: string; // "15.00%"
 };
+
+export interface AdvertiserData {
+  id?: string | number; // Optional, as it might not exist before saving to DB
+  date: string;
+  cabang_id: string;
+  spend: number;
+  ppn: number;
+  total_budget: number;
+  platform_id: string;
+  leads: number;
+  cost_per_lead: number;
+  konversi_google: number;
+  cost_per_konversi: number;
+  keterangan: string;
+}

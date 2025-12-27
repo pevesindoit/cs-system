@@ -122,7 +122,6 @@ export default function Report() {
             const res = await getReport(formData);
             setReportData(res?.data?.data?.summary);
             setReportDetail(res?.data?.data?.daily_breakdown);
-
         } catch (error) {
             console.error("Failed to save:", error);
         } finally {

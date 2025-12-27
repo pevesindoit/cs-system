@@ -1,3 +1,4 @@
+import { formType, loginType } from "@/app/types/types";
 import axios from "axios";
 
 export const addUser = async (payload: formType) => {

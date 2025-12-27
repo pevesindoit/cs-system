@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { DropDown } from "../custom-component/DropDown";
 import { getBranch, getType } from "../function/fetch/get/fetch";
 import { addUser } from "../function/fetch/auth/fetch";
+import { formType, itemType, SelectItemData } from "../types/types";
 
 // Define the shape your DropDown expects
 export default function AddNewUser() {

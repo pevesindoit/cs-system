@@ -5,6 +5,7 @@ import { X } from "lucide-react";
 import { Button } from "@/components/ui/button"; // Using your existing Button component
 import { addFollowups } from "@/app/function/fetch/add/fetch";
 import { createPortal } from "react-dom";
+import { dataType, followUpsType } from "@/app/types/types";
 
 
 

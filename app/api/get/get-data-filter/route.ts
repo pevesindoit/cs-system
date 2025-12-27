@@ -6,13 +6,13 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
 
     // 1. Destructure parameters
-    // Menggunakan fallback body.data || body agar fleksibel
-    const { start_date, end_date, branch, cs } = body.data || body;
+    const { start_date, end_date, branch, cs, status } = body.data || body;
 
     const start = `${start_date} 00:00:00+00`;
     const end = `${end_date} 23:59:59+00`;
 
-    // 2. Build the query
+    // 2. Build the query (GLOBAL FILTERS ONLY: Date, Branch, CS)
+    // We do NOT add the status filter here. We need all statuses to calculate the counts.
     let query = supabase
       .from("leads")
       .select(
@@ -22,7 +22,7 @@ export async function POST(req: NextRequest) {
       .lte("created_at", end)
       .order("created_at", { ascending: false });
 
-    // 3. Conditional Filtering
+    // 3. Conditional Filtering (Global Context)
     if (branch) {
       query = query.eq("branch_id", branch);
     }
@@ -31,15 +31,18 @@ export async function POST(req: NextRequest) {
       query = query.eq("user_id", cs);
     }
 
-    // 4. Await the data
-    const { data: leads, error: errorLeads } = await query;
+    // NOTE: We removed the `status` filter from the SQL query here!
+
+    // 4. Await the data (This is the "All Statuses" dataset)
+    const { data: allLeads, error: errorLeads } = await query;
 
     if (errorLeads) {
       return NextResponse.json({ error: errorLeads.message }, { status: 500 });
     }
 
-    // ======== 1. LEADS STATUS COUNT (Summary Cards) ============
-    // Kita tetap pertahankan ini untuk summary card di atas grafik
+    // ======== 1. LEADS STATUS COUNT (Based on ALL leads) ============
+    // We calculate this BEFORE filtering by status, so the counts remain correct
+    // even if the user selects a specific status filter.
     const initialCounts: Record<string, number> = {
       closed: 0,
       followup: 0,
@@ -49,7 +52,7 @@ export async function POST(req: NextRequest) {
       hot: 0,
     };
 
-    const statusCounts = leads.reduce((acc, lead) => {
+    const statusCounts = allLeads.reduce((acc, lead) => {
       const statusName = lead.status ? lead.status.toLowerCase() : "unknown";
       if (acc[statusName] !== undefined) {
         acc[statusName]++;
@@ -57,9 +60,17 @@ export async function POST(req: NextRequest) {
       return acc;
     }, initialCounts);
 
-    // ======== 2. DAILY CHART DATA (TOTAL LEADS) ============
+    // ======== FILTER DATA FOR RESPONSE ============
+    // Now we apply the status filter manually in JavaScript for the List and Chart
+    let filteredLeads = allLeads;
 
-    // Step A: Generate all dates (Agar grafik tidak bolong jika ada hari tanpa leads)
+    if (status) {
+      filteredLeads = allLeads.filter((lead) => lead.status === status);
+    }
+
+    // ======== 2. DAILY CHART DATA (Based on FILTERED leads) ============
+
+    // Step A: Generate all dates
     const generateDateRange = (start: string, end: string): string[] => {
       const dates: string[] = [];
       const startDate = new Date(start);
@@ -77,26 +88,22 @@ export async function POST(req: NextRequest) {
 
     const allDates = generateDateRange(start_date, end_date);
 
-    // Step B: Init map for DAILY TOTALS
-    // Format: { "2023-01-01": 0, "2023-01-02": 0 }
+    // Step B: Init map
     const dailyCountMap: Record<string, number> = {};
-
     allDates.forEach((date) => {
       dailyCountMap[date] = 0;
     });
 
-    // Step C: Fill map from leads (Count ALL leads regardless of status)
-    leads.forEach((lead) => {
+    // Step C: Fill map using FILTERED leads
+    // The chart will reflect the selected status (e.g., only show "Closed" trends)
+    filteredLeads.forEach((lead) => {
       const date = lead.created_at.split("T")[0];
-
-      // Pastikan tanggal ada dalam range (safety check)
       if (dailyCountMap[date] !== undefined) {
         dailyCountMap[date] += 1;
       }
     });
 
-    // Step D: Build Single Array for Chart
-    // Output: [{ date: "2025-12-01", count: 5 }, { date: "2025-12-02", count: 8 }]
+    // Step D: Build Chart Array
     const chartData = allDates.map((date) => ({
       date,
       count: dailyCountMap[date],
@@ -104,9 +111,9 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json(
       {
-        leads,
-        statusCounts,
-        chartData, // <--- Sekarang kembali menjadi Array tunggal simple
+        leads: filteredLeads, // Filtered list
+        statusCounts, // Unfiltered counts (Total context)
+        chartData, // Filtered chart
       },
       { status: 200 }
     );

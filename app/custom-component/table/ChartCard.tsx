@@ -101,7 +101,7 @@ export function ChartCard({ data }: ChartCardProps) {
             <CardContent className="px-2 pt-4 sm:px-6 sm:pt-6">
                 <ChartContainer
                     config={chartConfig}
-                    className="aspect-auto h-[250px] w-full"
+                    className="aspect-auto h-50 w-full"
                 >
                     <AreaChart data={filteredData}>
                         <defs>
@@ -154,7 +154,7 @@ export function ChartCard({ data }: ChartCardProps) {
 
                         <Area
                             dataKey="count"
-                            type="natural"
+                            type="monotone"
                             fill="url(#fillLeads)"
                             stroke="var(--color-leads)"
                             stackId="a"

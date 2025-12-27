@@ -35,7 +35,9 @@ export function LeadsPage() {
     const [chart, setChart] = useState([])
     const router = useRouter()
     const [data, setData] = useState([])
+    const [statusSelected, setStatusSelected] = useState("")
     const [user, setUser] = useState("")
+
 
     useEffect(() => {
         async function loadUser() {
@@ -80,6 +82,7 @@ export function LeadsPage() {
             ...range,
             cs,
             branch,
+            status: statusSelected
         };
 
         const fetchFilter = async () => {
@@ -89,16 +92,16 @@ export function LeadsPage() {
             setChart(res?.data.chartData)
         }
         fetchFilter()
-    }, [range, cs, branch])
+    }, [range, cs, branch, statusSelected])
 
     return (
         <div className="space-y-7">
             <div className="h-full">
                 <H1>Leads Management</H1>
                 <div className="space-y-4">
-                    <div className="flex space-x-3">
+                    <div className="md:flex md:space-x-3">
                         <DateRangePicker onChange={setRange} />
-                        <div className="grid grid-cols-3 w-full gap-3">
+                        <div className="grid md:grid-cols-3 w-full gap-3">
                             <DropDownLeads
                                 items={css}
                                 onValueChange={(val) => {
@@ -118,9 +121,18 @@ export function LeadsPage() {
                     </div>
 
                     <div className="bg-white rounded-[10px] py-7 px-8 border overflow-hidden text-[.7rem]">
-                        <div className="grid grid-cols-6 gap-2">
+                        <div className="grid md:grid-cols-6 grid-cols-2 gap-2">
                             {Object.entries(totalLeads).map(([status, total]) => (
-                                <div key={status} className="flex justify-between border rounded-[10px] py-10 px-5">
+                                <div
+                                    key={status}
+                                    // Optional: I added a toggle logic here. 
+                                    // If you click the same status again, it deselects it.
+                                    onClick={() => setStatusSelected(status === statusSelected ? "" : status)}
+                                    className={`flex justify-between border rounded-[10px] py-10 px-5 cursor-pointer transition-colors ${
+                                        // HERE IS THE FIX: Compare current item 'status' with state 'statusSelected'
+                                        status === statusSelected ? "bg-green-200 border-green-400" : "bg-white hover:bg-gray-50"
+                                        }`}
+                                >
                                     <p className="capitalize font-bold">{status}</p>
                                     <p>{total}</p>
                                 </div>

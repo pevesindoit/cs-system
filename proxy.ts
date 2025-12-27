@@ -1,7 +1,7 @@
 // middleware.ts
 import { NextResponse, NextRequest } from "next/server";
 
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
   const userType = request.cookies.get("user-type")?.value;
   const userAccessToken = request.cookies.get("sb-access-token")?.value;

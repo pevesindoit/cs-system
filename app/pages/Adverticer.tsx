@@ -1,15 +1,28 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import InputAdvertiser from "../custom-component/table/InputAdvertiser";
 import ListAdvertiser from "../custom-component/table/ListAdvertiser";
 import { AdvertiserData } from "@/app/types/types";
+import { addAdvertise } from "../function/fetch/add/fetch";
+import { supabaseBrowser } from "@/lib/supabaseBrowser";
 
 export default function Advertiser() {
     const [tableData, setTableData] = useState<AdvertiserData[]>([]);
+    const [userId, setUserId] = useState("");
 
-    const handleNewData = (newItem: AdvertiserData) => {
+    useEffect(() => {
+        const getUser = async () => {
+            const { data } = await supabaseBrowser.auth.getUser();
+            if (data.user) setUserId(data.user.id);
+        }
+        getUser();
+    }, []);
 
+    const handleNewData = async (newItem: AdvertiserData) => {
+        const payload = { ...newItem, ads_manager_id: userId };
+        const res = await addAdvertise(payload);
+        console.log(res, "haswil")
         setTableData((prev) => [newItem, ...prev]);
     };
 

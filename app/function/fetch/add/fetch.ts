@@ -1,4 +1,9 @@
-import { adsType, CostumerType, dataType } from "@/app/types/types";
+import {
+  adsType,
+  AdvertiserData,
+  CostumerType,
+  dataType,
+} from "@/app/types/types";
 import axios from "axios";
 
 export const addCostumer = async (data: CostumerType) => {
@@ -30,6 +35,15 @@ export const addAdss = async (data: adsType) => {
 export const addFollowups = async (data: dataType) => {
   try {
     const res = await axios.post("/api/add/add-followup", data);
+    return res;
+  } catch (error) {
+    console.log("Failed to fetch organisations", error);
+  }
+};
+
+export const addAdvertise = async (data: AdvertiserData) => {
+  try {
+    const res = await axios.post("/api/add/add-advertiser-data", data);
     return res;
   } catch (error) {
     console.log("Failed to fetch organisations", error);

@@ -1,59 +1,41 @@
 "use client";
 
 import { useState } from "react";
-import { SocialLogData } from "@/app/types/types";
+import { SelectItemData, SocialLogData } from "@/app/types/types";
 import { DropDownGrid } from "../DropdownGrid";
 
 // Define Props
 interface InputProps {
   onAddData: (data: SocialLogData) => void;
+  platforms?: SelectItemData[];
 }
 
-export default function InputSocialGrowth({ onAddData }: InputProps) {
+export default function InputSocialGrowth({
+  onAddData,
+  platforms = [], // Fix 1: Default value prevents "undefined" error
+}: InputProps) {
+
   // 1. State
   const [formData, setFormData] = useState<SocialLogData>({
-    entry_date: new Date().toISOString().split("T")[0],
-    platform: "",
+    created_at: new Date().toISOString().split("T")[0],
+    platform_id: "",
     followers: 0,
-    reach_or_impressions: 0,
-    engagement_or_clicks: 0,
+    reach: 0,
+    engagement: 0,
     notes: "",
   });
 
-  // 2. Static Data for Dropdown
-  const platforms = [
-    {
-      value: "Instagram",
-      label: "Instagram",
-      classname: "text-pink-600 font-semibold",
-    },
-    { value: "TikTok", label: "TikTok", classname: "text-black font-semibold" },
-    {
-      value: "Facebook",
-      label: "Facebook",
-      classname: "text-blue-700 font-semibold",
-    },
-    {
-      value: "Website",
-      label: "Website",
-      classname: "text-green-600 font-semibold",
-    },
-  ];
-
   // 3. Helper for Website Logic
-  const isWebsite = formData.platform === "Website";
+  const isWebsite = formData.platform_id === "Website";
 
   // 4. Handle Changes
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
 
     setFormData((prev) => {
-      // Handle Number Fields
-      if (
-        ["followers", "reach_or_impressions", "engagement_or_clicks"].includes(
-          name
-        )
-      ) {
+      // Fix 2: Updated key names to match the input "name" attributes below
+      // (Changed 'reach_or_impressions' to 'reach', etc.)
+      if (["followers", "reach", "engagement"].includes(name)) {
         return {
           ...prev,
           [name]: value === "" ? 0 : Number(value),
@@ -66,7 +48,7 @@ export default function InputSocialGrowth({ onAddData }: InputProps) {
 
   // 5. Handle Submit
   const handleAdd = () => {
-    if (!formData.platform) return alert("Pilih Platform");
+    if (!formData.platform_id) return alert("Pilih Platform");
 
     // Send to parent
     onAddData(formData);
@@ -75,8 +57,8 @@ export default function InputSocialGrowth({ onAddData }: InputProps) {
     setFormData((prev) => ({
       ...prev,
       followers: 0,
-      reach_or_impressions: 0,
-      engagement_or_clicks: 0,
+      reach: 0,
+      engagement: 0,
       notes: "",
     }));
   };
@@ -88,8 +70,8 @@ export default function InputSocialGrowth({ onAddData }: InputProps) {
         <div className="px-1 py-1">
           <input
             type="date"
-            name="entry_date"
-            value={formData.entry_date}
+            name="created_at" // Changed from entry_date to match state key
+            value={formData.created_at}
             onChange={handleChange}
             className="w-full bg-transparent outline-none focus:bg-gray-50 pl-1"
           />
@@ -100,9 +82,11 @@ export default function InputSocialGrowth({ onAddData }: InputProps) {
       <td className="p-0 border-r align-middle">
         <div className="px-1">
           <DropDownGrid
-            items={platforms}
+            // Fix 4: Ensure it's never undefined and cast to 'any' to bypass 
+            // the strict type check between SelectItemData and Item
+            items={(platforms ?? [])}
             onValueChange={(value) =>
-              setFormData((prev) => ({ ...prev, platform: value }))
+              setFormData((prev) => ({ ...prev, platform_id: value }))
             }
           />
         </div>
@@ -132,9 +116,9 @@ export default function InputSocialGrowth({ onAddData }: InputProps) {
         <div className="px-1">
           <input
             type="number"
-            name="reach_or_impressions"
+            name="reach"
             placeholder="0"
-            value={formData.reach_or_impressions || ""}
+            value={formData.reach || ""}
             onChange={handleChange}
             className="w-full h-8 px-1 bg-transparent outline-none focus:bg-gray-50 text-right"
           />
@@ -146,9 +130,9 @@ export default function InputSocialGrowth({ onAddData }: InputProps) {
         <div className="px-1">
           <input
             type="number"
-            name="engagement_or_clicks"
+            name="engagement"
             placeholder="0"
-            value={formData.engagement_or_clicks || ""}
+            value={formData.engagement || ""}
             onChange={handleChange}
             className="w-full h-8 px-1 bg-transparent outline-none focus:bg-gray-50 text-right"
           />

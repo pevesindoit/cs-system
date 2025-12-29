@@ -3,6 +3,7 @@ import {
   AdvertiserData,
   CostumerType,
   dataType,
+  SocialLogData,
 } from "@/app/types/types";
 import axios from "axios";
 
@@ -44,6 +45,15 @@ export const addFollowups = async (data: dataType) => {
 export const addAdvertise = async (data: AdvertiserData) => {
   try {
     const res = await axios.post("/api/add/add-advertiser-data", data);
+    return res;
+  } catch (error) {
+    console.log("Failed to fetch organisations", error);
+  }
+};
+
+export const addSocialMediaGrowth = async (data: SocialLogData) => {
+  try {
+    const res = await axios.post("/api/add/add-socialmedia-growth", data);
     return res;
   } catch (error) {
     console.log("Failed to fetch organisations", error);

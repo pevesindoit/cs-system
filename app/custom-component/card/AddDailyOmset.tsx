@@ -1,14 +1,17 @@
 "use client"
 import { useEffect, useState } from "react";
 import H1 from "../H1"
-import { SocialLogData } from "@/app/types/types";
+import { itemType, SelectItemData, SocialLogData } from "@/app/types/types";
 import { supabaseBrowser } from "@/lib/supabaseBrowser";
 import InputSocialGrowth from "../input/InputSocialGrowth";
 import ListSocialGrowth from "../input/ListSocialGrowth";
+import { addSocialMediaGrowth } from "@/app/function/fetch/add/fetch";
+import { getCs, getSocialMediaGrowth } from "@/app/function/fetch/get/fetch";
 
 export default function AddDailyOmset() {
     const [tableData, setTableData] = useState<SocialLogData[]>([]);
     const [userId, setUserId] = useState("");
+    const [platforms, setPlatforms] = useState<SelectItemData[]>([]);
 
     // 1. Get User ID
     useEffect(() => {
@@ -23,7 +26,8 @@ export default function AddDailyOmset() {
     useEffect(() => {
         if (!userId) return;
         const fetchData = async () => {
-            const res = await getSocialLogs(userId)
+            const res = await getSocialMediaGrowth(userId)
+            console.log(res, "ini sisinasdk")
             if (res?.status === 200) {
                 setTableData(res?.data.data);
             }
@@ -34,12 +38,10 @@ export default function AddDailyOmset() {
     // 3. Handle Add New Data
     const handleNewData = async (newItem: SocialLogData) => {
         const payload = { ...newItem, user_id: userId };
-        const res = await addSocialLog(payload);
-
+        const res = await addSocialMediaGrowth(payload);
+        console.log(res?.data.allLeads, "ini bede")
         if (res?.status === 200) {
-            // Assuming your API returns the updated list or you append it manually
-            // Here I assume the API returns the full updated list like your reference
-            setTableData(res?.data.allLogs);
+            setTableData(res?.data.allLeads);
         }
     };
 
@@ -52,6 +54,20 @@ export default function AddDailyOmset() {
         "Notes",
         "Action"
     ];
+
+    useEffect(() => {
+        const fetch = async () => {
+            const res = await getCs()
+            const rawData = res?.data
+            const formattedListPlatform = rawData.platform.map((item: itemType) => ({
+                value: item.id,
+                label: item.name,
+                classname: item.classname
+            }));
+            setPlatforms(formattedListPlatform)
+        }
+        fetch()
+    }, [])
 
     return (
         <div className="w-full py-3 pr-3 pl-3 md:pl-0 relative gap-3 overflow-x-auto md:overflow-x-visible no-scrollbar min-w-max">
@@ -76,7 +92,7 @@ export default function AddDailyOmset() {
 
                 <tbody className="divide-y divide-gray-200">
                     {/* INPUT ROW */}
-                    <InputSocialGrowth onAddData={handleNewData} />
+                    <InputSocialGrowth onAddData={handleNewData} platforms={platforms} />
 
                     {/* DATA ROWS */}
                     <ListSocialGrowth data={tableData} />

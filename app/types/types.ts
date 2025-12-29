@@ -237,11 +237,10 @@ export interface AdvertiserData {
 export interface SocialLogData {
   id?: number; // Optional because it's auto-generated on insert
   created_at?: string;
-  entry_date: string;
-  platform: string; // 'Instagram', 'TikTok', 'Facebook', 'Website'
+  platform_id: string; // 'Instagram', 'TikTok', 'Facebook', 'Website'
   followers: number;
-  reach_or_impressions: number;
-  engagement_or_clicks: number;
+  reach: number;
+  engagement: number;
   notes?: string;
   user_id?: string; // To link it to the user
 }

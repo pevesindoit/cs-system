@@ -1,14 +1,18 @@
 "use client";
 
-import { useState } from "react";
-import { AdvertiserData } from "@/app/types/types";
+import { useEffect, useState } from "react";
+import { AdvertiserData, itemType, SelectItemDataInt } from "@/app/types/types";
 import EditableDate from "../table/EditableDate";
 import EditableInput from "../table/EditableInput";
 import { updateAdvertiser } from "@/app/function/fetch/update/update-lead/fetch";
+import EditableSelect from "./EditableDropdown";
+import { getCs } from "@/app/function/fetch/get/fetch";
 
 export default function ListAdvertiser({ data }: { data: AdvertiserData[] }) {
     const [rows, setRows] = useState<AdvertiserData[]>(data);
     const [prevData, setPrevData] = useState<AdvertiserData[]>(data);
+    const [branchs, setBranchs] = useState<SelectItemDataInt[]>([]);
+    const [platforms, setPlatforms] = useState<SelectItemDataInt[]>([]);
 
     // Sync State
     if (data !== prevData) {
@@ -57,6 +61,26 @@ export default function ListAdvertiser({ data }: { data: AdvertiserData[] }) {
         }
     };
 
+    useEffect(() => {
+        const fetch = async () => {
+            const res = await getCs()
+            const rawData = res?.data
+            const formattedListPlatform = rawData.ads_platform.map((item: itemType) => ({
+                value: item.id,
+                label: item.name,
+                classname: item.classname
+            }));
+            const formattedListBranch = rawData.branch.map((item: itemType) => ({
+                value: item.id,
+                label: item.name,
+                classname: item.classname
+            }));
+            setPlatforms(formattedListPlatform)
+            setBranchs(formattedListBranch)
+        }
+        fetch()
+    }, [])
+
     if (rows.length === 0) {
         return (
             <tr>
@@ -97,9 +121,21 @@ export default function ListAdvertiser({ data }: { data: AdvertiserData[] }) {
 
                         {/* Branch */}
                         <td className="px-2 py-2 border-r whitespace-nowrap">
-                            <div className="px-1 py-1">
+                            {/* <div className="px-1 py-1">
                                 {row.branch?.name}
-                            </div>
+                            </div> */}
+                            <EditableSelect<string>
+                                value={row.cabang_id ?? undefined}
+                                rowId={safeId}
+                                field="cabang_id"
+                                // ✅ FIX: Convert c.value to String()
+                                options={branchs.map((c) => ({
+                                    label: c.label,
+                                    value: String(c.value),
+                                    className: c.classname,
+                                }))}
+                                onSave={handleSave}
+                            />
                         </td>
 
                         {/* Spend */}
@@ -128,7 +164,18 @@ export default function ListAdvertiser({ data }: { data: AdvertiserData[] }) {
 
                         {/* Platform Name */}
                         <td className="px-2 py-2 border-r whitespace-nowrap uppercase">
-                            {platformName}
+                            <EditableSelect<string>
+                                value={row.platform_id ?? undefined}
+                                rowId={safeId}
+                                field="platform_id"
+                                // ✅ FIX: Convert c.value to String()
+                                options={platforms.map((c) => ({
+                                    label: c.label,
+                                    value: String(c.value),
+                                    className: c.classname,
+                                }))}
+                                onSave={handleSave}
+                            />
                         </td>
 
                         {/* Leads */}
@@ -182,7 +229,7 @@ export default function ListAdvertiser({ data }: { data: AdvertiserData[] }) {
                         </td>
 
                         <td className="px-2 py-2 border-r whitespace-nowrap"></td>
-                    </tr>
+                    </tr >
                 );
             })}
         </>

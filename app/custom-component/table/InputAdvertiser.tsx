@@ -21,7 +21,7 @@ export default function InputAdvertiser({ onAddData }: InputProps) {
         ppn: 0,
         platform_id: "",
         leads: 0,
-        konversi_google: 0,
+        conversi_google: 0,
         keterangan: "",
     });
 
@@ -36,7 +36,7 @@ export default function InputAdvertiser({ onAddData }: InputProps) {
     const totalBudget = Number(formData.spend) + Number(formData.ppn);
 
     const costPerLead = formData.leads > 0 ? Math.round(totalBudget / formData.leads) : 0;
-    const costPerKonversi = formData.konversi_google > 0 ? Math.round(totalBudget / formData.konversi_google) : 0;
+    const costPerKonversi = formData.conversi_google > 0 ? Math.round(totalBudget / formData.conversi_google) : 0;
 
     // Handle Changes
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -69,7 +69,7 @@ export default function InputAdvertiser({ onAddData }: InputProps) {
                     ...prev,
                     platform_id: value,
                     // Reset konversi_google if switching away from google
-                    konversi_google: value !== "google" ? 0 : prev.konversi_google
+                    konversi_google: value !== "google" ? 0 : prev.conversi_google
                 };
             }
 
@@ -83,17 +83,18 @@ export default function InputAdvertiser({ onAddData }: InputProps) {
         // Construct the full payload
         const payload: AdvertiserData = {
             ...formData,
-            // Ensure types match what your interface expects
             platform_id: formData.platform_id,
-            total_budget: totalBudget, // Uses the calculation above
+            total_budget: totalBudget,
             cost_per_lead: costPerLead,
             cost_per_konversi: costPerKonversi,
+            // ✅ ADD THIS LINE
+            created_at: new Date().toISOString(),
         };
 
         // Send data to Parent
         onAddData(payload);
 
-        // Reset Form
+        // Reset Form...
         setFormData({
             date: new Date().toISOString().split("T")[0],
             cabang_id: "",
@@ -101,7 +102,7 @@ export default function InputAdvertiser({ onAddData }: InputProps) {
             ppn: 0,
             platform_id: "",
             leads: 0,
-            konversi_google: 0,
+            conversi_google: 0,
             keterangan: "",
         });
     };
@@ -200,7 +201,7 @@ export default function InputAdvertiser({ onAddData }: InputProps) {
             {/* 9. KONVERSI GOOGLE */}
             <td className={`p-0 border-r align-middle ${!isGoogle ? "bg-gray-100" : ""}`}>
                 <div className="px-1">
-                    <input type="number" name="konversi_google" placeholder={isGoogle ? "0" : "-"} disabled={!isGoogle} value={isGoogle ? (formData.konversi_google || "") : ""} onChange={handleChange} className={`w-full h-8 px-1 bg-transparent outline-none text-right ${isGoogle ? "focus:bg-gray-50" : "cursor-not-allowed bg-gray-100"}`} />
+                    <input type="number" name="konversi_google" placeholder={isGoogle ? "0" : "-"} disabled={!isGoogle} value={isGoogle ? (formData.conversi_google || "") : ""} onChange={handleChange} className={`w-full h-8 px-1 bg-transparent outline-none text-right ${isGoogle ? "focus:bg-gray-50" : "cursor-not-allowed bg-gray-100"}`} />
                 </div>
             </td>
 

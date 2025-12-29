@@ -15,3 +15,16 @@ export const updateLead = async ({ id, field, value }: UpdateLeadPayload) => {
 
   return res.data;
 };
+export const updateAdvertiser = async ({
+  id,
+  field,
+  value,
+}: UpdateLeadPayload) => {
+  const res = await axios.post("/api/update/update-advertiser", {
+    id,
+    field,
+    value,
+  });
+
+  return res.data;
+};

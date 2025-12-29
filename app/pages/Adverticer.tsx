@@ -6,6 +6,7 @@ import ListAdvertiser from "../custom-component/table/ListAdvertiser";
 import { AdvertiserData } from "@/app/types/types";
 import { addAdvertise } from "../function/fetch/add/fetch";
 import { supabaseBrowser } from "@/lib/supabaseBrowser";
+import { getDataAdvertiserList } from "../function/fetch/get/fetch";
 
 export default function Advertiser() {
     const [tableData, setTableData] = useState<AdvertiserData[]>([]);
@@ -17,13 +18,26 @@ export default function Advertiser() {
             if (data.user) setUserId(data.user.id);
         }
         getUser();
-    }, []);
+    }, [userId]);
+
+    useEffect(() => {
+        if (!userId) return;
+        const fetchData = async () => {
+            const res = await getDataAdvertiserList(userId)
+            if (res?.status === 200) {
+                setTableData(res?.data.data);
+            }
+        }
+        fetchData()
+    }, [userId])
 
     const handleNewData = async (newItem: AdvertiserData) => {
         const payload = { ...newItem, ads_manager_id: userId };
         const res = await addAdvertise(payload);
-        console.log(res, "haswil")
-        setTableData((prev) => [newItem, ...prev]);
+        console.log(res?.data.allLeads, "inimi datanya")
+        if (res?.status === 200) {
+            setTableData(res?.data.allLeads);
+        }
     };
 
     const headers = [
@@ -31,8 +45,6 @@ export default function Advertiser() {
         "Platform", "Leads", "Cost per Lead", "Konversi Google",
         "Cost per Konversi", "Keterangan", "Action",
     ];
-
-    console.log(tableData, "inimi")
 
     return (
         <div className="flex w-full py-3 pr-3 pl-3 md:pl-0 relative gap-3 overflow-x-auto md:overflow-x-visible no-scrollbar min-w-max">

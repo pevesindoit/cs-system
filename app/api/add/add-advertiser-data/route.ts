@@ -72,8 +72,6 @@ export async function POST(req: NextRequest) {
       ads_manager_id: finalUserId,
     };
 
-    console.log(insertPayload);
-
     // 5. Insert
     // CRITICAL FIX: Changed table from "advertiser_data" to "ads" to match the fetch query below
     const { data: newEntry, error: insertError } = await supabase
@@ -101,6 +99,7 @@ export async function POST(req: NextRequest) {
       .order("created_at", { ascending: false })
       .limit(50);
 
+    console.log(allLeads, "inimi ahhay");
     if (fetchError) {
       return NextResponse.json({ error: fetchError.message }, { status: 500 });
     }

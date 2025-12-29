@@ -222,7 +222,14 @@ export interface AdvertiserData {
   platform_id: string;
   leads: number;
   cost_per_lead: number;
-  konversi_google: number;
+  conversi_google: number;
   cost_per_konversi: number;
   keterangan: string;
+  created_at: string;
+  platform?: {
+    name: string;
+  };
+  branch?: {
+    name: string;
+  };
 }

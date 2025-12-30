@@ -123,6 +123,7 @@ export default function ListRealOmset({ data }: Props) {
                                     rowId={safeId}
                                     field="total"
                                     isNumeric={true}
+                                    isCurrency={true}
                                     onSave={handleSave}
                                 />
                             </div>

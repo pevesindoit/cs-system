@@ -8,6 +8,7 @@ import { getCs } from "@/app/function/fetch/get/fetch";
 import EditableDate from "../table/EditableDate";
 import EditableInput from "../table/EditableInput";
 import EditableSelect from "../table/EditableDropdown";
+import { updateSocialMediaGrowth } from "@/app/function/fetch/update/update-lead/fetch";
 
 // IMPORTANT: Import your update function here. 
 // If you haven't created it yet, creates a file similar to 'updateAdvertiser'
@@ -63,7 +64,7 @@ export default function ListSocialGrowth({ data }: Props) {
 
         // Update Database
         // Make sure to create this function in your API functions folder
-        // await updateSocialGrowth({ id, field, value }); 
+        await updateSocialMediaGrowth({ id, field, value });
         console.log(`Saving ${field}: ${value} for ID: ${id}`); // Placeholder log
     };
 

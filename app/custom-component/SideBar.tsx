@@ -46,10 +46,10 @@ export default function SideBar() {
         {
             group: "Admin",
             items: [
+                { link: "/advertiser", icon: <CircleDollarSign size={16} />, text: "Advertiser" },
                 { link: "/report", icon: <ClipboardPlus size={16} />, text: "Report" },
-                { link: "/dashboard", icon: <LayoutDashboard size={16} />, text: "Dashboard" },
                 { link: "/cs", icon: <Users size={16} />, text: "CS" },
-                { link: "/manager", icon: <CircleDollarSign size={16} />, text: "Manager" },
+                { link: "/dashboard", icon: <LayoutDashboard size={16} />, text: "Dashboard" },
                 { link: "/get-leads", icon: <List size={16} />, text: "Leads" },
             ],
         },
@@ -156,7 +156,7 @@ export default function SideBar() {
             </div>
 
             {mobileMenuOpen && (
-                <div className="md:hidden fixed inset-0 z-[60] flex">
+                <div className="md:hidden fixed inset-0 z-60 flex">
                     <div
                         className="absolute inset-0 bg-black/50"
                         onClick={() => setMobileMenuOpen(false)}

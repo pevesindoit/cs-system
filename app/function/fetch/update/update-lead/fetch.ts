@@ -15,3 +15,44 @@ export const updateLead = async ({ id, field, value }: UpdateLeadPayload) => {
 
   return res.data;
 };
+export const updateAdvertiser = async ({
+  id,
+  field,
+  value,
+}: UpdateLeadPayload) => {
+  const res = await axios.post("/api/update/update-advertiser", {
+    id,
+    field,
+    value,
+  });
+
+  return res.data;
+};
+
+export const updateSocialMediaGrowth = async ({
+  id,
+  field,
+  value,
+}: UpdateLeadPayload) => {
+  const res = await axios.post("/api/update/update-socialmedia-growth", {
+    id,
+    field,
+    value,
+  });
+
+  return res.data;
+};
+
+export const updateRealOmset = async ({
+  id,
+  field,
+  value,
+}: UpdateLeadPayload) => {
+  const res = await axios.post("/api/update/update-real-omset", {
+    id,
+    field,
+    value,
+  });
+
+  return res.data;
+};

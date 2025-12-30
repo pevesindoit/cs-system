@@ -111,3 +111,39 @@ export const getReport = async (data: ReportItem) => {
     console.log("Failed to fetch organisations", error);
   }
 };
+
+export const getDataAdvertiserList = async (id: string) => {
+  try {
+    const res = await axios.post("/api/get/get-advertiser-data", {
+      user_id: id,
+    });
+    return res;
+  } catch (error) {
+    console.log("Failed to fetch organisations", error);
+    return null;
+  }
+};
+
+export const getSocialMediaGrowth = async (id: string) => {
+  try {
+    const res = await axios.post("/api/get/get-socialmedia-growth", {
+      user_id: id,
+    });
+    return res;
+  } catch (error) {
+    console.log("Failed to fetch organisations", error);
+    return null;
+  }
+};
+
+export const getRealOmset = async (id: string) => {
+  try {
+    const res = await axios.post("/api/get/get-real-omset", {
+      user_id: id,
+    });
+    return res;
+  } catch (error) {
+    console.log("Failed to fetch organisations", error);
+    return null;
+  }
+};

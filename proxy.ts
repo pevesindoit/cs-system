@@ -54,5 +54,6 @@ export const config = {
     "/dashboard/:path*",
     "/leads/:path*",
     "/report/:path*",
+    "/advertiser/:path*",
   ],
 };

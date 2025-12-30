@@ -222,7 +222,33 @@ export interface AdvertiserData {
   platform_id: string;
   leads: number;
   cost_per_lead: number;
-  konversi_google: number;
+  conversi_google: number;
   cost_per_konversi: number;
   keterangan: string;
+  created_at: string;
+  platform?: {
+    name: string;
+  };
+  branch?: {
+    name: string;
+  };
+}
+
+export interface SocialLogData {
+  id?: number; // Optional because it's auto-generated on insert
+  created_at?: string;
+  platform_id: string; // 'Instagram', 'TikTok', 'Facebook', 'Website'
+  followers: number;
+  reach: number;
+  engagement: number;
+  notes?: string;
+  user_id?: string; // To link it to the user
+}
+
+export interface RealOmsetLogData {
+  id?: string; // Optional because it's auto-generated on insert
+  created_at?: string;
+  branch_id: string; // 'Instagram', 'TikTok', 'Facebook', 'Website'
+  total: number;
+  user_id?: string; // To link it to the user
 }

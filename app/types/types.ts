@@ -255,6 +255,7 @@ export interface RealOmsetLogData {
 
 export interface ReusableCsData {
   platforms: SelectItemData[];
+  platformsNotAds?: SelectItemData[];
   branches: SelectItemData[];
 }
 

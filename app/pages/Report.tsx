@@ -6,17 +6,18 @@ import { getCs, getReport } from "../function/fetch/get/fetch";
 import DateRangePicker from "../custom-component/DateRangePicker";
 import { itemType, ReportItem, ReportSummaryData } from "../types/types";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button"; // Assuming you have a Button component
+import { Button } from "@/components/ui/button";
 import { DropDown } from "../custom-component/DropDown";
 import { ReportSummary } from "../custom-component/table/ReportSummary";
 import { ReportDetail } from "../custom-component/table/ReportDetail";
+import ReportBranch from "../custom-component/card/ReportBranch";
 
-// 1. Define Types for cleaner code
+
 type FormDataType = {
     start_date: string;
     end_date: string;
     platform_id: string;
-    target_lead: number; // Allow string for input handling
+    target_lead: number;
     target_omset: number;
     branch_id: string;
 };
@@ -38,19 +39,20 @@ export default function Report() {
     // --- STATE ---
     const [range, setRange] = useState(GetDefaultDate());
 
-    // Initial State
     const [formData, setFormData] = useState<FormDataType>({
         start_date: range.start_date,
         end_date: range.end_date,
         platform_id: "",
-        target_lead: 0, // Use empty string for inputs instead of null
+        target_lead: 0,
         target_omset: 0,
         branch_id: ""
     });
 
     const [reportData, setReportData] = useState<ReportSummaryData | null>(null);
-    const [reportSummary, setReportSummary] = useState([]);
     const [reportDetail, setReportDetail] = useState([]);
+    // 1. ADD STATE FOR BRANCH BREAKDOWN
+    const [reportBranch, setReportBranch] = useState([]);
+
     const [loading, setLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
     const [branchs, setBranchs] = useState([]);
@@ -58,8 +60,6 @@ export default function Report() {
 
     // --- EFFECTS ---
 
-    // 1. Sync DateRangePicker with FormData
-    // When 'range' changes, update 'formData' automatically
     useEffect(() => {
         setFormData((prev) => ({
             ...prev,
@@ -68,7 +68,7 @@ export default function Report() {
         }));
     }, [range]);
 
-    // 2. Fetch Existing Report Data
+    // 2. FETCH DATA LOGIC
     useEffect(() => {
         const fetchData = async () => {
             if (!range.start_date || !range.end_date) return;
@@ -81,12 +81,12 @@ export default function Report() {
                 };
 
                 const res = await getReport(payload);
-                setReportSummary(res?.data?.data?.summary);
 
-                if (res?.data) {
+                if (res?.data?.data) {
                     setReportData(res.data.data.summary);
                     setReportDetail(res.data.data.daily_breakdown);
-
+                    // Set Branch Data
+                    setReportBranch(res.data.data.branch_breakdown || []);
                 }
             } catch (error) {
                 console.error("Error fetching report:", error);
@@ -98,14 +98,8 @@ export default function Report() {
         fetchData();
     }, [range]);
 
-    // --- HANDLERS ---
-
-    // 3. Generic Input Change Handler
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const { name, value, type } = e.target; // Get 'type' as well
-
-        // If the input type is number, parse it. Otherwise use the string value.
-        // Alternatively, you can check by field name: if (name === 'target_lead') ...
+        const { name, value, type } = e.target;
         const finalValue = type === 'number' ? (value === "" ? 0 : Number(value)) : value;
 
         setFormData((prev) => ({
@@ -114,14 +108,17 @@ export default function Report() {
         }));
     };
 
-    // 4. Submit Handler
+    // 3. SAVE HANDLER
     const handleSave = async () => {
         setIsSaving(true);
-
         try {
             const res = await getReport(formData);
-            setReportData(res?.data?.data?.summary);
-            setReportDetail(res?.data?.data?.daily_breakdown);
+            if (res?.data?.data) {
+                setReportData(res.data.data.summary);
+                setReportDetail(res.data.data.daily_breakdown);
+                // Set Branch Data
+                setReportBranch(res.data.data.branch_breakdown || []);
+            }
         } catch (error) {
             console.error("Failed to save:", error);
         } finally {
@@ -133,40 +130,38 @@ export default function Report() {
         const fetch = async () => {
             const res = await getCs()
             const rawData = res?.data
-            const formattedListPlatform = rawData.platform.map((item: itemType) => ({
+            const formattedListPlatform = rawData?.ads_platform?.map((item: itemType) => ({
                 value: item.id,
                 label: item.name,
                 classname: item.classname
-            }));
-            const formattedListBranch = rawData.branch.map((item: itemType) => ({
+            })) || [];
+            const formattedListBranch = rawData?.branch?.map((item: itemType) => ({
                 value: item.id,
                 label: item.name,
                 classname: item.classname
-            }));
+            })) || [];
+
             setPlatforms(formattedListPlatform)
             setBranchs(formattedListBranch)
         }
         fetch()
     }, [])
 
-    console.log(reportData, "inimi")
+    console.log(reportBranch, "ini laporan cabanganya")
+
     if (loading) return <div>Loading Report...</div>;
 
     return (
         <div className="space-y-6">
             <H1>Manager Report</H1>
             <div className="flex flex-col gap-4">
-                {/* Date Picker (Updates Range & FormData) */}
                 <DateRangePicker onChange={setRange} />
 
-                {/* --- FORM INPUTS --- */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-white p-6 border rounded-md">
-
                     <div className="space-y-2">
                         <DropDown
                             label="Platform"
                             items={platforms}
-                            // The Dropdown returns a string value
                             onValueChange={(value: string) =>
                                 setFormData((prev) => ({ ...prev, platform_id: value }))
                             }
@@ -177,7 +172,6 @@ export default function Report() {
                         <DropDown
                             label="Cabang"
                             items={branchs}
-                            // The Dropdown returns a string value
                             onValueChange={(value: string) =>
                                 setFormData((prev) => ({ ...prev, branch_id: value }))
                             }
@@ -214,9 +208,9 @@ export default function Report() {
                 </div>
             </div>
 
-            {/* --- REPORT DISPLAY --- */}
-            <div className="border rounded-[5px] h-full py-10 px-9 bg-[#FEFEFE] gap-8">
-                {/* Your report visualization goes here */}
+            <div className="border rounded-[5px] h-full py-10 px-9 bg-[#FEFEFE] gap-8 space-y-8">
+                {/* 4. RENDER NEW COMPONENT */}
+                <ReportBranch data={reportBranch} />
                 <ReportDetail data={reportDetail} />
                 <ReportSummary data={reportData} />
             </div>

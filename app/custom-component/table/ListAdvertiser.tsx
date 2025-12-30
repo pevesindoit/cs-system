@@ -18,9 +18,6 @@ export default function ListAdvertiser({ data, platforms, branches }: Props) {
     const [rows, setRows] = useState<AdvertiserData[]>(data);
     const [prevData, setPrevData] = useState<AdvertiserData[]>(data);
 
-    // REMOVED: Internal state for branches/platforms
-    // REMOVED: Internal useEffect that calls getCs()
-
     // Sync State
     if (data !== prevData) {
         setRows(data);

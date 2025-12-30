@@ -1,16 +1,18 @@
 "use client"
 import { useEffect, useState } from "react";
 import H1 from "../H1"
-import { itemType, ReusableCsData, SelectItemData, SocialLogData } from "@/app/types/types";
+import { ReusableCsData, SocialLogData } from "@/app/types/types";
 import { supabaseBrowser } from "@/lib/supabaseBrowser";
 import InputSocialGrowth from "../input/InputSocialGrowth";
 import ListSocialGrowth from "../input/ListSocialGrowth";
 import { addSocialMediaGrowth } from "@/app/function/fetch/add/fetch";
-import { getCs, getSocialMediaGrowth } from "@/app/function/fetch/get/fetch";
+import { getSocialMediaGrowth } from "@/app/function/fetch/get/fetch";
 
-export default function AddDailyOmset({ platforms, branches }: ReusableCsData) {
+export default function AddDailyOmset({ platforms }: ReusableCsData) {
     const [tableData, setTableData] = useState<SocialLogData[]>([]);
     const [userId, setUserId] = useState("");
+
+    console.log(platforms, "inimi")
 
     // 1. Get User ID
     useEffect(() => {
@@ -80,7 +82,7 @@ export default function AddDailyOmset({ platforms, branches }: ReusableCsData) {
                     <InputSocialGrowth onAddData={handleNewData} platforms={platforms} />
 
                     {/* DATA ROWS */}
-                    <ListSocialGrowth data={tableData} />
+                    <ListSocialGrowth data={tableData} platforms={platforms} />
                 </tbody>
 
             </table>

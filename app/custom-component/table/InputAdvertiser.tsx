@@ -1,6 +1,5 @@
 "use client";
 
-import { getCs } from "@/app/function/fetch/get/fetch";
 import { AdvertiserData, itemType, SelectItemData } from "@/app/types/types";
 import { useEffect, useState } from "react";
 import { DropDownGrid } from "../DropdownGrid";
@@ -26,8 +25,6 @@ export default function InputAdvertiser({ onAddData, platforms, branches }: Inpu
         conversi_google: 0,
         keterangan: "",
     });
-
-    const [branchs, setBranchs] = useState([]);
 
     // Helpers & Calculations
     const isGoogle = formData.platform_id === "google";
@@ -124,7 +121,7 @@ export default function InputAdvertiser({ onAddData, platforms, branches }: Inpu
             <td className="p-0 border-r align-middle">
                 <div className="px-1">
                     <DropDownGrid
-                        items={branchs}
+                        items={branches}
                         onValueChange={(value) =>
                             setFormData((prev) => ({ ...prev, cabang_id: value }))
                         }

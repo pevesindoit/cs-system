@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import H1 from "../H1"
 // Ensure you have a type definition for your Omset Data (e.g., RealOmsetLogData)
-import { itemType, RealOmsetLogData, ReusableCsData, SelectItemData } from "@/app/types/types";
+import { RealOmsetLogData, ReusableCsData } from "@/app/types/types";
 import { supabaseBrowser } from "@/lib/supabaseBrowser";
 
 // You will need to create these two components based on your SocialGrowth inputs
@@ -11,9 +11,9 @@ import ListRealOmset from "../input/ListRealOmset";
 
 // Ensure these fetch functions exist in your backend logic
 import { addRealOmset } from "@/app/function/fetch/add/fetch";
-import { getCs, getRealOmset } from "@/app/function/fetch/get/fetch";
+import { getRealOmset } from "@/app/function/fetch/get/fetch";
 
-export default function AddRealOmset({ platforms, branches }: ReusableCsData) {
+export default function AddRealOmset({ branches }: ReusableCsData) {
     const [tableData, setTableData] = useState<RealOmsetLogData[]>([]);
     const [userId, setUserId] = useState("");
 
@@ -84,7 +84,7 @@ export default function AddRealOmset({ platforms, branches }: ReusableCsData) {
                     <InputRealOmset onAddData={handleNewData} branches={branches} />
 
                     {/* DATA ROWS */}
-                    <ListRealOmset data={tableData} />
+                    <ListRealOmset data={tableData} branches={branches} />
                 </tbody>
 
             </table>

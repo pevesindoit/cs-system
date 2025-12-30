@@ -1,8 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { itemType, SelectItemDataInt, SocialLogData } from "@/app/types/types";
-import { getCs } from "@/app/function/fetch/get/fetch";
+import { useState } from "react";
+import { SelectItemData, SocialLogData } from "@/app/types/types";
 
 // Imports for Editable Table Components
 import EditableDate from "../table/EditableDate";
@@ -16,33 +15,20 @@ import { updateSocialMediaGrowth } from "@/app/function/fetch/update/update-lead
 
 interface Props {
     data: SocialLogData[];
+    platforms: SelectItemData[];
 }
 
-export default function ListSocialGrowth({ data }: Props) {
+export default function ListSocialGrowth({ data, platforms }: Props) {
     const [rows, setRows] = useState<SocialLogData[]>(data);
     const [prevData, setPrevData] = useState<SocialLogData[]>(data);
-    const [platforms, setPlatforms] = useState<SelectItemDataInt[]>([]);
+
+    console.log(platforms, "inimi")
 
     // 1. Sync State with Props (Server Data)
     if (data !== prevData) {
         setRows(data);
         setPrevData(data);
     }
-
-    // 2. Fetch Dropdown Options
-    useEffect(() => {
-        const fetch = async () => {
-            const res = await getCs();
-            const rawData = res?.data;
-            const formattedListPlatform = rawData.platform.map((item: itemType) => ({
-                value: item.id,
-                label: item.name,
-                classname: item.classname,
-            }));
-            setPlatforms(formattedListPlatform);
-        };
-        fetch();
-    }, []);
 
     // 3. Handle Save (Update Logic)
     const handleSave = async (

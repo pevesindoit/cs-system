@@ -42,3 +42,17 @@ export const updateSocialMediaGrowth = async ({
 
   return res.data;
 };
+
+export const updateRealOmset = async ({
+  id,
+  field,
+  value,
+}: UpdateLeadPayload) => {
+  const res = await axios.post("/api/update/update-real-omset", {
+    id,
+    field,
+    value,
+  });
+
+  return res.data;
+};

@@ -244,3 +244,11 @@ export interface SocialLogData {
   notes?: string;
   user_id?: string; // To link it to the user
 }
+
+export interface RealOmsetLogData {
+  id?: string; // Optional because it's auto-generated on insert
+  created_at?: string;
+  branch_id: string; // 'Instagram', 'TikTok', 'Facebook', 'Website'
+  total: number;
+  user_id?: string; // To link it to the user
+}

@@ -3,6 +3,7 @@ import {
   AdvertiserData,
   CostumerType,
   dataType,
+  RealOmsetLogData,
   SocialLogData,
 } from "@/app/types/types";
 import axios from "axios";
@@ -54,6 +55,15 @@ export const addAdvertise = async (data: AdvertiserData) => {
 export const addSocialMediaGrowth = async (data: SocialLogData) => {
   try {
     const res = await axios.post("/api/add/add-socialmedia-growth", data);
+    return res;
+  } catch (error) {
+    console.log("Failed to fetch organisations", error);
+  }
+};
+
+export const addRealOmset = async (data: RealOmsetLogData) => {
+  try {
+    const res = await axios.post("/api/add/add-real-omset", data);
     return res;
   } catch (error) {
     console.log("Failed to fetch organisations", error);

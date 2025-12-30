@@ -226,6 +226,7 @@ export interface AdvertiserData {
   cost_per_konversi: number;
   keterangan: string;
   created_at: string;
+  omset_target: number;
   platform?: {
     name: string;
   };

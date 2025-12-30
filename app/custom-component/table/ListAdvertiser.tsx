@@ -166,6 +166,20 @@ export default function ListAdvertiser({ data, platforms, branches }: Props) {
                             </div>
                         </td>
 
+                        {/* Spend */}
+                        <td className="px-2 py-2 border-r whitespace-nowrap text-right">
+                            <div className="px-1">
+                                <EditableInput<number>
+                                    value={row.omset_target}
+                                    rowId={safeId}
+                                    field="omset_target"
+                                    isNumeric={true}
+                                    isCurrency={true}
+                                    onSave={handleSave}
+                                />
+                            </div>
+                        </td>
+
                         {/* Cost Per Lead */}
                         <td className="px-2 py-2 border-r whitespace-nowrap text-right">
                             {costPerLead.toLocaleString("id-ID")}

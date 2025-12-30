@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import H1 from "../custom-component/H1";
 import { getCs, getReport } from "../function/fetch/get/fetch";
-import DateRangePicker from "../custom-component/DateRangePicker";
 import { itemType, ReportItem, ReportSummaryData } from "../types/types";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -11,12 +10,13 @@ import { DropDown } from "../custom-component/DropDown";
 import { ReportSummary } from "../custom-component/table/ReportSummary";
 import { ReportDetail } from "../custom-component/table/ReportDetail";
 import ReportBranch from "../custom-component/card/ReportBranch";
+import DateMountSelector from "../custom-component/formater/DateMountSelector";
 
 
 type FormDataType = {
     start_date: string;
     end_date: string;
-    platform_id: string;
+    platform_id: string; // Now stores NAME (e.g. "Meta")
     target_lead: number;
     target_omset: number;
     branch_id: string;
@@ -36,7 +36,6 @@ const GetDefaultDate = () => {
 };
 
 export default function Report() {
-    // --- STATE ---
     const [range, setRange] = useState(GetDefaultDate());
 
     const [formData, setFormData] = useState<FormDataType>({
@@ -50,15 +49,12 @@ export default function Report() {
 
     const [reportData, setReportData] = useState<ReportSummaryData | null>(null);
     const [reportDetail, setReportDetail] = useState([]);
-    // 1. ADD STATE FOR BRANCH BREAKDOWN
     const [reportBranch, setReportBranch] = useState([]);
 
     const [loading, setLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
     const [branchs, setBranchs] = useState([]);
     const [platforms, setPlatforms] = useState([]);
-
-    // --- EFFECTS ---
 
     useEffect(() => {
         setFormData((prev) => ({
@@ -68,7 +64,6 @@ export default function Report() {
         }));
     }, [range]);
 
-    // 2. FETCH DATA LOGIC
     useEffect(() => {
         const fetchData = async () => {
             if (!range.start_date || !range.end_date) return;
@@ -85,7 +80,6 @@ export default function Report() {
                 if (res?.data?.data) {
                     setReportData(res.data.data.summary);
                     setReportDetail(res.data.data.daily_breakdown);
-                    // Set Branch Data
                     setReportBranch(res.data.data.branch_breakdown || []);
                 }
             } catch (error) {
@@ -108,7 +102,6 @@ export default function Report() {
         }));
     };
 
-    // 3. SAVE HANDLER
     const handleSave = async () => {
         setIsSaving(true);
         try {
@@ -116,7 +109,6 @@ export default function Report() {
             if (res?.data?.data) {
                 setReportData(res.data.data.summary);
                 setReportDetail(res.data.data.daily_breakdown);
-                // Set Branch Data
                 setReportBranch(res.data.data.branch_breakdown || []);
             }
         } catch (error) {
@@ -130,11 +122,15 @@ export default function Report() {
         const fetch = async () => {
             const res = await getCs()
             const rawData = res?.data
+
+            // --- MODIFIED SECTION ---
+            // Use item.name as the value so we send "Meta" instead of "UUID"
             const formattedListPlatform = rawData?.ads_platform?.map((item: itemType) => ({
-                value: item.id,
+                value: item.name, // <--- CHANGED TO NAME
                 label: item.name,
                 classname: item.classname
             })) || [];
+
             const formattedListBranch = rawData?.branch?.map((item: itemType) => ({
                 value: item.id,
                 label: item.name,
@@ -147,15 +143,13 @@ export default function Report() {
         fetch()
     }, [])
 
-    console.log(reportBranch, "ini laporan cabanganya")
-
     if (loading) return <div>Loading Report...</div>;
 
     return (
         <div className="space-y-6">
             <H1>Manager Report</H1>
             <div className="flex flex-col gap-4">
-                <DateRangePicker onChange={setRange} />
+                <DateMountSelector onChange={setRange} />
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-white p-6 border rounded-md">
                     <div className="space-y-2">
@@ -178,23 +172,21 @@ export default function Report() {
                         />
                     </div>
 
+                    {/* Targets Inputs (unchanged) */}
                     <div className="space-y-2">
                         <label className="text-sm font-medium">Target Lead</label>
                         <Input
                             name="target_lead"
                             type="number"
-                            placeholder="Ex: 100"
                             value={formData.target_lead}
                             onChange={handleChange}
                         />
                     </div>
-
                     <div className="space-y-2">
                         <label className="text-sm font-medium">Target Omset</label>
                         <Input
                             name="target_omset"
                             type="number"
-                            placeholder="Ex: 5000000"
                             value={formData.target_omset}
                             onChange={handleChange}
                         />
@@ -209,7 +201,6 @@ export default function Report() {
             </div>
 
             <div className="border rounded-[5px] h-full py-10 px-9 bg-[#FEFEFE] gap-8 space-y-8">
-                {/* 4. RENDER NEW COMPONENT */}
                 <ReportBranch data={reportBranch} />
                 <ReportDetail data={reportDetail} />
                 <ReportSummary data={reportData} />

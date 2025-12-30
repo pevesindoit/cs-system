@@ -44,7 +44,7 @@ export default function Advertiser({ platforms, branches }: ReusableCsData) {
 
     const headers = [
         "Tanggal", "Cabang", "Spend", "PPN", "Total Budget",
-        "Platform", "Leads", "Cost per Lead", "Konversi Google",
+        "Platform", "Target Leads", "Target Omset", "Cost per Lead", "Konversi Google",
         "Cost per Konversi", "Keterangan", "Action",
     ];
 

@@ -1,17 +1,19 @@
 "use client";
 
 import { getCs } from "@/app/function/fetch/get/fetch";
-import { AdvertiserData, itemType } from "@/app/types/types";
+import { AdvertiserData, itemType, SelectItemData } from "@/app/types/types";
 import { useEffect, useState } from "react";
 import { DropDownGrid } from "../DropdownGrid";
 
 // 2. Define the Props Interface
 interface InputProps {
     onAddData: (newItem: AdvertiserData) => void;
+    platforms: SelectItemData[];
+    branches: SelectItemData[];
 }
 
 // 3. Update Component to accept props
-export default function InputAdvertiser({ onAddData }: InputProps) {
+export default function InputAdvertiser({ onAddData, platforms, branches }: InputProps) {
 
     // State
     const [formData, setFormData] = useState({
@@ -26,7 +28,6 @@ export default function InputAdvertiser({ onAddData }: InputProps) {
     });
 
     const [branchs, setBranchs] = useState([]);
-    const [platforms, setPlatforms] = useState([]);
 
     // Helpers & Calculations
     const isGoogle = formData.platform_id === "google";
@@ -107,26 +108,6 @@ export default function InputAdvertiser({ onAddData }: InputProps) {
         });
     };
 
-    useEffect(() => {
-        const fetch = async () => {
-            const res = await getCs()
-            const rawData = res?.data
-            const formattedListPlatform = rawData?.ads_platform?.map((item: itemType) => ({
-                value: item.id,
-                label: item.name,
-                classname: item.classname
-            })) || [];
-            const formattedListBranch = rawData?.branch?.map((item: itemType) => ({
-                value: item.id,
-                label: item.name,
-                classname: item.classname
-            })) || [];
-
-            setPlatforms(formattedListPlatform)
-            setBranchs(formattedListBranch)
-        }
-        fetch()
-    }, [])
 
     console.log(formData, "ini data formya")
 

@@ -3,13 +3,14 @@
 import { useEffect, useState } from "react";
 import InputAdvertiser from "../custom-component/table/InputAdvertiser";
 import ListAdvertiser from "../custom-component/table/ListAdvertiser";
-import { AdvertiserData } from "@/app/types/types";
+import { AdvertiserData, ReusableCsData } from "@/app/types/types";
 import { addAdvertise } from "../function/fetch/add/fetch";
 import { supabaseBrowser } from "@/lib/supabaseBrowser";
 import { getDataAdvertiserList } from "../function/fetch/get/fetch";
 import H1 from "../custom-component/H1";
 
-export default function Advertiser() {
+
+export default function Advertiser({ platforms, branches }: ReusableCsData) {
     const [tableData, setTableData] = useState<AdvertiserData[]>([]);
     const [userId, setUserId] = useState("");
 
@@ -71,11 +72,13 @@ export default function Advertiser() {
                 <tbody className="divide-y divide-gray-200">
                     {/* INPUT ROW (Sticky below header) */}
                     {/* We pass the handler here, but it renders a TR inside */}
-                    <InputAdvertiser onAddData={handleNewData} />
+                    <InputAdvertiser onAddData={handleNewData} platforms={platforms} // Pass prop
+                        branches={branches} />
 
                     {/* DATA ROWS */}
                     {/* We pass the data here, it renders multiple TRs inside */}
-                    <ListAdvertiser data={tableData} />
+                    <ListAdvertiser data={tableData} platforms={platforms} // Pass prop
+                        branches={branches} />
                 </tbody>
 
             </table>

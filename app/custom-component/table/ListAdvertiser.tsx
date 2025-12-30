@@ -1,18 +1,25 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { AdvertiserData, itemType, SelectItemDataInt } from "@/app/types/types";
+import { useState } from "react";
+import { AdvertiserData, SelectItemData } from "@/app/types/types";
 import EditableDate from "../table/EditableDate";
 import EditableInput from "../table/EditableInput";
 import { updateAdvertiser } from "@/app/function/fetch/update/update-lead/fetch";
 import EditableSelect from "./EditableDropdown";
-import { getCs } from "@/app/function/fetch/get/fetch";
 
-export default function ListAdvertiser({ data }: { data: AdvertiserData[] }) {
+// 1. Update Interface to accept platforms and branches from parent
+interface Props {
+    data: AdvertiserData[];
+    platforms: SelectItemData[];
+    branches: SelectItemData[];
+}
+
+export default function ListAdvertiser({ data, platforms, branches }: Props) {
     const [rows, setRows] = useState<AdvertiserData[]>(data);
     const [prevData, setPrevData] = useState<AdvertiserData[]>(data);
-    const [branchs, setBranchs] = useState<SelectItemDataInt[]>([]);
-    const [platforms, setPlatforms] = useState<SelectItemDataInt[]>([]);
+
+    // REMOVED: Internal state for branches/platforms
+    // REMOVED: Internal useEffect that calls getCs()
 
     // Sync State
     if (data !== prevData) {
@@ -37,15 +44,13 @@ export default function ListAdvertiser({ data }: { data: AdvertiserData[] }) {
             // 2. Update UI (Optimistic) - Update BOTH Spend and Total Budget
             setRows((prev) =>
                 prev.map((row) =>
-                    row.id === id
+                    String(row.id) === id // Ensure consistent ID comparison
                         ? { ...row, spend: newSpend, total_budget: newTotalBudget }
                         : row
                 )
             );
 
-            // 3. Update Database - VITAL: Update BOTH fields
-            // You must call the API twice, or update your API to accept multiple fields.
-            // Calling it twice is the easiest fix for now:
+            // 3. Update Database
             await updateAdvertiser({ id, field: "spend", value: newSpend });
             await updateAdvertiser({ id, field: "total_budget", value: newTotalBudget });
         }
@@ -54,32 +59,12 @@ export default function ListAdvertiser({ data }: { data: AdvertiserData[] }) {
         else {
             setRows((prev) =>
                 prev.map((row) =>
-                    row.id === id ? { ...row, [field]: value } : row
+                    String(row.id) === id ? { ...row, [field]: value } : row
                 )
             );
             await updateAdvertiser({ id, field, value });
         }
     };
-
-    useEffect(() => {
-        const fetch = async () => {
-            const res = await getCs()
-            const rawData = res?.data
-            const formattedListPlatform = rawData.ads_platform.map((item: itemType) => ({
-                value: item.id,
-                label: item.name,
-                classname: item.classname
-            }));
-            const formattedListBranch = rawData.branch.map((item: itemType) => ({
-                value: item.id,
-                label: item.name,
-                classname: item.classname
-            }));
-            setPlatforms(formattedListPlatform)
-            setBranchs(formattedListBranch)
-        }
-        fetch()
-    }, [])
 
     if (rows.length === 0) {
         return (
@@ -98,12 +83,8 @@ export default function ListAdvertiser({ data }: { data: AdvertiserData[] }) {
                 const costPerLead = row.leads > 0 ? row.spend / row.leads : 0;
                 const platformName = row.platform?.name || row.platform_id;
                 const isGoogle = platformName?.toLowerCase() === 'google';
-                // Handle null/undefined conversi_google safely
                 const safeConversiGoogle = row.conversi_google || 0;
                 const costPerKonversi = safeConversiGoogle > 0 ? row.spend / safeConversiGoogle : 0;
-
-                // ✅ FIX: Force ID to be a string. 
-                // This satisfies TypeScript if 'id' is defined as 'string | number' in your types.
                 const safeId = String(row.id || "");
 
                 return (
@@ -113,7 +94,7 @@ export default function ListAdvertiser({ data }: { data: AdvertiserData[] }) {
                         <td className="px-2 py-2 border-r whitespace-nowrap sticky left-0 bg-white z-10">
                             <EditableDate
                                 value={row.created_at}
-                                rowId={safeId} // No longer complains about number vs string
+                                rowId={safeId}
                                 field="created_at"
                                 onSave={handleSave}
                             />
@@ -121,15 +102,12 @@ export default function ListAdvertiser({ data }: { data: AdvertiserData[] }) {
 
                         {/* Branch */}
                         <td className="px-2 py-2 border-r whitespace-nowrap">
-                            {/* <div className="px-1 py-1">
-                                {row.branch?.name}
-                            </div> */}
                             <EditableSelect<string>
                                 value={row.cabang_id ?? undefined}
                                 rowId={safeId}
                                 field="cabang_id"
-                                // ✅ FIX: Convert c.value to String()
-                                options={branchs.map((c) => ({
+                                // USE PROP: branches
+                                options={branches.map((c) => ({
                                     label: c.label,
                                     value: String(c.value),
                                     className: c.classname,
@@ -168,7 +146,7 @@ export default function ListAdvertiser({ data }: { data: AdvertiserData[] }) {
                                 value={row.platform_id ?? undefined}
                                 rowId={safeId}
                                 field="platform_id"
-                                // ✅ FIX: Convert c.value to String()
+                                // USE PROP: platforms
                                 options={platforms.map((c) => ({
                                     label: c.label,
                                     value: String(c.value),
@@ -201,7 +179,7 @@ export default function ListAdvertiser({ data }: { data: AdvertiserData[] }) {
                             {isGoogle ? (
                                 <div className="px-1">
                                     <EditableInput<number>
-                                        value={safeConversiGoogle} // Use safe variable (handles null)
+                                        value={safeConversiGoogle}
                                         rowId={safeId}
                                         field="conversi_google"
                                         isNumeric={true}
@@ -220,7 +198,7 @@ export default function ListAdvertiser({ data }: { data: AdvertiserData[] }) {
                         <td className="px-2 py-2 border-r whitespace-nowrap">
                             <div className="px-1">
                                 <EditableInput<string>
-                                    value={row.keterangan || ""} // Handle potential null
+                                    value={row.keterangan || ""}
                                     rowId={safeId}
                                     field="keterangan"
                                     onSave={handleSave}

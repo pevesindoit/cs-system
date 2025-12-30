@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import H1 from "../H1"
 // Ensure you have a type definition for your Omset Data (e.g., RealOmsetLogData)
-import { itemType, RealOmsetLogData, SelectItemData } from "@/app/types/types";
+import { itemType, RealOmsetLogData, ReusableCsData, SelectItemData } from "@/app/types/types";
 import { supabaseBrowser } from "@/lib/supabaseBrowser";
 
 // You will need to create these two components based on your SocialGrowth inputs
@@ -13,10 +13,9 @@ import ListRealOmset from "../input/ListRealOmset";
 import { addRealOmset } from "@/app/function/fetch/add/fetch";
 import { getCs, getRealOmset } from "@/app/function/fetch/get/fetch";
 
-export default function AddRealOmset() {
+export default function AddRealOmset({ platforms, branches }: ReusableCsData) {
     const [tableData, setTableData] = useState<RealOmsetLogData[]>([]);
     const [userId, setUserId] = useState("");
-    const [branches, setBranches] = useState<SelectItemData[]>([]);
 
     // 1. Get User ID
     useEffect(() => {
@@ -58,23 +57,6 @@ export default function AddRealOmset() {
     ];
 
     // 4. Fetch Branch Data (Cabang)
-    useEffect(() => {
-        const fetch = async () => {
-            const res = await getCs()
-            const rawData = res?.data
-
-            // Assuming getCs returns a 'cabang' array. If it's different, adjust here.
-            const formattedListBranches = rawData.branch ? rawData.branch.map((item: itemType) => ({
-                value: item.id,
-                label: item.name,
-                classname: item.classname
-            })) : [];
-            console.log(branches, "")
-
-            setBranches(formattedListBranches)
-        }
-        fetch()
-    }, [])
 
     return (
         <div className="w-full py-3 pr-3 pl-3 md:pl-0 relative gap-3 overflow-x-auto md:overflow-x-visible no-scrollbar min-w-max">

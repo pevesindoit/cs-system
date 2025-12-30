@@ -252,3 +252,14 @@ export interface RealOmsetLogData {
   total: number;
   user_id?: string; // To link it to the user
 }
+
+export interface ReusableCsData {
+  platforms: SelectItemData[];
+  branches: SelectItemData[];
+}
+
+export interface ReusableCsDataAdvertiser {
+  data: AdvertiserData[];
+  platforms: SelectItemData[];
+  branches: SelectItemData[];
+}

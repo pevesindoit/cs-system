@@ -3,8 +3,11 @@ import React from 'react';
 
 // --- HELPER FUNCTIONS ---
 
-const formatIDR = (value: number) => {
-    return "Rp " + value.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+const formatIDR = (value: number | undefined | null) => {
+    // Safety check: if value is null or undefined, treat it as 0
+    const safeValue = value || 0;
+
+    return "Rp " + safeValue.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
 };
 
 const parsePercent = (valueString: string): number => {
@@ -78,9 +81,9 @@ export function ReportSummary({ data }: { data: ReportSummaryData | null }) {
                         valueClassName="text-green-700"
                         subValue={
                             <span>
-                                Target: {formatIDR(data.target_omset)}
+                                Target: {formatIDR(data.omset_target)}
                                 <span className={`ml-1 ${getAchievementColor(omsetAchievedNum)}`}>
-                                    ({data.target_vs_actual_omset})
+                                    ({data.target_vs_actual_leads})
                                 </span>
                             </span>
                         }

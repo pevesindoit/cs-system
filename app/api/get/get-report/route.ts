@@ -149,8 +149,6 @@ export async function POST(req: NextRequest) {
     const adsData = (adsRes.data || []) as AdvertiserRow[];
     const leadsData = (leadsRes.data || []) as LeadData[];
     const platforms = (platformRes.data || []) as PlatformRow[];
-    console.log(adsData, "ini bede");
-
     // Create a lookup map for Platform ID -> Name
     const platformMap = new Map<string, string>();
     platforms.forEach((p) => platformMap.set(p.id, p.name.toLowerCase()));

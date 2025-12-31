@@ -18,9 +18,6 @@ export default function ListAdvertiser({ data, platforms, branches }: Props) {
     const [rows, setRows] = useState<AdvertiserData[]>(data);
     const [prevData, setPrevData] = useState<AdvertiserData[]>(data);
 
-    // REMOVED: Internal state for branches/platforms
-    // REMOVED: Internal useEffect that calls getCs()
-
     // Sync State
     if (data !== prevData) {
         setRows(data);
@@ -164,6 +161,20 @@ export default function ListAdvertiser({ data, platforms, branches }: Props) {
                                     rowId={safeId}
                                     field="leads"
                                     isNumeric={true}
+                                    onSave={handleSave}
+                                />
+                            </div>
+                        </td>
+
+                        {/* Spend */}
+                        <td className="px-2 py-2 border-r whitespace-nowrap text-right">
+                            <div className="px-1">
+                                <EditableInput<number>
+                                    value={row.omset_target}
+                                    rowId={safeId}
+                                    field="omset_target"
+                                    isNumeric={true}
+                                    isCurrency={true}
                                     onSave={handleSave}
                                 />
                             </div>

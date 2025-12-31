@@ -56,7 +56,7 @@ export default function Cs() {
 
 
     const status = [
-        { label: "Cosed", value: "closed", classname: "bg-[#D7FFD3] text-[#372E2E]" },
+        { label: "Cosing", value: "closing", classname: "bg-[#D7FFD3] text-[#372E2E]" },
         { label: "Followup", value: "followup", classname: "bg-[#FDEBC3] text-[#372E2E]" },
         { label: "Los", value: "los", classname: "bg-[#A6EEB9] text-[#372E2E]" },
         { label: "Hold", value: "hold", classname: "bg-[#E1C3FD] text-[#372E2E]" },

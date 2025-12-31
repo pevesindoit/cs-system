@@ -1,6 +1,5 @@
 "use client";
 
-import { getCs } from "@/app/function/fetch/get/fetch";
 import { AdvertiserData, itemType, SelectItemData } from "@/app/types/types";
 import { useEffect, useState } from "react";
 import { DropDownGrid } from "../DropdownGrid";
@@ -25,9 +24,8 @@ export default function InputAdvertiser({ onAddData, platforms, branches }: Inpu
         leads: 0,
         conversi_google: 0,
         keterangan: "",
+        omset_target: 0
     });
-
-    const [branchs, setBranchs] = useState([]);
 
     // Helpers & Calculations
     const isGoogle = formData.platform_id === "google";
@@ -105,6 +103,7 @@ export default function InputAdvertiser({ onAddData, platforms, branches }: Inpu
             leads: 0,
             conversi_google: 0,
             keterangan: "",
+            omset_target: 0
         });
     };
 
@@ -124,7 +123,7 @@ export default function InputAdvertiser({ onAddData, platforms, branches }: Inpu
             <td className="p-0 border-r align-middle">
                 <div className="px-1">
                     <DropDownGrid
-                        items={branchs}
+                        items={branches}
                         onValueChange={(value) =>
                             setFormData((prev) => ({ ...prev, cabang_id: value }))
                         }
@@ -171,6 +170,14 @@ export default function InputAdvertiser({ onAddData, platforms, branches }: Inpu
                     <input type="number" name="leads" placeholder="0" value={formData.leads || ""} onChange={handleChange} className="w-full h-8 px-1 bg-transparent outline-none focus:bg-gray-50 text-right" />
                 </div>
             </td>
+
+            {/* 7. LEADS */}
+            <td className="p-0 border-r align-middle">
+                <div className="px-1">
+                    <input type="number" name="omset_target" placeholder="0" value={formData.omset_target || ""} onChange={handleChange} className="w-full h-8 px-1 bg-transparent outline-none focus:bg-gray-50 text-right" />
+                </div>
+            </td>
+
 
             {/* 8. CPL */}
             <td className="p-0 border-r align-middle bg-gray-50">

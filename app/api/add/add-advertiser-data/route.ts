@@ -9,13 +9,11 @@ export async function POST(req: NextRequest) {
       date,
       cabang_id,
       spend,
-      ppn,
       total_budget,
       platform_id,
       leads,
-      cost_per_lead,
+      omset_target,
       konversi_google,
-      cost_per_konversi,
       keterangan,
       ads_manager_id,
     } = body;
@@ -65,6 +63,7 @@ export async function POST(req: NextRequest) {
       spend: Number(spend),
       total_budget: Number(total_budget),
       leads: Number(leads),
+      omset_target: Number(omset_target),
       // Ensure these match your actual DB column names in the 'ads' table
       conversi_google: Number(konversi_google),
 

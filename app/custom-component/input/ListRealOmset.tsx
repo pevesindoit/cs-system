@@ -1,8 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { itemType, SelectItemDataInt, RealOmsetLogData } from "@/app/types/types";
-import { getCs } from "@/app/function/fetch/get/fetch";
+import { useState } from "react";
+import { RealOmsetLogData, SelectItemData } from "@/app/types/types";
 
 // Imports for Editable Table Components
 import EditableDate from "../table/EditableDate";
@@ -15,36 +14,18 @@ import { updateRealOmset } from "@/app/function/fetch/update/update-lead/fetch";
 
 interface Props {
     data: RealOmsetLogData[];
+    branches: SelectItemData[];
 }
 
-export default function ListRealOmset({ data }: Props) {
+export default function ListRealOmset({ data, branches }: Props) {
     const [rows, setRows] = useState<RealOmsetLogData[]>(data);
     const [prevData, setPrevData] = useState<RealOmsetLogData[]>(data);
-    const [branches, setBranches] = useState<SelectItemDataInt[]>([]);
 
     // 1. Sync State with Props (Server Data)
     if (data !== prevData) {
         setRows(data);
         setPrevData(data);
     }
-
-    // 2. Fetch Dropdown Options (Branches/Cabang)
-    useEffect(() => {
-        const fetch = async () => {
-            const res = await getCs();
-            const rawData = res?.data;
-
-            // Mapping 'cabang' instead of 'platform'
-            const formattedListBranches = rawData.branch ? rawData.branch.map((item: itemType) => ({
-                value: item.id,
-                label: item.name,
-                classname: item.classname,
-            })) : [];
-
-            setBranches(formattedListBranches);
-        };
-        fetch();
-    }, []);
 
     // 3. Handle Save (Update Logic)
     const handleSave = async (

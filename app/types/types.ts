@@ -193,7 +193,7 @@ export type ReportSummaryData = {
   // date_range: DateRange;
   omset: number;
   target_lead: number;
-  target_omset: number;
+  omset_target: number;
   target_vs_actual_leads: string; // e.g., "0.00%"
   target_vs_actual_omset: string; // e.g., "0.00%"
   total_spend: number;
@@ -226,6 +226,7 @@ export interface AdvertiserData {
   cost_per_konversi: number;
   keterangan: string;
   created_at: string;
+  omset_target: number;
   platform?: {
     name: string;
   };
@@ -255,6 +256,7 @@ export interface RealOmsetLogData {
 
 export interface ReusableCsData {
   platforms: SelectItemData[];
+  platformsNotAds?: SelectItemData[];
   branches: SelectItemData[];
 }
 

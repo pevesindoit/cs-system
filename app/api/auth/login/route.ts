@@ -22,42 +22,45 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: error.message }, { status: 400 });
     }
 
-    // --- FIX IS HERE ---
-    // We must return 'session' so the client can use it
     const response = NextResponse.json(
       {
         message: "Login successful",
         user: data.user,
-        session: data.session, // <--- Add this back!
+        session: data.session,
       },
       { status: 200 }
     );
 
-    // Set User Type Cookie for Middleware
-    const userType = data.user.user_metadata?.type || "user";
+    // --- KONFIGURASI UNLIMITED ---
+    // 100 Tahun dalam detik (secara efektif "unlimited" bagi user)
+    const MAX_AGE_UNLIMITED = 60 * 60 * 24 * 365 * 100;
 
-    console.log(data, "ini typenya");
+    // Set User Type Cookie
+    const userType = data.user.user_metadata?.type || "user";
 
     response.cookies.set("user-type", userType, {
       httpOnly: true,
       path: "/",
-      maxAge: 60 * 60 * 24 * 7,
+      maxAge: MAX_AGE_UNLIMITED, // Ubah ke unlimited
       sameSite: "lax",
     });
 
-    // Optional: Set auth tokens in cookies if needed for middleware
+    // Set Auth Cookies
     if (data.session) {
+      // Access Token (Meskipun token asli expired 1 jam, cookie-nya kita buat abadi
+      // agar middleware bisa membacanya sebelum mencoba refresh)
       response.cookies.set("sb-access-token", data.session.access_token, {
         httpOnly: true,
         path: "/",
-        maxAge: data.session.expires_in,
+        maxAge: MAX_AGE_UNLIMITED, // Ubah ke unlimited
         sameSite: "lax",
       });
 
+      // Refresh Token (Ini kunci agar user tetap login selamanya)
       response.cookies.set("sb-refresh-token", data.session.refresh_token, {
         httpOnly: true,
         path: "/",
-        maxAge: 60 * 60 * 24 * 30,
+        maxAge: MAX_AGE_UNLIMITED, // Ubah ke unlimited
         sameSite: "lax",
       });
     }

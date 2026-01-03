@@ -11,6 +11,8 @@ export async function POST(req: NextRequest) {
         "*, platform:platform_id(name,id), channel:channel_id(name,id), keterangan_leads:keterangan_leads(name,id), branch:branch_id(name,id), pic:pic_id(name,id)"
       )
       .eq("user_id", user_id) // <-- filter by user id
+      .order("updated_at", { ascending: false })
+      // ✅ 2. Secondary Sort: Inside the same date, put the one added LAST (newest time) at the top
       .order("created_at", { ascending: false });
 
     if (error) {

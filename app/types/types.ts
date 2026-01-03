@@ -65,7 +65,7 @@ export interface leadsType {
   } | null;
   reason: string;
   user_id: string;
-  created_at: string;
+  updated_at: string;
   nomor_hp: string;
 }
 
@@ -115,6 +115,7 @@ export interface leadsTypeError {
   branch_id: string;
   nomor_hp: string;
   created_at: string;
+  updated_at: string;
 }
 
 export interface adsTypeError {

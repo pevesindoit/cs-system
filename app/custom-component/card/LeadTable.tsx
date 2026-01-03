@@ -113,9 +113,9 @@ export default function LeadTableGrid({
                             <td className="p-0 sticky left-0 z-10 align-middle group-hover:bg-gray-50">
                                 <div className="px-1 py-1 border-r bg-white">
                                     <EditableDate
-                                        value={item.created_at}
+                                        value={item.updated_at}
                                         rowId={item.id}
-                                        field="created_at"
+                                        field="updated_at"
                                         onSave={handleSave}
                                     />
                                 </div>

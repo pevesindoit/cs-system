@@ -44,7 +44,7 @@ export default function Cs() {
         branch_id: "d1382b33-9052-4469-a394-8dd99457d1be",
         reason: "",
         user_id: user,
-        created_at: GetToday(),
+        updated_at: GetToday(),
         nomor_hp: ""
     });
     const [platforms, setPlatforms] = useState<SelectItemData[]>([]);
@@ -65,31 +65,32 @@ export default function Cs() {
     ]
     const [leads, setLeads] = useState<leadsTypeError[]>([]);
 
-    const resetFormExceptDate = (date: string) => ({
+    const resetFormKeepSettings = (lastData: leadsType) => ({
+        // 1. Fields to RESET (Clear these)
         name: "",
         address: "",
-        channel_id: 5,
-        platform_id: "33d30171-5646-4231-af2d-1650ca595e39",
-        keterangan_leads_id: 1,
-        status: "",
-        nominal: null,
-        pic_id: 1,
-        branch_id: "d1382b33-9052-4469-a394-8dd99457d1be",
-        reason: "",
-        user_id: "",
         nomor_hp: "",
-        created_at: date, // 👈 KEEP DATE
+        nominal: null,
+        reason: "",
+        status: lastData.status, // Reset to default status (usually 'hold' for new entry)
+
+        // 2. Fields to KEEP (Copy from previous input)
+        channel_id: lastData.channel_id,
+        platform_id: lastData.platform_id,
+        keterangan_leads_id: lastData.keterangan_leads_id,
+        pic_id: lastData.pic_id,
+        branch_id: lastData.branch_id,
+        updated_at: lastData.updated_at,
+        user_id: lastData.user_id,
     });
 
 
     useEffect(() => {
-        // ✅ CRITICAL FIX: Stop if user is not loaded yet
         if (!user) return;
 
         const fetchLeads = async () => {
             try {
-                // ✅ No need to check auth again or redirect here.
-                // We utilize the 'user' state variable which we know is valid now.
+                let fetchedData: leadsTypeError[] = []; // Explicitly type the array
 
                 if (searchQuery) {
                     const payload = {
@@ -97,17 +98,39 @@ export default function Cs() {
                         number: searchQuery
                     };
                     const res = await getFilterSearch(payload);
-                    setLeads(res?.data.data || []);
+                    fetchedData = res?.data.data || [];
                 } else {
                     const res = await getLeads(user);
-                    setLeads(res?.data.data || []);
+                    fetchedData = res?.data.data || [];
                 }
+
+                // ✅ FIX: Use 'leadsTypeError' instead of 'any'
+                // Inside your useEffect
+                // Inside your useEffect...
+
+                // ✅ FIX: Match the Double Sort logic (Updated At -> Created At)
+                const sortedData = fetchedData.sort((a: leadsTypeError, b: leadsTypeError) => {
+                    // 1. Primary Sort: updated_at (The date the user selected)
+                    const dateA = new Date(a.updated_at).getTime();
+                    const dateB = new Date(b.updated_at).getTime();
+
+                    // If dates are different, sort by date
+                    if (dateB !== dateA) {
+                        return dateB - dateA;
+                    }
+
+                    // 2. Secondary Sort: created_at (Tie-breaker for same day)
+                    const createdA = new Date(a.created_at).getTime();
+                    const createdB = new Date(b.created_at).getTime();
+                    return createdB - createdA;
+                });
+
+                setLeads(sortedData);
             } catch (error) {
                 console.log(error);
             }
         };
 
-        // Debounce Logic
         const timer = setTimeout(() => {
             fetchLeads();
         }, 500);
@@ -190,28 +213,42 @@ export default function Cs() {
                 ...formData,
                 nomor_hp: cleanedNomorHp,
                 user_id: user,
+                // ✅ Map the Date Picker value to 'updated_at'
+                updated_at: formData.updated_at,
+                // ✅ Remove 'created_at' so the Database generates the precise timestamp
+                created_at: undefined,
             };
 
             // 2. Call API
             const res = await addLead(finalData);
 
-            // --- CHANGED SECTION START ---
-
-            // OLD WAY (Don't do this anymore): 
-            // setLeads(res?.data.allLeads);
-
-            // NEW WAY: Manually add the single new lead to the top of the list
-            const newLead = res?.data?.newLead; // Access the specific key from your new API response
+            const newLead = res?.data?.newLead;
 
             if (newLead) {
-                setLeads((prevLeads) => [newLead, ...prevLeads]);
+                // ✅ FIX: Sort immediately on the frontend
+                setLeads((prevLeads) => {
+                    const updatedList = [newLead, ...prevLeads];
+
+                    return updatedList.sort((a, b) => {
+                        // 1. Primary Sort: updated_at (User selected date)
+                        const dateA = new Date(a.updated_at).getTime();
+                        const dateB = new Date(b.updated_at).getTime();
+
+                        if (dateB !== dateA) {
+                            return dateB - dateA;
+                        }
+
+                        // 2. Secondary Sort: created_at (System timestamp)
+                        const createdA = new Date(a.created_at).getTime();
+                        const createdB = new Date(b.created_at).getTime();
+                        return createdB - createdA;
+                    });
+                });
             }
 
-            // --- CHANGED SECTION END ---
-
-            // 3. Save Date & Reset Form
-            localStorage.setItem("last_lead_date", formData.created_at);
-            setFormData(resetFormExceptDate(formData.created_at));
+            // Keep the user's selected date in local storage
+            localStorage.setItem("last_lead_date", formData.updated_at);
+            setFormData(resetFormKeepSettings(formData));
 
         } catch (error) {
             console.log(error)
@@ -264,12 +301,12 @@ export default function Cs() {
                             <div className="px-1 py-1 border-r">
                                 <input
                                     type="date"
-                                    value={formData.created_at}
+                                    value={formData.updated_at}
                                     onChange={(e) => {
                                         const value = e.target.value;
                                         setFormData((prev) => ({
                                             ...prev,
-                                            created_at: value,
+                                            updated_at: value,
                                         }));
                                         localStorage.setItem("last_lead_date", value);
                                     }}

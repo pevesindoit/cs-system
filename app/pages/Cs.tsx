@@ -14,6 +14,7 @@ import { itemType, leadsType, leadsTypeError, SelectItemData, SelectItemDataInt 
 
 export default function Cs() {
     const [user, setUser] = useState("")
+    const [loading, setLoading] = useState(false)
     const router = useRouter();
     useEffect(() => {
         async function loadUser() {
@@ -187,6 +188,7 @@ export default function Cs() {
 
 
     const addLeads = async () => {
+        setLoading(true)
         try {
             const finalData = {
                 ...formData,
@@ -204,8 +206,9 @@ export default function Cs() {
             setFormData(resetFormExceptDate(formData.created_at));
         } catch (error) {
             console.log(error)
+        } finally {
+            setLoading(false)
         }
-
     };
 
     return (
@@ -413,7 +416,9 @@ export default function Cs() {
                                     onClick={addLeads}
                                     className="text-[10px] w-full h-full py-2"
                                 >
-                                    tambah
+                                    {
+                                        loading ? "loading" : "tambah"
+                                    }
                                 </button>
                             </div>
                         </td>

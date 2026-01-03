@@ -84,7 +84,8 @@ export default function LeadTableGrid({
 
     };
 
-    console.log(channels,)
+
+
 
     return (
         <>
@@ -285,7 +286,7 @@ export default function LeadTableGrid({
 
                             {/* Action Button */}
                             <td className="p-0 text-center align-middle">
-                                <div className="flex justify-center items-center px-1">
+                                <div className="flex justify-center items-center px-1 space-x-2">
                                     <button
                                         onClick={() => toggleExpand(item.id)}
                                         className={`text-[10px] px-3 py-1 rounded border transition-all ${expandedRowId === item.id
@@ -294,6 +295,13 @@ export default function LeadTableGrid({
                                             }`}
                                     >
                                         {expandedRowId === item.id ? "Tutup" : "Lihat"}
+                                    </button>
+
+                                    <button
+                                        // onClick={addLeads}
+                                        className="text-[10px] w-full h-full px-2 bg-red-50 text-red-500 border-red-200 py-1 rounded border"
+                                    >
+                                        hapus
                                     </button>
                                 </div>
                             </td>

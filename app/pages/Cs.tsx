@@ -180,9 +180,9 @@ export default function Cs() {
         setFormData((prev) => ({
             ...prev,
             [name]:
-                name === "nominal"
-                    ? Number(value)
-                    : value,
+                name === "nominal" ? Number(value) :
+                    name === "nomor_hp" ? value : // Biarkan user mengetik apa adanya dulu
+                        value,
         }));
     };
 
@@ -190,20 +190,36 @@ export default function Cs() {
     const addLeads = async () => {
         setLoading(true)
         try {
+            // 1. Prepare Data
+            const cleanedNomorHp = formData.nomor_hp?.trim() === "" ? null : formData.nomor_hp;
+
             const finalData = {
                 ...formData,
+                nomor_hp: cleanedNomorHp,
                 user_id: user,
             };
 
+            // 2. Call API
             const res = await addLead(finalData);
 
-            setLeads(res?.data.allLeads);
+            // --- CHANGED SECTION START ---
 
-            // ✅ remember date
+            // OLD WAY (Don't do this anymore): 
+            // setLeads(res?.data.allLeads);
+
+            // NEW WAY: Manually add the single new lead to the top of the list
+            const newLead = res?.data?.newLead; // Access the specific key from your new API response
+
+            if (newLead) {
+                setLeads((prevLeads) => [newLead, ...prevLeads]);
+            }
+
+            // --- CHANGED SECTION END ---
+
+            // 3. Save Date & Reset Form
             localStorage.setItem("last_lead_date", formData.created_at);
-
-            // ✅ reset form but keep date
             setFormData(resetFormExceptDate(formData.created_at));
+
         } catch (error) {
             console.log(error)
         } finally {
@@ -286,7 +302,6 @@ export default function Cs() {
                             <div className="px-1">
                                 <input
                                     name="nomor_hp"
-                                    type="number"
                                     value={formData.nomor_hp ?? ""}
                                     onChange={handleChange}
                                     className="w-full h-8 px-1 bg-transparent outline-none focus:bg-gray-50"

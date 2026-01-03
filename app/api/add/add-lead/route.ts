@@ -6,7 +6,7 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const { name, user_id, ...rest } = body;
 
-    // Validate required fields
+    // 1. Validate required fields
     if (!user_id) {
       return NextResponse.json(
         { error: "Missing required fields: name or user_id" },
@@ -14,18 +14,19 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Build the data you want to insert
+    // 2. Build the payload
     const insertPayload = {
       name,
       user_id,
-      ...rest, // include other optional fields if needed
+      ...rest,
     };
 
-    // Insert new lead
+    // 3. Insert and return ONLY the new record
+    // We select specific fields or '*' to get the ID back immediately
     const { data: newLead, error: insertError } = await supabase
       .from("leads")
       .insert(insertPayload)
-      .select()
+      .select("*, platform:platform_id(name)") // Try to join immediately if Supabase allows, otherwise just select '*'
       .single();
 
     if (insertError) {
@@ -33,25 +34,13 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: insertError.message }, { status: 500 });
     }
 
-    // Fetch updated list
-    const { data: allLeads, error: fetchError } = await supabase
-      .from("leads")
-      .select("*, platform:platform_id(name)")
-      .eq("user_id", user_id)
-      .order("created_at", { ascending: false });
+    // --- DELETED: The "Fetch All" block that was crashing your server ---
 
-    if (fetchError) {
-      console.error("Supabase Fetch Error:", fetchError);
-      return NextResponse.json({ error: fetchError.message }, { status: 500 });
-    }
-
+    // 4. Return just the new lead
     return NextResponse.json(
       {
-        newLead: {
-          id: newLead.id,
-          name: newLead.name,
-        },
-        allLeads,
+        message: "Lead created successfully",
+        newLead: newLead, // Send the full object so frontend can use it
       },
       { status: 200 }
     );

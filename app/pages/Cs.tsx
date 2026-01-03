@@ -20,7 +20,6 @@ export default function Cs() {
         async function loadUser() {
             try {
                 const { data } = await supabaseBrowser.auth.getUser();
-
                 if (!data?.user) {
                     router.push("/login");
                     return;
@@ -84,27 +83,23 @@ export default function Cs() {
 
 
     useEffect(() => {
-        // Bungkus logika fetch dalam fungsi
+        // ✅ CRITICAL FIX: Stop if user is not loaded yet
+        if (!user) return;
+
         const fetchLeads = async () => {
             try {
-                const { data } = await supabaseBrowser.auth.getUser();
-                if (!data?.user) {
-                    router.push("/login");
-                    return;
-                }
+                // ✅ No need to check auth again or redirect here.
+                // We utilize the 'user' state variable which we know is valid now.
 
                 if (searchQuery) {
                     const payload = {
-                        user_id: data?.user?.id,
+                        user_id: user,
                         number: searchQuery
                     };
-
-                    // PERBAIKAN: Payload dikirim langsung tanpa bungkus { data: payload }
-                    // Lihat poin no 2 di bawah kenapa ini diubah
                     const res = await getFilterSearch(payload);
                     setLeads(res?.data.data || []);
                 } else {
-                    const res = await getLeads(data?.user?.id);
+                    const res = await getLeads(user);
                     setLeads(res?.data.data || []);
                 }
             } catch (error) {
@@ -112,16 +107,14 @@ export default function Cs() {
             }
         };
 
-        // --- LOGIKA DEBOUNCE ---
-        // Tunggu 500ms sebelum menjalankan fetchLeads
+        // Debounce Logic
         const timer = setTimeout(() => {
             fetchLeads();
         }, 500);
 
-        // Jika searchQuery berubah sebelum 500ms, batalkan timer sebelumnya
         return () => clearTimeout(timer);
 
-    }, [router, searchQuery]);
+    }, [user, searchQuery]);
 
     useEffect(() => {
         const fetchPlatforms = async () => {

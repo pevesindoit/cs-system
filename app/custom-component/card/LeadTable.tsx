@@ -10,6 +10,7 @@ import { ModalFollowUp } from "../modal/ModalFollowUp";
 import { getFollowups } from "@/app/function/fetch/get/fetch";
 import FormatDate from "../formater/DateFormater";
 import { dataType, followUpsType, leadsTypeError, SelectItemData, SelectItemDataInt } from "@/app/types/types";
+import { deleteLead } from "@/app/function/fetch/delete/route";
 
 
 type LeadTableGridProps = {
@@ -84,8 +85,10 @@ export default function LeadTableGrid({
 
     };
 
-
-
+    const deleteLeads = async (id: string) => {
+        const res = await deleteLead(id)
+        console.log(res, "ini resnya")
+    }
 
     return (
         <>
@@ -298,7 +301,7 @@ export default function LeadTableGrid({
                                     </button>
 
                                     <button
-                                        // onClick={addLeads}
+                                        onClick={() => deleteLeads(item.id)}
                                         className="text-[10px] w-full h-full px-2 bg-red-50 text-red-500 border-red-200 py-1 rounded border"
                                     >
                                         hapus

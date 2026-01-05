@@ -10,7 +10,7 @@ import { ModalFollowUp } from "../modal/ModalFollowUp";
 import { getFollowups } from "@/app/function/fetch/get/fetch";
 import FormatDate from "../formater/DateFormater";
 import { dataType, followUpsType, leadsTypeError, SelectItemData, SelectItemDataInt } from "@/app/types/types";
-import { deleteLead } from "@/app/function/fetch/delete/route";
+import { deleteLead } from "@/app/function/fetch/delete/fetch";
 
 
 type LeadTableGridProps = {

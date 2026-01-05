@@ -195,10 +195,9 @@ export default function Cs() {
 
         setFormData((prev) => ({
             ...prev,
-            [name]:
-                name === "nominal" ? Number(value) :
-                    name === "nomor_hp" ? value : // Biarkan user mengetik apa adanya dulu
-                        value,
+            [name]: name === "nominal"
+                ? (value === "" ? null : value) // If empty, set null. If not, keep string.
+                : value,
         }));
     };
 
@@ -209,13 +208,25 @@ export default function Cs() {
             // 1. Prepare Data
             const cleanedNomorHp = formData.nomor_hp?.trim() === "" ? null : formData.nomor_hp;
 
+            // --- TAMBAHAN PENTING ---
+            // Bersihkan nominal dari karakter non-angka (jika ada) lalu convert ke Number
+            // Jika null/kosong, jadikan 0 (atau null, tergantung DB Anda boleh null atau tidak)
+            let cleanedNominal = 0;
+            if (formData.nominal) {
+                // Hapus titik/koma jika user copas "10.000", lalu convert
+                // Jika input type="number" biasanya browser sudah handle ini, tapi aman jaga2
+                const stringNominal = String(formData.nominal).replace(/[^0-9.]/g, '');
+                cleanedNominal = Number(stringNominal);
+            }
+
+
             const finalData = {
                 ...formData,
                 nomor_hp: cleanedNomorHp,
                 user_id: user,
-                // ✅ Map the Date Picker value to 'updated_at'
+
                 updated_at: formData.updated_at,
-                // ✅ Remove 'created_at' so the Database generates the precise timestamp
+                nominal: cleanedNominal,
                 created_at: undefined,
             };
 

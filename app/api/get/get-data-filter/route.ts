@@ -44,7 +44,7 @@ export async function POST(req: NextRequest) {
     // We calculate this BEFORE filtering by status, so the counts remain correct
     // even if the user selects a specific status filter.
     const initialCounts: Record<string, number> = {
-      closed: 0,
+      closing: 0,
       followup: 0,
       los: 0,
       hold: 0,

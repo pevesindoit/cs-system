@@ -38,6 +38,8 @@ export default function LeadTableGrid({
     const [expandedRowId, setExpandedRowId] = useState<string | null>(null);
     const [followUpsData, setFollowUpsData] = useState<followUpsType[]>([])
 
+    console.log(rows, "ini coba")
+
     useEffect(() => {
         const fetchData = async () => {
             if (Array.isArray(data)) {
@@ -237,7 +239,14 @@ export default function LeadTableGrid({
                                         value={item.nominal}
                                         rowId={item.id}
                                         field="nominal"
-                                        parseValue={(v) => Number(v)}
+                                        parseValue={(v) => {
+                                            if (typeof v === 'string') {
+                                                // Remove non-numeric chars (dots, commas, currency symbols)
+                                                const cleanValue = v.replace(/[^0-9]/g, '');
+                                                return cleanValue ? Number(cleanValue) : 0;
+                                            }
+                                            return Number(v);
+                                        }}
                                         onSave={handleSave}
                                         isNumeric={true}
                                         isCurrency={true}

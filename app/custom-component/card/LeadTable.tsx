@@ -86,8 +86,12 @@ export default function LeadTableGrid({
     };
 
     const deleteLeads = async (id: string) => {
-        const res = await deleteLead(id)
-        console.log(res, "ini resnya")
+        try {
+            const res = await deleteLead(id)
+            console.log(res)
+        } catch {
+            console.log("error")
+        }
     }
 
     return (

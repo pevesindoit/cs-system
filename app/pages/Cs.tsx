@@ -446,6 +446,13 @@ export default function Cs() {
                         <td className="p-0 border-r align-middle">
                             <div className="px-1">
                                 <input
+                                    onKeyDown={(e) => {
+                                        if (e.key === "Enter") {
+                                            // Mencegah behavior default (jika ada form wrap)
+                                            e.preventDefault();
+                                            addLeads();
+                                        }
+                                    }}
                                     name="reason"
                                     value={formData.reason}
                                     onChange={handleChange}

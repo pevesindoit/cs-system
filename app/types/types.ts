@@ -67,6 +67,7 @@ export interface leadsType {
   user_id: string;
   updated_at: string;
   nomor_hp: string;
+  created_at: string;
 }
 
 export interface leadsDataType {

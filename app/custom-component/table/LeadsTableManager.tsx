@@ -57,7 +57,7 @@ export function LeadsTableManager({ data }: leadDataType) {
                                 data.map((item, index) => (
                                     <tr key={index} className="border-b hover:bg-gray-50">
                                         <td className="px-2 py-2 whitespace-nowrap">
-                                            {new Date(item.created_at).toLocaleDateString("id-ID")}
+                                            {new Date(item.updated_at).toLocaleDateString("id-ID")}
                                         </td>
 
                                         <td className="px-2 py-2 whitespace-nowrap">

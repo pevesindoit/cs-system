@@ -292,24 +292,39 @@ export default function Cs() {
                             "Cabang",
                             "Keterangan",
                             "Action",
-                        ].map((h, i) => (
-                            <th
-                                key={i}
-                                scope="col"
-                                className="px-2 py-2 font-medium text-left border-r last:border-r-0 whitespace-nowrap"
-                            >
-                                {h}
-                            </th>
-                        ))}
+                        ].map((h, i) => {
+                            // LOGIC FOR STICKY HEADERS
+                            let stickyClass = "";
+
+                            // Column 1 (Tanggal): Width 100px
+                            if (i === 0) stickyClass = "sticky left-0 z-20 bg-gray-50 w-[100px]";
+
+                            // Column 2 (Nama): Width 150px (Starts at 100px)
+                            else if (i === 1) stickyClass = "sticky left-[100px] z-20 bg-gray-50 w-[150px]";
+
+                            // Column 3 (No HP): Width 120px (Starts at 100px + 150px = 250px)
+                            else if (i === 2) stickyClass = "sticky left-[250px] z-20 bg-gray-50 w-[120px]";
+
+                            return (
+                                <th
+                                    key={i}
+                                    scope="col"
+                                    className={`px-2 py-2 font-medium text-left border-r last:border-r-0 whitespace-nowrap ${stickyClass}`}
+                                >
+                                    {h}
+                                </th>
+                            );
+                        })}
                     </tr>
                 </thead>
 
                 {/* INPUT ROW */}
                 <tbody className="bg-white">
-                    <tr className="border-b ">
-                        {/* Date (Sticky Column) */}
-                        <td className="p-0 bg-white z-10 align-middle sticky left-0">
-                            <div className="px-1 py-1 border-r">
+                    <tr className="border-b">
+
+                        {/* 1. Date (Sticky left-0) */}
+                        <td className="p-0 bg-white z-10 align-middle sticky left-0 border-r w-[100px]">
+                            <div className="px-1 py-1">
                                 <input
                                     type="date"
                                     value={formData.updated_at}
@@ -326,8 +341,8 @@ export default function Cs() {
                             </div>
                         </td>
 
-                        {/* Nama */}
-                        <td className="p-0 border-r align-middle">
+                        {/* 2. Nama (Sticky left-[100px]) */}
+                        <td className="p-0 bg-white z-10 align-middle sticky left-[100px] border-r w-[150px]">
                             <div className="px-1">
                                 <input
                                     name="name"
@@ -338,8 +353,8 @@ export default function Cs() {
                             </div>
                         </td>
 
-                        {/* No HP */}
-                        <td className="p-0 border-r align-middle">
+                        {/* 3. No HP (Sticky left-[250px]) */}
+                        <td className="p-0 bg-white z-10 align-middle sticky left-[250px] border-r w-[120px]">
                             <div className="px-1">
                                 <input
                                     name="nomor_hp"
@@ -350,7 +365,7 @@ export default function Cs() {
                             </div>
                         </td>
 
-                        {/* Address */}
+                        {/* Address (Standard Scrolling) */}
                         <td className="p-0 border-r align-middle">
                             <div className="px-1">
                                 <input

@@ -113,11 +113,11 @@ export default function LeadTableGrid({
                 {rows.map((item) => (
                     <Fragment key={item.id}>
                         {/* 1. Main Data Row */}
-                        <tr className="hover:bg-gray-100 transition-colors border-b group ">
+                        <tr className="hover:bg-gray-100 transition-colors border-b group">
 
-                            {/* Date (Sticky Column) */}
-                            <td className="p-0 sticky left-0 z-10 align-middle group-hover:bg-gray-50">
-                                <div className="px-1 py-1 border-r bg-white">
+                            {/* 1. Date (Sticky left-0 | Width 100px) */}
+                            <td className="p-0 sticky left-0 z-10 align-middle bg-white group-hover:bg-gray-50 border-r w-[100px]">
+                                <div className="px-1 py-1">
                                     <EditableDate
                                         value={item.updated_at}
                                         rowId={item.id}
@@ -127,8 +127,8 @@ export default function LeadTableGrid({
                                 </div>
                             </td>
 
-                            {/* Name */}
-                            <td className="p-0 border-r align-middle">
+                            {/* 2. Name (Sticky left-[100px] | Width 150px) */}
+                            <td className="p-0 sticky left-[100px] z-10 align-middle bg-white group-hover:bg-gray-50 border-r w-[150px]">
                                 <div className="px-1">
                                     <EditableInput<string>
                                         value={item.name}
@@ -139,8 +139,8 @@ export default function LeadTableGrid({
                                 </div>
                             </td>
 
-                            {/* No HP */}
-                            <td className="p-0 border-r align-middle">
+                            {/* 3. No HP (Sticky left-[250px] | Width 120px) */}
+                            <td className="p-0 sticky left-[250px] z-10 align-middle bg-white group-hover:bg-gray-50 border-r w-[120px]">
                                 <div className="px-1">
                                     <EditableInput<string>
                                         value={item.nomor_hp}

@@ -18,8 +18,9 @@ export async function POST(req: NextRequest) {
       .select(
         "*, platform:platform_id(name), pic_name:pic_id(name), branch_name:branch_id(name)"
       )
-      .gte("created_at", start)
-      .lte("created_at", end)
+      .gte("updated_at", start)
+      .lte("updated_at", end)
+      .order("updated_at", { ascending: false })
       .order("created_at", { ascending: false });
 
     // 3. Conditional Filtering (Global Context)
@@ -97,7 +98,7 @@ export async function POST(req: NextRequest) {
     // Step C: Fill map using FILTERED leads
     // The chart will reflect the selected status (e.g., only show "Closed" trends)
     filteredLeads.forEach((lead) => {
-      const date = lead.created_at.split("T")[0];
+      const date = lead.updated_at.split("T")[0];
       if (dailyCountMap[date] !== undefined) {
         dailyCountMap[date] += 1;
       }

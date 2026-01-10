@@ -33,7 +33,7 @@ export default function SideBar() {
     const pathname = usePathname();
 
     // Desktop State
-    const [collapsed, setCollapsed] = useState(false);
+    const [collapsed, setCollapsed] = useState(true);
 
     // Mobile State
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);

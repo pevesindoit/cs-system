@@ -112,25 +112,26 @@ export default function LeadTableGrid({
 
     // ✅ Updated Handle Send Text
     const handleSendText = (messageFromModal: string, newFollowUpItem: followUpsType) => {
-        // 1. WhatsApp Redirection Logic
-        const localNumber = dataFollowUp?.noted; // Get number from state
+        const localNumber = dataFollowUp?.noted;
 
         if (localNumber) {
-            // Convert '08...' to '628...'
-            const waNumber = "62" + localNumber.slice(1);
-            const encodedMessage = encodeURIComponent(messageFromModal);
-            const whatsappUrl = `https://api.whatsapp.com/send?phone=${waNumber}&text=${encodedMessage}`;
+            // 1. Clean the number (remove non-digits) and format to 62...
+            const cleanNumber = localNumber.replace(/\D/g, '');
+            const waNumber = "62" + cleanNumber.slice(1);
 
-            // Open in new tab
-            window.open(whatsappUrl, "_blank");
+            const encodedMessage = encodeURIComponent(messageFromModal);
+
+            // 2. IMPORTANT: Use '?' before 'text'
+            const whatsappUrl = `https://web.whatsapp.com/send?phone=${waNumber}text=${encodedMessage}`;
+
+            // 3. Use a static string "WAChat" to reuse the same tab
+            window.open(whatsappUrl, "WAChat");
         }
 
-        // 2. Immediate UI Update
         if (newFollowUpItem) {
             setFollowUpsData((prev) => [newFollowUpItem, ...prev]);
         }
 
-        // 3. Close Modal
         setIsModalOpen(false);
     };
 

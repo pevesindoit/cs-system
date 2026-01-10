@@ -5,6 +5,7 @@ export function proxy(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
   const userType = request.cookies.get("user-type")?.value;
   const userAccessToken = request.cookies.get("sb-access-token")?.value;
+  const allowedPagesCs = ["/cs/cs-performance"];
   // const userRefreshToken = request.cookies.get("sb-refresh-token")?.value;
 
   if (!userAccessToken) {
@@ -28,10 +29,13 @@ export function proxy(request: NextRequest) {
   };
 
   // 2. RESTRICT SPECIFIC ROUTES for other users:
+  const isAllowedPageCs = allowedPagesCs.some((page) =>
+    pathname.startsWith(page)
+  );
 
   // Protect /cs routes: Only 'cs' (and 'manager') can enter.
   // Since we handled manager above, we just check if it's NOT 'cs'.
-  if (pathname.startsWith("/cs") && userType !== "cs") {
+  if (pathname.startsWith("/cs") && userType !== "cs" && !isAllowedPageCs) {
     return redirectBack();
   }
 
@@ -54,6 +58,7 @@ export const config = {
     "/dashboard/:path*",
     "/leads/:path*",
     "/report/:path*",
+    "/cs-performance/:path*",
     "/advertiser/:path*",
   ],
 };

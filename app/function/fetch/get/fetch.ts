@@ -1,4 +1,5 @@
 import {
+  csPerformanceType,
   dashboardFilterType,
   dashboardPayloadType,
   FilterNumber,
@@ -145,5 +146,14 @@ export const getRealOmset = async (id: string) => {
   } catch (error) {
     console.log("Failed to fetch organisations", error);
     return null;
+  }
+};
+
+export const getCsPerformance = async (data: csPerformanceType) => {
+  try {
+    const res = await axios.post("/api/get/get-cs-performance", { data });
+    return res;
+  } catch (error) {
+    console.log("Failed to fetch organisations", error);
   }
 };

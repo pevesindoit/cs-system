@@ -50,7 +50,7 @@ export default function SideBar() {
                 { link: "/report", icon: <ClipboardPlus size={16} />, text: "Report" },
                 { link: "/cs", icon: <Users size={16} />, text: "CS" },
                 { link: "/dashboard", icon: <LayoutDashboard size={16} />, text: "Dashboard" },
-                { link: "/get-leads", icon: <List size={16} />, text: "Leads" },
+                { link: "/cs-performance", icon: <List size={16} />, text: "Leads" },
             ],
         },
     ];
@@ -61,9 +61,10 @@ export default function SideBar() {
             // IF Manager (type_id 2): Show everything
             if (userType === 2) return true;
 
-            // IF CS (type_id 1): Show ONLY the "/cs" page
+            // IF CS (type_id 1): Show "/cs" AND "/cs-performance"
             if (userType === 1) {
-                return item.link === "/cs";
+                // ✅ UPDATE THIS LINE
+                return item.link === "/cs" || item.link === "/cs-performance";
             }
 
             // Fallback (e.g., pending or unknown role): Show nothing or safe pages

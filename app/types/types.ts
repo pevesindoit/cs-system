@@ -159,6 +159,13 @@ export interface dashboardFilterType {
   cs: string;
 }
 
+export interface csPerformanceType {
+  start_date: string;
+  end_date: string;
+  branch?: string;
+  cs?: string;
+}
+
 export interface dataType {
   id: string;
   noted: string;

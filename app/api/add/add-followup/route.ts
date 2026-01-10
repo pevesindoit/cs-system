@@ -36,25 +36,14 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: insertError.message }, { status: 500 });
     }
 
-    // Fetch updated list
-    const { data: allLeads, error: fetchError } = await supabase
-      .from("followups")
-      .select("*")
-      .eq("leads_id", id)
-      .order("created_at", { ascending: false });
-
-    if (fetchError) {
-      console.error("Supabase Fetch Error:", fetchError);
-      return NextResponse.json({ error: fetchError.message }, { status: 500 });
-    }
+    // Fetch updated lis
 
     return NextResponse.json(
       {
         newLead: {
           id: newLead.id,
-          name: newLead.name,
+          note: newLead.note,
         },
-        allLeads,
       },
       { status: 200 }
     );

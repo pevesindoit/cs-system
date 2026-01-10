@@ -1,17 +1,23 @@
 "use client";
 
-import React from "react";
-import { updateLead } from "@/app/function/fetch/update/update-lead/fetch";
+import React, { Fragment, useEffect, useState } from "react";
 import EditableInput from "../table/EditableInput";
-import { useEffect, useState, Fragment } from "react";
 import EditableSelect from "../table/EditableDropdown";
 import EditableDate from "../table/EditableDate";
-import { ModalFollowUp } from "../modal/ModalFollowUp";
-import { getFollowups } from "@/app/function/fetch/get/fetch";
+import { ModalFollowUp } from "../modal/ModalFollowUp"; // Ensure this imports your updated Modal
 import FormatDate from "../formater/DateFormater";
-import { dataType, followUpsType, leadsTypeError, SelectItemData, SelectItemDataInt } from "@/app/types/types";
-import { deleteLead } from "@/app/function/fetch/delete/fetch";
 
+// API & Types
+import { updateLead } from "@/app/function/fetch/update/update-lead/fetch";
+import { getFollowups } from "@/app/function/fetch/get/fetch";
+import { deleteLead } from "@/app/function/fetch/delete/fetch";
+import {
+    dataType,
+    followUpsType,
+    leadsTypeError,
+    SelectItemData,
+    SelectItemDataInt
+} from "@/app/types/types";
 
 type LeadTableGridProps = {
     data: leadsTypeError[];
@@ -34,88 +40,133 @@ export default function LeadTableGrid({
 }: LeadTableGridProps) {
     const [rows, setRows] = useState<leadsTypeError[]>([]);
     const [isModalOpen, setIsModalOpen] = useState(false);
-    const [dataFollowUp, setDataFollowUp] = useState<dataType>()
-    const [expandedRowId, setExpandedRowId] = useState<string | null>(null);
-    const [followUpsData, setFollowUpsData] = useState<followUpsType[]>([])
 
-    console.log(rows, "ini coba")
+    // Stores the temporary data for the modal (ID + Formatted Phone Number)
+    const [dataFollowUp, setDataFollowUp] = useState<dataType>();
+
+    const [expandedRowId, setExpandedRowId] = useState<string | null>(null);
+    const [followUpsData, setFollowUpsData] = useState<followUpsType[]>([]);
 
     useEffect(() => {
-        const fetchData = async () => {
-            if (Array.isArray(data)) {
-                setRows(data);
-            }
+        if (Array.isArray(data)) {
+            setRows(data);
         }
-        fetchData()
     }, [data]);
+
+    // --- HANDLERS ---
 
     const handleSave = async (
         id: string,
         field: string,
         value: string | number
     ) => {
-        // optimistic update
+        // Optimistic update
         setRows((prev) =>
             prev.map((row) =>
                 row.id === id ? { ...row, [field]: value } : row
             )
         );
-
         await updateLead({ id, field, value });
     };
 
-    // 2. Handler to toggle the view
     const toggleExpand = async (id: string) => {
-        setExpandedRowId((prev) => (prev === id ? null : id));
-        const res = await getFollowups(id)
-        setFollowUpsData(res?.data.data)
+        // If clicking the same row, close it
+        if (expandedRowId === id) {
+            setExpandedRowId(null);
+            setFollowUpsData([]); // Clear data
+            return;
+        }
+
+        // Open new row and fetch data
+        setExpandedRowId(id);
+        setFollowUpsData([]); // Reset while loading
+        try {
+            const res = await getFollowups(id);
+            // Ensure we set an array
+            setFollowUpsData(Array.isArray(res?.data?.data) ? res.data.data : []);
+        } catch (error) {
+            console.error("Error fetching followups:", error);
+            setFollowUpsData([]);
+        }
     };
 
-    const addFollowup = async (id: string, nomor_hp: string) => {
+    const formatPhoneNumber = (phone: string) => {
+        let cleaned = phone.replace(/\D/g, "");
+        if (cleaned.startsWith("62")) {
+            cleaned = "0" + cleaned.slice(2);
+        } else if (cleaned.startsWith("8")) {
+            cleaned = "0" + cleaned;
+        }
+        return cleaned;
+    };
+
+    const addFollowup = (id: string, nomor_hp: string) => {
+        const formattedNumber = formatPhoneNumber(nomor_hp);
         const payload = {
             id,
-            noted: nomor_hp
+            noted: formattedNumber
+        };
+        setDataFollowUp(payload);
+        setIsModalOpen(true);
+    };
+
+    // ✅ Updated Handle Send Text
+    const handleSendText = (messageFromModal: string, newFollowUpItem: followUpsType) => {
+        // 1. WhatsApp Redirection Logic
+        const localNumber = dataFollowUp?.noted; // Get number from state
+
+        if (localNumber) {
+            // Convert '08...' to '628...'
+            const waNumber = "62" + localNumber.slice(1);
+            const encodedMessage = encodeURIComponent(messageFromModal);
+            const whatsappUrl = `https://api.whatsapp.com/send?phone=${waNumber}&text=${encodedMessage}`;
+
+            // Open in new tab
+            window.open(whatsappUrl, "_blank");
         }
-        setDataFollowUp(payload)
-        setIsModalOpen(true)
-    }
 
-    const handleSendText = async (data: followUpsType[]) => {
-        // Close modal after success
+        // 2. Immediate UI Update
+        if (newFollowUpItem) {
+            setFollowUpsData((prev) => [newFollowUpItem, ...prev]);
+        }
+
+        // 3. Close Modal
         setIsModalOpen(false);
-        setFollowUpsData(data)
-
     };
 
     const deleteLeads = async (id: string) => {
+        if (!confirm("Are you sure you want to delete this lead?")) return;
         try {
-            const res = await deleteLead(id)
-            console.log(res)
-        } catch {
-            console.log("error")
+            await deleteLead(id);
+            // Remove from UI immediately
+            setRows((prev) => prev.filter((row) => row.id !== id));
+        } catch (error) {
+            console.error("Error deleting lead:", error);
         }
-    }
+    };
 
     return (
         <>
+            {/* Modal */}
             {isModalOpen && dataFollowUp && (
                 <ModalFollowUp
                     isOpen={isModalOpen}
                     onClose={() => setIsModalOpen(false)}
                     onSubmit={handleSendText}
-                    title="Add Note"
-                    placeholder="Write a note about this lead..."
                     data={dataFollowUp}
+                    title="Add Note & Send WhatsApp"
+                    placeholder="Type message to customer..."
                 />
             )}
 
-            <tbody className="bg-white ">
+            {/* Table */}
+            <tbody className="bg-white">
                 {rows.map((item) => (
                     <Fragment key={item.id}>
                         {/* 1. Main Data Row */}
                         <tr className="hover:bg-gray-100 transition-colors border-b group">
 
-                            {/* 1. Date (Sticky left-0 | Width 100px) */}
+                            {/* Updated At */}
                             <td className="p-0 sticky left-0 z-10 align-middle bg-white group-hover:bg-gray-50 border-r w-[100px]">
                                 <div className="px-1 py-1">
                                     <EditableDate
@@ -127,7 +178,7 @@ export default function LeadTableGrid({
                                 </div>
                             </td>
 
-                            {/* 2. Name (Sticky left-[100px] | Width 150px) */}
+                            {/* Name */}
                             <td className="p-0 sticky left-[100px] z-10 align-middle bg-white group-hover:bg-gray-50 border-r w-[150px]">
                                 <div className="px-1">
                                     <EditableInput<string>
@@ -139,7 +190,7 @@ export default function LeadTableGrid({
                                 </div>
                             </td>
 
-                            {/* 3. No HP (Sticky left-[250px] | Width 120px) */}
+                            {/* No HP */}
                             <td className="p-0 sticky left-[250px] z-10 align-middle bg-white group-hover:bg-gray-50 border-r w-[120px]">
                                 <div className="px-1">
                                     <EditableInput<string>
@@ -241,7 +292,6 @@ export default function LeadTableGrid({
                                         field="nominal"
                                         parseValue={(v) => {
                                             if (typeof v === 'string') {
-                                                // Remove non-numeric chars (dots, commas, currency symbols)
                                                 const cleanValue = v.replace(/[^0-9]/g, '');
                                                 return cleanValue ? Number(cleanValue) : 0;
                                             }
@@ -300,7 +350,7 @@ export default function LeadTableGrid({
                                 </div>
                             </td>
 
-                            {/* Action Button */}
+                            {/* Action Buttons */}
                             <td className="p-0 text-center align-middle">
                                 <div className="flex justify-center items-center px-1 space-x-2">
                                     <button
@@ -317,7 +367,7 @@ export default function LeadTableGrid({
                                         onClick={() => deleteLeads(item.id)}
                                         className="text-[10px] w-full h-full px-2 bg-red-50 text-red-500 border-red-200 py-1 rounded border"
                                     >
-                                        hapus
+                                        Hapus
                                     </button>
                                 </div>
                             </td>
@@ -328,12 +378,14 @@ export default function LeadTableGrid({
                             <tr className="bg-gray-50 border-b">
                                 <td colSpan={13} className="p-0">
                                     <div className="w-full border-t border-dashed border-gray-300">
-                                        <div className="p-4">
+
+                                        {/* Expand Header / Toolbar */}
+                                        <div className="p-4 flex gap-2">
                                             <button
                                                 onClick={() => addFollowup(item.id, item.nomor_hp)}
-                                                className="text-[10px] px-3 py-1 rounded border transition-all bg-white hover:bg-gray-100"
+                                                className="text-[10px] px-3 py-1 rounded border transition-all bg-white hover:bg-gray-100 font-medium text-gray-700 shadow-sm"
                                             >
-                                                Followup
+                                                + Followup
                                             </button>
                                         </div>
 
@@ -343,19 +395,26 @@ export default function LeadTableGrid({
                                             <div className="px-2 py-2 font-semibold col-span-10">Keterangan</div>
                                         </div>
 
-                                        {followUpsData.map((fItem: followUpsType, index: number) => (
-                                            <div
-                                                className="grid grid-cols-13 text-[10px] border-b last:border-b-0"
-                                                key={index}
-                                            >
-                                                <div className="px-2 py-2 col-span-3 border-r">
-                                                    <FormatDate value={fItem.created_at} />
-                                                </div>
-                                                <div className="px-2 py-2 col-span-10">
-                                                    {fItem.note}
-                                                </div>
+                                        {/* Followup Items */}
+                                        {followUpsData.length === 0 ? (
+                                            <div className="p-4 text-center text-gray-400 text-xs italic">
+                                                belum di followup
                                             </div>
-                                        ))}
+                                        ) : (
+                                            followUpsData.map((fItem, index) => (
+                                                <div
+                                                    className="grid grid-cols-13 text-[10px] border-b last:border-b-0 bg-white"
+                                                    key={index}
+                                                >
+                                                    <div className="px-2 py-2 col-span-3 border-r text-gray-500">
+                                                        <FormatDate value={fItem.created_at} />
+                                                    </div>
+                                                    <div className="px-2 py-2 col-span-10 text-gray-700">
+                                                        {fItem.note}
+                                                    </div>
+                                                </div>
+                                            ))
+                                        )}
                                     </div>
                                 </td>
                             </tr>

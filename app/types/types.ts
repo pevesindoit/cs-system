@@ -190,6 +190,7 @@ export type ReportItem = {
   target_omset?: number;
   perweak?: string;
   perday?: string;
+  interval?: 'day' | 'week';
   branch_id?: string;
 };
 

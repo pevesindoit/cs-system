@@ -7,7 +7,7 @@ interface AdvertiserRow {
   spend: number;
   total_budget: number;
   leads: number;
-  created_at: string;
+  updated_at: string;
   platform_id?: string;
   cabang_id?: string;
 }
@@ -15,7 +15,7 @@ interface AdvertiserRow {
 interface LeadData {
   nominal: number;
   status: string;
-  created_at: string;
+  updated_at: string;
   platform_id?: string;
   branch_id?: string;
 }
@@ -48,9 +48,10 @@ interface WeeklyMetric {
 
 function getMonday(d: Date) {
   const date = new Date(d);
-  const day = date.getDay();
-  const diff = date.getDate() - day + (day === 0 ? -6 : 1);
-  return new Date(date.setDate(diff));
+  const day = date.getUTCDay();
+  const diff = date.getUTCDate() - day + (day === 0 ? -6 : 1);
+  date.setUTCDate(diff);
+  return date;
 }
 
 const PLATFORM_MAPPING: Record<string, string[]> = {
@@ -69,7 +70,7 @@ export async function POST(req: NextRequest) {
       console.log(error);
     }
 
-    const { start_date, end_date, platform_id, branch_id } = body as ReportItem;
+    const { start_date, end_date, platform_id, branch_id, interval = 'week' } = body as ReportItem;
 
     // Dates
     const now = new Date();
@@ -82,8 +83,28 @@ export async function POST(req: NextRequest) {
     const today = new Date();
     const safeEndDate = end_date || formatDate(today);
 
-    const start = `${safeStartDate} 00:00:00+00`;
-    const end = `${safeEndDate} 23:59:59+00`;
+    // Determine Query Range
+    // Extend to full week if interval is 'week' to ensure complete data for the first/last rows
+    let queryStartStr = safeStartDate;
+    let queryEndStr = safeEndDate;
+
+    if (interval === 'week') {
+      // Extend start to Monday
+      const s = new Date(safeStartDate);
+      const startMonday = getMonday(s);
+      queryStartStr = formatDate(startMonday);
+
+      // Extend end to Sunday
+      const e = new Date(safeEndDate);
+      const endMonday = getMonday(e);
+      const endSunday = new Date(endMonday);
+      endSunday.setUTCDate(endMonday.getUTCDate() + 6);
+      queryEndStr = formatDate(endSunday);
+    }
+
+    // Use +07 timezone offset for WIB
+    const start = `${queryStartStr} 00:00:00+07`;
+    const end = `${queryEndStr} 23:59:59+07`;
 
     // Queries
     const branchQuery = supabase.from("branch").select("id, name");
@@ -94,16 +115,16 @@ export async function POST(req: NextRequest) {
     let adsQuery = supabase
       .from("advertiser_data")
       .select(
-        "spend, total_budget, leads, platform_id, created_at, cabang_id, omset_target"
+        "spend, total_budget, leads, platform_id, updated_at, cabang_id, omset_target"
       )
-      .gte("created_at", start)
-      .lte("created_at", end);
+      .gte("updated_at", start)
+      .lte("updated_at", end);
 
     let leadsQuery = supabase
       .from("leads")
-      .select("nominal, status, platform_id, created_at, branch_id")
-      .gte("created_at", start)
-      .lte("created_at", end);
+      .select("nominal, status, platform_id, updated_at, branch_id")
+      .gte("updated_at", start)
+      .lte("updated_at", end);
 
     // ==========================================
     // FILTER LOGIC
@@ -154,18 +175,26 @@ export async function POST(req: NextRequest) {
     platforms.forEach((p) => platformMap.set(p.id, p.name.toLowerCase()));
 
     // ==========================================
-    // LOGIC: WEEKLY BREAKDOWN
+    // LOGIC: TIME BUCKET BREAKDOWN (WEEKLY OR DAILY)
     // ==========================================
-    const allWeekKeys = new Set<string>();
+
+    const getKey = (d: Date) => {
+      if (interval === 'day') {
+        return formatDate(d);
+      }
+      return formatDate(getMonday(d));
+    };
+
+    const allKeys = new Set<string>();
     const currentDate = new Date(safeStartDate);
     const lastDate = new Date(safeEndDate);
 
-    // Generate all weeks in range
+    // Generate all keys in range
     while (currentDate <= lastDate) {
-      allWeekKeys.add(formatDate(getMonday(currentDate)));
-      currentDate.setDate(currentDate.getDate() + 1);
+      allKeys.add(getKey(currentDate));
+      currentDate.setUTCDate(currentDate.getUTCDate() + 1);
     }
-    const sortedWeekKeys = Array.from(allWeekKeys).sort();
+    const sortedKeys = Array.from(allKeys).sort();
 
     // 1. Initialize Branch Map
     const branchMap = new Map<
@@ -176,14 +205,21 @@ export async function POST(req: NextRequest) {
     branches.forEach((b) => {
       if (branch_id && String(b.id) !== String(branch_id)) return;
       const weeksMap = new Map<string, WeeklyMetric>();
-      sortedWeekKeys.forEach((weekKey) => {
-        const monday = new Date(weekKey);
-        const sunday = new Date(monday);
-        sunday.setDate(monday.getDate() + 6);
+      sortedKeys.forEach((key) => {
+        // Calculate date range for the bucket
+        let startStr = key;
+        let endStr = key;
 
-        weeksMap.set(weekKey, {
-          start_date: weekKey,
-          end_date: formatDate(sunday),
+        if (interval === 'week') {
+          const monday = new Date(key);
+          const sunday = new Date(monday);
+          sunday.setUTCDate(monday.getUTCDate() + 6);
+          endStr = formatDate(sunday);
+        }
+
+        weeksMap.set(key, {
+          start_date: startStr,
+          end_date: endStr,
           budget: 0,
           target_lead: 0,
           omset_target: 0,
@@ -201,14 +237,21 @@ export async function POST(req: NextRequest) {
 
     // 2. Initialize GLOBAL Map for the separate 'ads' table
     const globalWeeksMap = new Map<string, WeeklyMetric>();
-    sortedWeekKeys.forEach((weekKey) => {
-      const monday = new Date(weekKey);
-      const sunday = new Date(monday);
-      sunday.setDate(monday.getDate() + 6);
+    sortedKeys.forEach((key) => {
+      // Calculate date range for the bucket
+      let startStr = key;
+      let endStr = key;
 
-      globalWeeksMap.set(weekKey, {
-        start_date: weekKey,
-        end_date: formatDate(sunday),
+      if (interval === 'week') {
+        const monday = new Date(key);
+        const sunday = new Date(monday);
+        sunday.setUTCDate(monday.getUTCDate() + 6);
+        endStr = formatDate(sunday);
+      }
+
+      globalWeeksMap.set(key, {
+        start_date: startStr,
+        end_date: endStr,
         budget: 0,
         target_lead: 0,
         omset_target: 0,
@@ -224,12 +267,12 @@ export async function POST(req: NextRequest) {
 
     // 3. AGGREGATE ADS DATA (Fill Branch Map AND Global Map)
     adsData.forEach((ad) => {
-      const weekKey = formatDate(getMonday(new Date(ad.created_at)));
+      const key = getKey(new Date(ad.updated_at));
       const pName = platformMap.get(ad.platform_id || "") || "";
       const spend = ad.spend || 0;
 
       // Update Global Map
-      const globalBucket = globalWeeksMap.get(weekKey);
+      const globalBucket = globalWeeksMap.get(key);
       if (globalBucket) {
         if (pName.includes("google")) globalBucket.google_ads += spend;
         else if (
@@ -245,7 +288,7 @@ export async function POST(req: NextRequest) {
       if (!ad.cabang_id) return;
       const bData = branchMap.get(String(ad.cabang_id));
       if (bData) {
-        const bucket = bData.weeks.get(weekKey);
+        const bucket = bData.weeks.get(key);
         if (bucket) {
           bucket.budget += spend;
           bucket.target_lead += ad.leads || 0;
@@ -266,10 +309,10 @@ export async function POST(req: NextRequest) {
 
     // 4. AGGREGATE LEADS DATA (Fill Branch Map AND Global Map)
     leadsData.forEach((lead) => {
-      const weekKey = formatDate(getMonday(new Date(lead.created_at)));
+      const key = getKey(new Date(lead.updated_at));
 
       // Update Global Map (only Omset needed for ratio)
-      const globalBucket = globalWeeksMap.get(weekKey);
+      const globalBucket = globalWeeksMap.get(key);
       if (globalBucket) {
         const status = lead.status?.toLowerCase();
         if (["closing", "followup", "hold"].includes(status)) {
@@ -281,7 +324,7 @@ export async function POST(req: NextRequest) {
       if (!lead.branch_id) return;
       const bData = branchMap.get(String(lead.branch_id));
       if (bData) {
-        const bucket = bData.weeks.get(weekKey);
+        const bucket = bData.weeks.get(key);
         if (bucket) {
           bucket.actual_lead += 1;
           const status = lead.status?.toLowerCase();
@@ -301,8 +344,13 @@ export async function POST(req: NextRequest) {
         const total_ads = w.google_ads + w.meta_ads + w.tiktok_ads;
         const ads_ratio = w.omset > 0 ? (total_ads / w.omset) * 100 : 0;
 
+        let label = `Week ${index + 1}`;
+        if (interval === 'day') {
+          label = w.start_date; // e.g. "2025-01-01"
+        }
+
         return {
-          week: `Week ${index + 1}`, // requested key: 'week'
+          week: label, // variable name 'week' preserved for frontend compatibility
           google_ads: w.google_ads,
           meta_ads: w.meta_ads,
           tiktok_ads: w.tiktok_ads,
@@ -337,9 +385,17 @@ export async function POST(req: NextRequest) {
           const total_ads = w.google_ads + w.meta_ads + w.tiktok_ads;
           const ads_ratio = w.omset > 0 ? (total_ads / w.omset) * 100 : 0;
 
+          let label = `Week ${index + 1}`;
+          let dateRange = `${w.start_date} - ${w.end_date}`;
+
+          if (interval === 'day') {
+            label = w.start_date;
+            dateRange = w.start_date;
+          }
+
           return {
-            week_name: `Week ${index + 1}`,
-            date_range: `${w.start_date} - ${w.end_date}`,
+            week_name: label,
+            date_range: dateRange,
             budget: budget,
             ppn: Math.round(ppn),
             total_spend: Math.round(total_spend),
@@ -408,8 +464,8 @@ export async function POST(req: NextRequest) {
       closing_rate:
         totalActualLead > 0
           ? `${((totalClosingLeads.length / totalActualLead) * 100).toFixed(
-              2
-            )}%`
+            2
+          )}%`
           : "0%",
       omset: totalOmset,
       ads_vs_omset:

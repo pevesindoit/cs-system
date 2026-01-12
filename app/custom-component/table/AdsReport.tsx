@@ -10,9 +10,25 @@ interface AdsDataRow {
     ads_ratio: string;
 }
 
-export default function AdsReport({ data }: { data: AdsDataRow[] }) {
+export default function AdsReport({ data }: { data: AdsDataRow[] | null }) {
+    // LOADING SKELETON
+    if (!data) {
+        return (
+            <div className="space-y-4 animate-pulse">
+                <div className="h-7 bg-gray-200 rounded w-1/4 mb-2"></div>
+                <div className="border rounded-lg shadow-sm bg-white p-4">
+                    <div className="space-y-3">
+                        <div className="h-8 bg-gray-100 rounded"></div>
+                        <div className="h-8 bg-gray-50 rounded"></div>
+                        <div className="h-8 bg-gray-100 rounded"></div>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
     // Safety check: if no data, don't render anything or render empty state
-    if (!data || data.length === 0) return null;
+    if (data.length === 0) return null;
 
     return (
         <div className="space-y-4">

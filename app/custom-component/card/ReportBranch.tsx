@@ -18,15 +18,34 @@ interface WeeklyDataRow {
     cost_per_lead: number;   // Data: 0
 }
 
-interface BranchWeeklyReport {
+export interface BranchWeeklyReport {
     branch_id: string;
     branch_name: string;
     weeks: WeeklyDataRow[];
 }
 
-export default function ReportBranch({ data }: { data: BranchWeeklyReport[] }) {
-    // Safety check
-    if (!data || !Array.isArray(data) || data.length === 0) return null;
+export default function ReportBranch({ data }: { data: BranchWeeklyReport[] | null }) {
+    // LOADING SKELETON
+    if (!data) {
+        return (
+            <div className="space-y-8 mt-8 animate-pulse">
+                <div className="h-8 bg-gray-200 rounded w-1/4 mb-4"></div>
+                {[1, 2].map((i) => (
+                    <div key={i} className="border rounded-lg bg-white overflow-hidden shadow-sm">
+                        <div className="bg-gray-100 px-6 py-4 border-b h-12"></div>
+                        <div className="p-6 space-y-4">
+                            <div className="h-6 bg-gray-200 rounded w-full"></div>
+                            <div className="h-6 bg-gray-100 rounded w-full"></div>
+                            <div className="h-6 bg-gray-200 rounded w-full"></div>
+                        </div>
+                    </div>
+                ))}
+            </div>
+        );
+    }
+
+    // Safety check for empty array (after null check)
+    if (!Array.isArray(data) || data.length === 0) return null;
 
     return (
         <div className="space-y-8 mt-8">

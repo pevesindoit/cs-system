@@ -1,10 +1,10 @@
 "use client";
 
-import React, { Fragment, useEffect, useState } from "react";
+import React, { Fragment, useState } from "react";
 import EditableInput from "../table/EditableInput";
 import EditableSelect from "../table/EditableDropdown";
 import EditableDate from "../table/EditableDate";
-import { ModalFollowUp } from "../modal/ModalFollowUp"; // Ensure this imports your updated Modal
+import { ModalFollowUp } from "../modal/ModalFollowUp";
 import FormatDate from "../formater/DateFormater";
 
 // API & Types
@@ -38,20 +38,17 @@ export default function LeadTableGrid({
     keteranganLeads,
     status
 }: LeadTableGridProps) {
-    const [rows, setRows] = useState<leadsTypeError[]>([]);
+    // FIX 1: Initialize state directly from props. 
+    // Use (data || []) to prevent crashes if data is initially undefined.
+    const [rows, setRows] = useState<leadsTypeError[]>(data || []);
+
     const [isModalOpen, setIsModalOpen] = useState(false);
-
-    // Stores the temporary data for the modal (ID + Formatted Phone Number)
     const [dataFollowUp, setDataFollowUp] = useState<dataType>();
-
     const [expandedRowId, setExpandedRowId] = useState<string | null>(null);
     const [followUpsData, setFollowUpsData] = useState<followUpsType[]>([]);
 
-    useEffect(() => {
-        if (Array.isArray(data)) {
-            setRows(data);
-        }
-    }, [data]);
+    // FIX 2: The useEffect that caused the error has been removed completely.
+    // The component will now render faster and without warnings.
 
     // --- HANDLERS ---
 
@@ -70,19 +67,16 @@ export default function LeadTableGrid({
     };
 
     const toggleExpand = async (id: string) => {
-        // If clicking the same row, close it
         if (expandedRowId === id) {
             setExpandedRowId(null);
-            setFollowUpsData([]); // Clear data
+            setFollowUpsData([]);
             return;
         }
 
-        // Open new row and fetch data
         setExpandedRowId(id);
-        setFollowUpsData([]); // Reset while loading
+        setFollowUpsData([]);
         try {
             const res = await getFollowups(id);
-            // Ensure we set an array
             setFollowUpsData(Array.isArray(res?.data?.data) ? res.data.data : []);
         } catch (error) {
             console.error("Error fetching followups:", error);
@@ -110,21 +104,15 @@ export default function LeadTableGrid({
         setIsModalOpen(true);
     };
 
-    // ✅ Updated Handle Send Text
     const handleSendText = (messageFromModal: string, newFollowUpItem: followUpsType) => {
         const localNumber = dataFollowUp?.noted;
 
         if (localNumber) {
-            // 1. Clean the number (remove non-digits) and format to 62...
             const cleanNumber = localNumber.replace(/\D/g, '');
             const waNumber = "62" + cleanNumber.slice(1);
-
             const encodedMessage = encodeURIComponent(messageFromModal);
+            const whatsappUrl = `https://web.whatsapp.com/send?phone=${waNumber}&text=${encodedMessage}`; // Added & before text
 
-            // 2. IMPORTANT: Use '?' before 'text'
-            const whatsappUrl = `https://web.whatsapp.com/send?phone=${waNumber}text=${encodedMessage}`;
-
-            // 3. Use a static string "WAChat" to reuse the same tab
             window.open(whatsappUrl, "WAChat");
         }
 
@@ -139,7 +127,6 @@ export default function LeadTableGrid({
         if (!confirm("Are you sure you want to delete this lead?")) return;
         try {
             await deleteLead(id);
-            // Remove from UI immediately
             setRows((prev) => prev.filter((row) => row.id !== id));
         } catch (error) {
             console.error("Error deleting lead:", error);
@@ -148,7 +135,6 @@ export default function LeadTableGrid({
 
     return (
         <>
-            {/* Modal */}
             {isModalOpen && dataFollowUp && (
                 <ModalFollowUp
                     isOpen={isModalOpen}
@@ -160,11 +146,9 @@ export default function LeadTableGrid({
                 />
             )}
 
-            {/* Table */}
             <tbody className="bg-white">
                 {rows.map((item) => (
                     <Fragment key={item.id}>
-                        {/* 1. Main Data Row */}
                         <tr className="hover:bg-gray-100 transition-colors border-b group">
 
                             {/* Updated At */}
@@ -374,7 +358,7 @@ export default function LeadTableGrid({
                             </td>
                         </tr>
 
-                        {/* 2. Expanded Detail Row */}
+                        {/* Expanded Detail Row */}
                         {expandedRowId === item.id && (
                             <tr className="bg-gray-50 border-b">
                                 <td colSpan={13} className="p-0">

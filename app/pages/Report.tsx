@@ -102,6 +102,20 @@ export default function Report() {
         window.print();
     };
 
+    // TAB STATE: 'monthly' (Weekly Aggregation) | 'daily' (Daily Aggregation)
+    const [activeTab, setActiveTab] = useState<'monthly' | 'daily'>('monthly');
+
+    // Sync Interval with Tab
+    useEffect(() => {
+        if (activeTab === 'monthly') {
+            setInterval('week');
+            setRange(fullMonthRange); // Reset to full month when switching to monthly
+        } else {
+            setInterval('day');
+            setRange(fullMonthRange); // Reset to full month initially, allow WeekFilter to narrow it
+        }
+    }, [activeTab, fullMonthRange]);
+
     return (
         <div className="space-y-6">
             <style jsx global>{`
@@ -146,32 +160,7 @@ export default function Report() {
             `}</style>
 
 
-            {/* Parent Row: Aligns DateSelector and the Filter Group */}
-            <div className="flex flex-row gap-4 items-center">
-
-                {/* 1. Date Selector (Monthly/Ranges) */}
-                <DateMountSelector onChange={setFullMonthRange} />
-
-                {/* 2. Filter Group (Interval + WeekFilter) */}
-            </div>
-            <div className="flex items-center space-x-5">
-                <select
-                    className="border p-2 rounded bg-white w-full flex items-center justify-between bg-white border border-gray-300 text-gray-700 py-2 px-3 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-                    value={interval}
-                    onChange={(e) => setInterval(e.target.value as 'day' | 'week')}
-                >
-                    <option value="week">Mingguan</option>
-                    <option value="day">Harian</option>
-                </select>
-
-                {interval === 'day' && (
-                    <WeekFilter
-                        startDate={fullMonthRange.start_date}
-                        endDate={fullMonthRange.end_date}
-                        onChange={setRange}
-                    />
-                )}
-            </div>
+            {/* HEADER & PRINT BUTTON */}
             <div className="flex flex-row justify-between items-center">
                 <H1>Manager Report</H1>
                 <button
@@ -183,10 +172,56 @@ export default function Report() {
                 </button>
             </div>
 
+            {/* TABS & FILTERS CONTAINER */}
+            <div className="space-y-4">
+                {/* 1. TABS */}
+                <div className="flex border-b border-gray-200">
+                    <button
+                        className={`py-2 px-4 font-medium text-sm focus:outline-none ${activeTab === 'monthly'
+                            ? 'text-blue-600 border-b-2 border-blue-600'
+                            : 'text-gray-500 hover:text-gray-700'
+                            }`}
+                        onClick={() => setActiveTab('monthly')}
+                    >
+                        Laporan Bulanan
+                    </button>
+                    <button
+                        className={`py-2 px-4 font-medium text-sm focus:outline-none ${activeTab === 'daily'
+                            ? 'text-blue-600 border-b-2 border-blue-600'
+                            : 'text-gray-500 hover:text-gray-700'
+                            }`}
+                        onClick={() => setActiveTab('daily')}
+                    >
+                        Laporan Harian
+                    </button>
+                </div>
+
+                {/* 2. FILTERS (Date & Week) */}
+                <div className="flex flex-row gap-4 items-end">
+                    {/* Always ensure date selector is visible */}
+                    <div className="w-64">
+                        <DateMountSelector onChange={setFullMonthRange} />
+                    </div>
+
+                    {/* Only show WeekFilter if in Daily Tab */}
+                    {activeTab === 'daily' && (
+                        <div className="w-64">
+                            <WeekFilter
+                                startDate={fullMonthRange.start_date}
+                                endDate={fullMonthRange.end_date}
+                                onChange={setRange}
+                            />
+                        </div>
+                    )}
+                </div>
+            </div>
+
             <div id="printable-area" className="border rounded-[5px] h-full py-10 px-9 bg-[#FEFEFE] gap-8 space-y-8 ">
                 {/* Add a header specifically for print view so context is not lost */}
                 <div className="hidden print:block mb-6">
-                    <h1 className="text-2xl font-bold text-gray-900">Manager Report</h1>
+                    <h1 className="text-2xl font-bold text-gray-900">
+                        {activeTab === 'monthly' ? 'Laporan Bulanan' : 'Laporan Harian'}
+                    </h1>
                     <p className="text-sm text-gray-500">
                         Period: {range.start_date} - {range.end_date}
                     </p>

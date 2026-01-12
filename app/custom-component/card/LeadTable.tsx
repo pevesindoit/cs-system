@@ -47,8 +47,14 @@ export default function LeadTableGrid({
     const [expandedRowId, setExpandedRowId] = useState<string | null>(null);
     const [followUpsData, setFollowUpsData] = useState<followUpsType[]>([]);
 
-    // FIX 2: The useEffect that caused the error has been removed completely.
-    // The component will now render faster and without warnings.
+    // FIX 2: Re-enable the useEffect to sync props to state.
+    // This is necessary because data is fetched asynchronously in the parent.
+    // Without this, the table only knows the initial empty [] value.
+    React.useEffect(() => {
+        if (data) {
+            setRows(data);
+        }
+    }, [data]);
 
     // --- HANDLERS ---
 

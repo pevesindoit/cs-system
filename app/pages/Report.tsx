@@ -43,7 +43,8 @@ const GetDefaultDate = () => {
     };
 };
 
-import { BranchWeeklyReport } from "../custom-component/card/ReportBranch"; // Assuming we can export this next
+import { BranchWeeklyReport } from "../custom-component/card/ReportBranch";
+import { Printer } from "lucide-react"; // Import Printer Icon
 
 export default function Report() {
     const [fullMonthRange, setFullMonthRange] = useState(GetDefaultDate());
@@ -96,12 +97,54 @@ export default function Report() {
         fetchData();
     }, [range, interval]);
 
-    // REMOVED BLOCKING LOADER
-    // if (loading) return <div>Loading Report...</div>;
+    // Handler for printing
+    const handlePrint = () => {
+        window.print();
+    };
 
     return (
         <div className="space-y-6">
-            <H1>Manager Report</H1>
+            <style jsx global>{`
+                @media print {
+                    @page {
+                        size: landscape;
+                        margin: 10mm;
+                    }
+                    /* Hide everything by default */
+                    body * {
+                        visibility: hidden;
+                    }
+                    /* Show only the printable area and its children */
+                    #printable-area, #printable-area * {
+                        visibility: visible;
+                    }
+                    /* Position the printable area at the top-left */
+                    #printable-area {
+                        position: absolute;
+                        left: 0;
+                        top: 0;
+                        width: 100%;
+                    }
+                    /* Ensure backgrounds (like graph colors) are printed */
+                    * {
+                        -webkit-print-color-adjust: exact !important;
+                        print-color-adjust: exact !important;
+                    }
+
+                    /* FIX: Ensure Scrollable Tables are fully visible in print */
+                    .overflow-x-auto {
+                        overflow: visible !important;
+                        display: block !important;
+                        width: auto !important;
+                    }
+                    
+                    /* Scale down to fit 13 columns */
+                    #printable-area {
+                        zoom: 75%;
+                    }
+                }
+            `}</style>
+
 
             {/* Parent Row: Aligns DateSelector and the Filter Group */}
             <div className="flex flex-row gap-4 items-center">
@@ -129,8 +172,26 @@ export default function Report() {
                     />
                 )}
             </div>
+            <div className="flex flex-row justify-between items-center">
+                <H1>Manager Report</H1>
+                <button
+                    onClick={handlePrint}
+                    className="flex items-center gap-2 bg-black hover:bg-gray-900 text-white px-4 py-2 rounded-md shadow transition-colors"
+                >
+                    <Printer size={18} />
+                    <span>Print / PDF</span>
+                </button>
+            </div>
 
-            <div className="border rounded-[5px] h-full py-10 px-9 bg-[#FEFEFE] gap-8 space-y-8 ">
+            <div id="printable-area" className="border rounded-[5px] h-full py-10 px-9 bg-[#FEFEFE] gap-8 space-y-8 ">
+                {/* Add a header specifically for print view so context is not lost */}
+                <div className="hidden print:block mb-6">
+                    <h1 className="text-2xl font-bold text-gray-900">Manager Report</h1>
+                    <p className="text-sm text-gray-500">
+                        Period: {range.start_date} - {range.end_date}
+                    </p>
+                </div>
+
                 <ReportBranch data={reportBranch} />
                 <AdsReport data={adsReport} />
                 <ReportSummary data={reportData} />

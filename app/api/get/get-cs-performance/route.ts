@@ -31,7 +31,8 @@ export async function POST(req: NextRequest) {
       .gte("updated_at", start)
       .lte("updated_at", end)
       .order("updated_at", { ascending: false })
-      .order("created_at", { ascending: false });
+      .order("created_at", { ascending: false })
+      .limit(100000);
 
     if (branch) query = query.eq("branch_id", branch);
     if (cs) query = query.eq("user_id", cs);
@@ -48,12 +49,32 @@ export async function POST(req: NextRequest) {
     if (cs) agentsQuery = agentsQuery.eq("id", cs);
 
     // =========================================================================
+    // QUERY C: PERFORMANCE DATA (Nominal Closing - Lightweight & Unlimited)
+    // =========================================================================
+    // We need a separate query for totals because the main query returns EVERYTHING and hits limits.
+    // This query grabs ONLY what we need for the SC Performance table.
+    let performanceQuery = supabase
+      .from("leads")
+      .select("user_id, nominal") // Fetch ONLY what's needed
+      .gte("updated_at", start)
+      .lte("updated_at", end)
+      .filter("status", "ilike", "closing"); // Filter ONLY Closing
+
+    if (branch) performanceQuery = performanceQuery.eq("branch_id", branch);
+    if (cs) performanceQuery = performanceQuery.eq("user_id", cs);
+
+    // =========================================================================
     // EXECUTE QUERIES PARALLEL
     // =========================================================================
-    const [leadsResult, agentsResult] = await Promise.all([query, agentsQuery]);
+    const [leadsResult, agentsResult, performanceResult] = await Promise.all([
+      query,
+      agentsQuery,
+      performanceQuery,
+    ]);
 
     const allLeads = leadsResult.data || [];
     const agents = agentsResult.data || [];
+    const performanceLeads = performanceResult.data || [];
 
     if (leadsResult.error) {
       return NextResponse.json(
@@ -63,8 +84,11 @@ export async function POST(req: NextRequest) {
     }
 
     // =========================================================================
-    // 1. LEADS STATUS COUNT (Based on ALL leads - Unfiltered by status)
+    // 1. LEADS STATUS COUNT (Based on ALL leads - Unfiltered by status of the MAIN query)
     // =========================================================================
+    // Note: If the main query is limited to 100k, this might still be truncated for VERY large datasets,
+    // but for status counts usually it's fine. If absolute accuracy is needed for status counts > 100k,
+    // we'd need another aggregate query.
     const initialCounts: Record<string, number> = {
       closing: 0,
       followup: 0,
@@ -83,14 +107,17 @@ export async function POST(req: NextRequest) {
     // =========================================================================
     // 2. SC PERFORMANCE (Nominal Closing per CS)
     // =========================================================================
+    // Use 'performanceLeads' (the unlimited lightweight query) instead of 'allLeads'
     const scPerformance = agents.map((agent) => {
-      const agentClosingLeads = allLeads.filter(
-        (lead) => lead.user_id === agent.id && lead.status === "closing"
+      const agentClosingLeads = performanceLeads.filter(
+        (lead) => lead.user_id === agent.id
+        // No need to check status here, the query already filtered for 'closing'
       );
-      const totalNominal = agentClosingLeads.reduce(
-        (sum, lead) => sum + (Number(lead.nominal) || 0),
-        0
-      );
+
+      const totalNominal = agentClosingLeads.reduce((sum, lead) => {
+        const nominal = Number(lead.nominal);
+        return sum + (isNaN(nominal) ? 0 : nominal);
+      }, 0);
 
       return {
         name: agent.name,
@@ -108,7 +135,7 @@ export async function POST(req: NextRequest) {
     let filteredLeads = allLeads;
 
     if (status) {
-      filteredLeads = allLeads.filter((lead) => lead.status === status);
+      filteredLeads = allLeads.filter((lead) => lead.status?.toLowerCase() === status.toLowerCase());
     }
 
     // =========================================================================

@@ -43,9 +43,13 @@ export const getCostumers = async () => {
   }
 };
 
-export const getLeads = async (user_id: string) => {
+// Update type definition if possible, but for now explicitly adding params
+export const getLeads = async (user_id: string, date?: string, page: number = 1, limit: number = 50) => {
   try {
-    const res = await axios.post("/api/get/get-leads", { user_id });
+    const payload: any = { user_id, page, limit };
+    if (date) payload.date = date;
+
+    const res = await axios.post("/api/get/get-leads", payload);
     return res;
   } catch (error) {
     console.log("Failed to fetch organisations", error);

@@ -54,6 +54,12 @@ export default function Cs() {
     const [branch, setBranch] = useState<SelectItemData[]>([]);
     const [searchQuery, setSearchQuery] = useState<number>()
 
+    // Pagination & Filter State
+    // REMOVED: filterDate (We now use continuous pagination)
+    const [currentPage, setCurrentPage] = useState(1);
+    const [totalPages, setTotalPages] = useState(1);
+    const [limit] = useState(50);
+
 
     const status = [
         { label: "Closing", value: "closing", classname: "bg-[#D7FFD3] text-[#372E2E]" },
@@ -100,8 +106,13 @@ export default function Cs() {
                     const res = await getFilterSearch(payload);
                     fetchedData = res?.data.data || [];
                 } else {
-                    const res = await getLeads(user);
+                    // Pass undefined for date to get ALL leads, paginated
+                    const res = await getLeads(user, undefined, currentPage, limit);
                     fetchedData = res?.data.data || [];
+
+                    if (res?.data?.pagination) {
+                        setTotalPages(res.data.pagination.totalPages);
+                    }
                 }
 
                 // ✅ FIX: Use 'leadsTypeError' instead of 'any'
@@ -136,8 +147,8 @@ export default function Cs() {
         }, 500);
 
         return () => clearTimeout(timer);
-
-    }, [user, searchQuery]);
+        // Removed filterDate from dependency array
+    }, [user, searchQuery, currentPage]);
 
     useEffect(() => {
         const fetchPlatforms = async () => {
@@ -270,10 +281,15 @@ export default function Cs() {
 
     return (
         <div className="flex w-full py-3 pr-3 pl-3 md:pl-0 relative gap-3 overflow-x-auto md:overflow-x-visible no-scrollbar min-w-max">
-            <SearchPopup
-                value={searchQuery}
-                onChange={setSearchQuery}
-            />
+            <div className="flex flex-col gap-2">
+                <div className="flex justify-between items-center w-full">
+                    <SearchPopup
+                        value={searchQuery}
+                        onChange={setSearchQuery}
+                    />
+                    {/* Date Filter Removed as per request */}
+                </div>
+            </div>
             <table className="border rounded-md text-[10px] min-w-max bg-yellow-200">
                 {/* HEADER */}
                 <thead className="bg-gray-50 border-b">
@@ -514,6 +530,29 @@ export default function Cs() {
                     status={status}
                 />
             </table >
+
+            {/* Pagination Controls */}
+            {!searchQuery && (
+                <div className="fixed bottom-4 left-1/2 transform -translate-x-1/2 bg-white shadow-lg rounded-full px-4 py-2 flex items-center gap-4 z-50 border">
+                    <button
+                        onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                        disabled={currentPage === 1}
+                        className="px-2 py-1 bg-gray-200 rounded-full disabled:opacity-50 text-xs hover:bg-gray-300"
+                    >
+                        Prev
+                    </button>
+                    <span className="text-xs font-semibold">
+                        Page {currentPage} of {totalPages || 1}
+                    </span>
+                    <button
+                        onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                        disabled={currentPage >= totalPages}
+                        className="px-2 py-1 bg-gray-200 rounded-full disabled:opacity-50 text-xs hover:bg-gray-300"
+                    >
+                        Next
+                    </button>
+                </div>
+            )}
         </div >
     )
 }

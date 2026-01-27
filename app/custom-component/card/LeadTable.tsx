@@ -90,7 +90,8 @@ export default function LeadTableGrid({
         }
     };
 
-    const formatPhoneNumber = (phone: string) => {
+    const formatPhoneNumber = (phone: string | null | undefined) => {
+        if (!phone) return "";
         let cleaned = phone.replace(/\D/g, "");
         if (cleaned.startsWith("62")) {
             cleaned = "0" + cleaned.slice(2);
@@ -130,7 +131,7 @@ export default function LeadTableGrid({
     };
 
     const deleteLeads = async (id: string) => {
-        if (!confirm("Are you sure you want to delete this lead?")) return;
+        if (!confirm("Yakin Mau Hapus Leads Ini?")) return;
         try {
             await deleteLead(id);
             setRows((prev) => prev.filter((row) => row.id !== id));
@@ -147,8 +148,8 @@ export default function LeadTableGrid({
                     onClose={() => setIsModalOpen(false)}
                     onSubmit={handleSendText}
                     data={dataFollowUp}
-                    title="Add Note & Send WhatsApp"
-                    placeholder="Type message to customer..."
+                    title="Tambah Pesan"
+                    placeholder="Ketik pesan ke customer..."
                 />
             )}
 

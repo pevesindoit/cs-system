@@ -398,6 +398,7 @@ export default function Cs() {
                             <div className="px-1">
                                 <DropDownGridInt
                                     items={channel}
+                                    value={formData.channel_id ?? undefined}
                                     onValueChange={(value) =>
                                         setFormData((prev) => ({ ...prev, channel_id: value }))
                                     }
@@ -410,6 +411,7 @@ export default function Cs() {
                             <div className="px-1">
                                 <DropDownGrid
                                     items={platforms}
+                                    value={formData.platform_id ?? undefined}
                                     onValueChange={(value) =>
                                         setFormData((prev) => ({ ...prev, platform_id: value }))
                                     }
@@ -422,6 +424,7 @@ export default function Cs() {
                             <div className="px-1">
                                 <DropDownGridInt
                                     items={keteranganLeads}
+                                    value={formData.keterangan_leads_id ?? undefined}
                                     onValueChange={(value) =>
                                         setFormData((prev) => ({
                                             ...prev,
@@ -437,6 +440,7 @@ export default function Cs() {
                             <div className="px-1">
                                 <DropDownGrid
                                     items={status}
+                                    value={formData.status ?? undefined}
                                     onValueChange={(value) =>
                                         setFormData((prev) => ({ ...prev, status: value }))
                                     }
@@ -462,6 +466,7 @@ export default function Cs() {
                             <div className="px-1">
                                 <DropDownGridInt
                                     items={pic}
+                                    value={formData.pic_id ?? undefined}
                                     onValueChange={(value) =>
                                         setFormData((prev) => ({
                                             ...prev,
@@ -477,6 +482,7 @@ export default function Cs() {
                             <div className="px-1">
                                 <DropDownGrid
                                     items={branch}
+                                    value={formData.branch_id ?? undefined}
                                     onValueChange={(value) =>
                                         setFormData((prev) => ({ ...prev, branch_id: value }))
                                     }

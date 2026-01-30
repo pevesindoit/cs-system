@@ -50,7 +50,7 @@ export default function Login() {
         const res = await login(formData);
 
         if (res?.status !== 200) {
-            setErrorMsg(res?.data.error || "Login failed");
+            setErrorMsg(res?.data?.error || "Login failed");
             setLoading(false);
             return;
         }

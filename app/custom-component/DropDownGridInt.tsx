@@ -25,14 +25,30 @@ export function DropDownGridInt({
     onValueChange,
 }: DropDownGridProps) {
     const [open, setOpen] = React.useState(false);
+    const [searchValue, setSearchValue] = React.useState("");
 
     // Find the label for the current value to display in the button
     const selectedLabel = items.find((item) => item.value === value)?.label;
 
+    const handleKeyDown = (e: React.KeyboardEvent<HTMLButtonElement>) => {
+        // Capture single characters to start searching immediately
+        if (e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey) {
+            e.preventDefault();
+            setSearchValue(e.key);
+            setOpen(true);
+        }
+    };
+
     return (
-        <Popover.Root open={open} onOpenChange={setOpen}>
+        <Popover.Root open={open} onOpenChange={(newOpen) => {
+            setOpen(newOpen);
+            if (!newOpen) {
+                setSearchValue("");
+            }
+        }}>
             <Popover.Trigger asChild>
                 <button
+                    onKeyDown={handleKeyDown}
                     role="combobox"
                     aria-expanded={open}
                     className={cn(
@@ -60,6 +76,8 @@ export function DropDownGridInt({
                 <Command className="flex h-full w-full flex-col overflow-hidden rounded-md bg-popover text-popover-foreground">
                     <div className="flex items-center border-b px-3" cmdk-input-wrapper="">
                         <CommandInput
+                            value={searchValue}
+                            onValueChange={setSearchValue}
                             placeholder="Search..."
                             className="flex h-10 w-full rounded-md bg-transparent py-3 text-xs outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50"
                         />

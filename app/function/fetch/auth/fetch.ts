@@ -14,8 +14,9 @@ export const login = async (payload: loginType) => {
   try {
     const res = await axios.post("/api/auth/login", payload);
     return res;
-  } catch (error) {
-    console.log("Failed to fetch organisations", error);
+  } catch (error: any) {
+    console.log("Failed to login", error);
+    return error.response;
   }
 };
 

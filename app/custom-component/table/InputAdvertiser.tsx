@@ -124,6 +124,7 @@ export default function InputAdvertiser({ onAddData, platforms, branches }: Inpu
                 <div className="px-1">
                     <DropDownGrid
                         items={branches}
+                        value={formData.cabang_id}
                         onValueChange={(value) =>
                             setFormData((prev) => ({ ...prev, cabang_id: value }))
                         }
@@ -157,6 +158,7 @@ export default function InputAdvertiser({ onAddData, platforms, branches }: Inpu
                 <div className="px-1">
                     <DropDownGrid
                         items={platforms}
+                        value={formData.platform_id}
                         onValueChange={(value) =>
                             setFormData((prev) => ({ ...prev, platform_id: value }))
                         }

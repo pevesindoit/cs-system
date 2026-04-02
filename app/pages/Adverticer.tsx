@@ -36,10 +36,13 @@ export default function Advertiser({ platforms, branches }: ReusableCsData) {
     const handleNewData = async (newItem: AdvertiserData) => {
         const payload = { ...newItem, ads_manager_id: userId };
         const res = await addAdvertise(payload);
-        console.log(res?.data.allLeads, "inimi datanya")
-        if (res?.status === 200) {
-            setTableData(res?.data.allLeads);
+        if (res?.status === 200 && res.data?.newEntry) {
+            setTableData(prev => [res.data.newEntry, ...prev]);
         }
+    };
+
+    const handleDelete = (id: string | number) => {
+        setTableData(prev => prev.filter(item => String(item.id) !== String(id)));
     };
 
     const headers = [
@@ -77,8 +80,12 @@ export default function Advertiser({ platforms, branches }: ReusableCsData) {
 
                     {/* DATA ROWS */}
                     {/* We pass the data here, it renders multiple TRs inside */}
-                    <ListAdvertiser data={tableData} platforms={platforms} // Pass prop
-                        branches={branches} />
+                    <ListAdvertiser 
+                        data={tableData} 
+                        platforms={platforms} 
+                        branches={branches} 
+                        onDelete={handleDelete} 
+                    />
                 </tbody>
 
             </table>

@@ -106,6 +106,7 @@ export function LeadsPage() {
                         <div className="grid md:grid-cols-3 w-full gap-3">
                             <DropDownLeads
                                 items={css}
+                                value={cs as any}
                                 onValueChange={(val) => {
                                     console.log("Selected ID:", val); // val is a number here
                                     setCs(val);
@@ -114,6 +115,7 @@ export function LeadsPage() {
 
                             <DropDownLeads
                                 items={branchs}
+                                value={branch as any}
                                 onValueChange={(val) => {
                                     console.log("Selected ID:", val); // val is a number here
                                     setBranch(val);

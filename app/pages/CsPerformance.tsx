@@ -143,14 +143,17 @@ export function CsPerformance() {
                         <div className="grid md:grid-cols-3 w-full gap-3">
                             <DropDownLeads
                                 items={css}
+                                value={cs as any}
                                 onValueChange={setCs}
                                 placeholder="Select CS..." />
                             <DropDownLeads
                                 items={branchs}
+                                value={branch as any}
                                 onValueChange={setBranch}
                                 placeholder="Select Branch..." />
                             <DropDownLeads
                                 items={keterangans}
+                                value={keterangan as any}
                                 onValueChange={(val) => setKeterangan(val ? val : undefined)}
                                 placeholder="Select Keterangan..." />
                         </div>

@@ -5,16 +5,19 @@ import { AdvertiserData, SelectItemData } from "@/app/types/types";
 import EditableDate from "../table/EditableDate";
 import EditableInput from "../table/EditableInput";
 import { updateAdvertiser } from "@/app/function/fetch/update/update-lead/fetch";
+import { deleteAdvertiserData } from "@/app/function/fetch/delete/fetch";
 import EditableSelect from "./EditableDropdown";
+import { Trash2 } from "lucide-react";
 
 // 1. Update Interface to accept platforms and branches from parent
 interface Props {
     data: AdvertiserData[];
     platforms: SelectItemData[];
     branches: SelectItemData[];
+    onDelete?: (id: string | number) => void;
 }
 
-export default function ListAdvertiser({ data, platforms, branches }: Props) {
+export default function ListAdvertiser({ data, platforms, branches, onDelete }: Props) {
     const [rows, setRows] = useState<AdvertiserData[]>(data);
     const [prevData, setPrevData] = useState<AdvertiserData[]>(data);
 
@@ -50,16 +53,25 @@ export default function ListAdvertiser({ data, platforms, branches }: Props) {
             // 3. Update Database
             await updateAdvertiser({ id, field: "spend", value: newSpend });
             await updateAdvertiser({ id, field: "total_budget", value: newTotalBudget });
-        }
-
-        // --- NORMAL LOGIC FOR OTHER FIELDS ---
-        else {
+        } else {
             setRows((prev) =>
                 prev.map((row) =>
                     String(row.id) === id ? { ...row, [field]: value } : row
                 )
             );
             await updateAdvertiser({ id, field, value });
+        }
+    };
+
+    const handleDeleteClick = async (id: string | number) => {
+        const confirmDelete = window.confirm("Are you sure you want to delete this data?");
+        if (confirmDelete) {
+            // Delete via API
+            await deleteAdvertiserData(id);
+            // Delete locally
+            if (onDelete) {
+                onDelete(id);
+            }
         }
     };
 
@@ -217,7 +229,15 @@ export default function ListAdvertiser({ data, platforms, branches }: Props) {
                             </div>
                         </td>
 
-                        <td className="px-2 py-2 border-r whitespace-nowrap"></td>
+                        {/* Action - Delete Button */}
+                        <td className="px-2 py-2 border-r whitespace-nowrap text-center">
+                            <button
+                                onClick={() => handleDeleteClick(safeId)}
+                                className="text-red-500 hover:text-red-700 transition"
+                            >
+                                <Trash2 size={16} />
+                            </button>
+                        </td>
                     </tr >
                 );
             })}

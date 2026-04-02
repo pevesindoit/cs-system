@@ -85,6 +85,7 @@ export default function InputSocialGrowth({
             // Fix 4: Ensure it's never undefined and cast to 'any' to bypass 
             // the strict type check between SelectItemData and Item
             items={(platforms ?? [])}
+            value={formData.platform_id}
             onValueChange={(value) =>
               setFormData((prev) => ({ ...prev, platform_id: value }))
             }

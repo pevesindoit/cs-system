@@ -74,6 +74,7 @@ export default function InputRealOmset({
                 <div className="px-1">
                     <DropDownGrid
                         items={(branches ?? [])}
+                        value={formData.branch_id}
                         onValueChange={(value) =>
                             setFormData((prev) => ({ ...prev, branch_id: value }))
                         }

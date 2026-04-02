@@ -76,7 +76,11 @@ export async function POST(req: NextRequest) {
     const { data: newEntry, error: insertError } = await supabase
       .from("advertiser_data")
       .insert(insertPayload)
-      .select()
+      .select(`
+        *, 
+        platform:platform_id(name), 
+        branch:cabang_id(name)
+      `)
       .single();
 
     if (insertError) {
@@ -84,27 +88,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: insertError.message }, { status: 500 });
     }
 
-    // 6. Fetch Updated List
-    const { data: allLeads, error: fetchError } = await supabase
-      .from("advertiser_data")
-      .select(
-        `
-        *, 
-        platform:platform_id(name), 
-        branch:cabang_id(name)
-      `
-      )
-      .eq("ads_manager_id", finalUserId)
-      .order("created_at", { ascending: false })
-      .limit(50);
-
-    console.log(allLeads, "inimi ahhay");
-    if (fetchError) {
-      return NextResponse.json({ error: fetchError.message }, { status: 500 });
-    }
-
     return NextResponse.json(
-      { message: "Success", newEntry, allLeads },
+      { message: "Success", newEntry },
       { status: 200 }
     );
   } catch (err) {

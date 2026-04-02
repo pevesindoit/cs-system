@@ -11,3 +11,15 @@ export const deleteLead = async (id: string) => {
     return null;
   }
 };
+
+export const deleteAdvertiserData = async (id: string | number) => {
+  try {
+    const res = await axios.post("/api/delete/delete-advertiser-data", {
+      id,
+    });
+    return res;
+  } catch (error) {
+    console.log("Failed to delete advertiser data", error);
+    return null;
+  }
+};

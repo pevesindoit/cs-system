@@ -12,6 +12,7 @@ export async function POST(req: NextRequest) {
       branch,
       cs,
       status,
+      keterangan,
       page = 1, // Default to page 1
       limit = 10, // Default to 10 items per page
     } = body.data || body;
@@ -36,6 +37,7 @@ export async function POST(req: NextRequest) {
 
     if (branch) query = query.eq("branch_id", branch);
     if (cs) query = query.eq("user_id", cs);
+    if (keterangan) query = query.eq("keterangan_leads_id", keterangan);
 
     // =========================================================================
     // QUERY B: USER DATA (Sales Consultants - Type 1)
@@ -62,6 +64,7 @@ export async function POST(req: NextRequest) {
 
     if (branch) performanceQuery = performanceQuery.eq("branch_id", branch);
     if (cs) performanceQuery = performanceQuery.eq("user_id", cs);
+    if (keterangan) performanceQuery = performanceQuery.eq("keterangan_leads_id", keterangan);
 
     // =========================================================================
     // EXECUTE QUERIES PARALLEL
@@ -176,6 +179,7 @@ export async function POST(req: NextRequest) {
     // =========================================================================
     // We slice the `filteredLeads` array based on page and limit
 
+    console.log(keterangan, "ini hasilnya")
     const pageInt = parseInt(page as string);
     const limitInt = parseInt(limit as string);
 

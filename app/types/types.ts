@@ -164,6 +164,7 @@ export interface csPerformanceType {
   end_date: string;
   branch?: string;
   cs?: string;
+  keterangan?: number | string;
 }
 
 export interface dataType {

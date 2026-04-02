@@ -32,6 +32,8 @@ export function CsPerformance() {
     const [cs, setCs] = useState<string>("");
     const [branchs, setBranchs] = useState([]);
     const [branch, setBranch] = useState<string>("");
+    const [keterangans, setKeterangans] = useState([]);
+    const [keterangan, setKeterangan] = useState<string | undefined>(undefined);
 
     // Data States
     const [totalLeads, setTotalLeads] = useState<Record<string, number>>({});
@@ -81,8 +83,13 @@ export function CsPerformance() {
                 label: item.name,
                 classname: item.classname
             }));
+            const formattedListKeterangan = rawData.keterangan_leads.map((item: itemType) => ({
+                value: item.id,
+                label: item.name,
+            }));
             setCss(formattedListPlatform)
             setBranchs(formattedListBranch)
+            setKeterangans(formattedListKeterangan)
         }
         fetch()
     }, [])
@@ -93,6 +100,7 @@ export function CsPerformance() {
             ...range,
             cs,
             branch,
+            keterangan,
             status: statusSelected,
             page: currentPage,
             limit: LIMIT
@@ -116,12 +124,12 @@ export function CsPerformance() {
             setScPerformance(res?.data.scPerformance || []);
         };
         fetchFilter();
-    }, [range, cs, branch, statusSelected, currentPage]);
+    }, [range, cs, branch, keterangan, statusSelected, currentPage]);
 
     // Reset to page 1 if filters change
     useEffect(() => {
         setCurrentPage(1);
-    }, [range, cs, branch, statusSelected]);
+    }, [range, cs, branch, keterangan, statusSelected]);
 
     return (
         <div className="space-y-7 pb-10">
@@ -141,6 +149,10 @@ export function CsPerformance() {
                                 items={branchs}
                                 onValueChange={setBranch}
                                 placeholder="Select Branch..." />
+                            <DropDownLeads
+                                items={keterangans}
+                                onValueChange={(val) => setKeterangan(val ? val : undefined)}
+                                placeholder="Select Keterangan..." />
                         </div>
                     </div>
 

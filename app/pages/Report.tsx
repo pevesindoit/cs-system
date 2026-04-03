@@ -12,6 +12,11 @@ import WeekFilter from "../custom-component/formater/WeekFilter";
 
 export interface AdsDataRow {
     week: string;
+    budget_iklan: number;
+    total_spend: number;
+    target_leads: number;
+    target_omset: number;
+    cost_perlead: number;
     google_ads: number;
     meta_ads: number;
     tiktok_ads: number;

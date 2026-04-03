@@ -7,7 +7,7 @@ interface AdvertiserRow {
   spend: number;
   total_budget: number;
   leads: number;
-  updated_at: string;
+  created_at: string;
   platform_id?: string;
   cabang_id?: string;
 }
@@ -34,6 +34,7 @@ interface WeeklyMetric {
   start_date: string;
   end_date: string;
   budget: number;
+  total_budget: number;
   omset_target: number;
   target_lead: number;
   actual_lead: number;
@@ -115,22 +116,22 @@ export async function POST(req: NextRequest) {
     let adsQuery = supabase
       .from("advertiser_data")
       .select(
-        "spend, total_budget, leads, platform_id, updated_at, cabang_id, omset_target"
+        "spend, total_budget, leads, platform_id, created_at, cabang_id, omset_target"
       )
-      .gte("updated_at", start)
-      .lte("updated_at", end);
+      .gte("created_at", start)
+      .lte("created_at", end);
 
     let leadsQuery = supabase
       .from("leads")
       .select("nominal, status, platform_id, updated_at, branch_id")
       .gte("updated_at", start)
       .lte("updated_at", end);
-
     // ==========================================
     // FILTER LOGIC
     // ==========================================
     if (platform_id) {
       adsQuery = adsQuery.eq("platform_id", platform_id);
+      console.log(adsQuery, "ini ads query")
 
       // If filtering by specific platform, we need to handle the "child" platforms (e.g. Meta -> FB/IG)
       const { data: platformData } = await supabase
@@ -221,6 +222,7 @@ export async function POST(req: NextRequest) {
           start_date: startStr,
           end_date: endStr,
           budget: 0,
+          total_budget: 0,
           target_lead: 0,
           omset_target: 0,
           actual_lead: 0,
@@ -253,6 +255,7 @@ export async function POST(req: NextRequest) {
         start_date: startStr,
         end_date: endStr,
         budget: 0,
+        total_budget: 0,
         target_lead: 0,
         omset_target: 0,
         actual_lead: 0,
@@ -267,13 +270,18 @@ export async function POST(req: NextRequest) {
 
     // 3. AGGREGATE ADS DATA (Fill Branch Map AND Global Map)
     adsData.forEach((ad) => {
-      const key = getKey(new Date(ad.updated_at));
+      const key = getKey(new Date(ad.created_at));
       const pName = platformMap.get(ad.platform_id || "") || "";
       const spend = ad.spend || 0;
 
       // Update Global Map
       const globalBucket = globalWeeksMap.get(key);
       if (globalBucket) {
+        globalBucket.budget += spend;
+        globalBucket.total_budget += ad.total_budget || (spend * 1.11);
+        globalBucket.target_lead += ad.leads || 0;
+        globalBucket.omset_target += ad.omset_target || 0;
+
         if (pName.includes("google")) globalBucket.google_ads += spend;
         else if (
           pName.includes("facebook") ||
@@ -291,6 +299,7 @@ export async function POST(req: NextRequest) {
         const bucket = bData.weeks.get(key);
         if (bucket) {
           bucket.budget += spend;
+          bucket.total_budget += ad.total_budget || (spend * 1.11);
           bucket.target_lead += ad.leads || 0;
           // --- FIX 2: Added accumulation for target_omset here ---
           bucket.omset_target += ad.omset_target || 0;
@@ -314,6 +323,7 @@ export async function POST(req: NextRequest) {
       // Update Global Map (only Omset needed for ratio)
       const globalBucket = globalWeeksMap.get(key);
       if (globalBucket) {
+        globalBucket.actual_lead += 1;
         const status = lead.status?.toLowerCase();
         if (["closing", "followup", "hold"].includes(status)) {
           globalBucket.omset += lead.nominal || 0;
@@ -344,6 +354,12 @@ export async function POST(req: NextRequest) {
         const total_ads = w.google_ads + w.meta_ads + w.tiktok_ads;
         const ads_ratio = w.omset > 0 ? (total_ads / w.omset) * 100 : 0;
 
+        const budget_iklan = w.budget;
+        const total_spend = w.total_budget || (budget_iklan * 1.11);
+        const target_leads = w.target_lead;
+        const actual_lead = w.actual_lead;
+        const cost_perlead = actual_lead > 0 ? (total_spend / actual_lead) : 0;
+
         let label = `Week ${index + 1}`;
         if (interval === 'day') {
           label = w.start_date; // e.g. "2025-01-01"
@@ -351,6 +367,11 @@ export async function POST(req: NextRequest) {
 
         return {
           week: label, // variable name 'week' preserved for frontend compatibility
+          budget_iklan: budget_iklan,
+          total_spend: Math.round(total_spend),
+          target_leads: target_leads,
+          target_omset: w.omset_target,
+          cost_perlead: Math.round(cost_perlead),
           google_ads: w.google_ads,
           meta_ads: w.meta_ads,
           tiktok_ads: w.tiktok_ads,
@@ -367,8 +388,8 @@ export async function POST(req: NextRequest) {
         const weeks = Array.from(data.weeks.values()).map((w, index) => {
           // Standard Metrics
           const budget = w.budget;
-          const ppn = budget * 0.11;
-          const total_spend = budget + ppn;
+          const total_spend = w.total_budget || (budget * 1.11);
+          const ppn = total_spend - budget;
 
           const actual_lead = w.actual_lead;
           const target_lead = w.target_lead;
@@ -428,6 +449,10 @@ export async function POST(req: NextRequest) {
       (acc, curr) => acc + (curr.spend || 0),
       0
     );
+    const totalSpend = adsData.reduce(
+      (acc, curr) => acc + (curr.total_budget || (curr.spend || 0) * 1.11),
+      0
+    );
     // This will now work correctly because omset_target is in adsData
     const totalOmsetTarget = adsData.reduce(
       (acc, curr) => acc + (curr.omset_target || 0),
@@ -437,8 +462,8 @@ export async function POST(req: NextRequest) {
       (acc, curr) => acc + (curr.leads || 0),
       0
     );
-    const totalPPN = totalBudget * 0.11;
-    const grandTotalSpend = totalBudget + totalPPN;
+    const totalPPN = totalSpend - totalBudget;
+    const grandTotalSpend = totalSpend;
 
     const totalActualLead = leadsData.length;
     const totalClosingLeads = leadsData.filter((l) =>

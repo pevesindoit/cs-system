@@ -13,9 +13,10 @@ interface WeeklyDataRow {
     target_leads: number;    // Data: 44
     target_vs_actual: string;// Data: "0.00%"
     closing_rate: string;    // Data: "0.00%"
-    ads_vs_omset: string;    // Data: "0.00%"
+    ads_vs_omset: string;
     ppn: number;             // Data: 4620
     cost_per_lead: number;   // Data: 0
+    target_omset: number;
 }
 
 export interface BranchWeeklyReport {
@@ -24,7 +25,10 @@ export interface BranchWeeklyReport {
     weeks: WeeklyDataRow[];
 }
 
+
+
 export default function ReportBranch({ data }: { data: BranchWeeklyReport[] | null }) {
+    console.log(data, "ini data")
     // LOADING SKELETON
     if (!data) {
         return (
@@ -78,6 +82,7 @@ export default function ReportBranch({ data }: { data: BranchWeeklyReport[] | nu
                                     <th className="px-4 py-3 text-center">PPN 11%</th>
                                     <th className="px-4 py-3 text-center">Total Spend</th>
                                     <th className="px-4 py-3 text-center">Target Leads</th>
+                                    <th className="px-4 py-3 text-center">Target Omset</th>
                                     <th className="px-4 py-3 text-center">Actual Leads</th>
                                     <th className="px-4 py-3 text-center">Cost Perlead</th>
                                     <th className="px-4 py-3 text-center">Target vs Actual</th>
@@ -128,7 +133,12 @@ export default function ReportBranch({ data }: { data: BranchWeeklyReport[] | nu
 
                                                 {/* 5. Target Leads */}
                                                 <td className="px-4 py-3 text-center text-gray-600">
-                                                    {week.target_leads || 0}
+                                                    {(week.target_leads || 0).toLocaleString("id-ID")}
+                                                </td>
+
+                                                {/* Target Omset */}
+                                                <td className="px-4 py-3 text-center font-medium text-gray-900">
+                                                    {(week.target_omset || 0).toLocaleString("id-ID")}
                                                 </td>
 
                                                 {/* 6. Actual Leads */}

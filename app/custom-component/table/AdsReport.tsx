@@ -2,6 +2,11 @@ import React from "react";
 // Import the interface if you moved it to types.ts, otherwise define here:
 interface AdsDataRow {
     week: string;
+    budget_iklan: number;
+    total_spend: number;
+    target_leads: number;
+    target_omset: number;
+    cost_perlead: number;
     google_ads: number;
     meta_ads: number;
     tiktok_ads: number;
@@ -41,6 +46,11 @@ export default function AdsReport({ data }: { data: AdsDataRow[] | null }) {
                     <thead className="text-xs text-gray-700 uppercase bg-gray-50 border-b">
                         <tr>
                             <th className="px-6 py-3">Period</th>
+                            <th className="px-6 py-3 text-right text-purple-600">Budget Iklan</th>
+                            <th className="px-6 py-3 text-right text-purple-600">Total Spend (Inc. PPN)</th>
+                            <th className="px-6 py-3 text-right text-purple-600">Target Leads</th>
+                            <th className="px-6 py-3 text-right text-purple-600">Target Omset</th>
+                            <th className="px-6 py-3 text-right text-purple-600">Cost Per Lead</th>
                             <th className="px-6 py-3 text-right">Google Ads</th>
                             <th className="px-6 py-3 text-right">Meta Ads</th>
                             <th className="px-6 py-3 text-right">TikTok Ads</th>
@@ -64,6 +74,31 @@ export default function AdsReport({ data }: { data: AdsDataRow[] | null }) {
                                 {/* Period */}
                                 <td className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">
                                     {row.week}
+                                </td>
+
+                                {/* Budget Iklan */}
+                                <td className="px-6 py-4 text-right">
+                                    {(row.budget_iklan || 0).toLocaleString("id-ID")}
+                                </td>
+
+                                {/* Total Spend */}
+                                <td className="px-6 py-4 text-right">
+                                    {(row.total_spend || 0).toLocaleString("id-ID")}
+                                </td>
+
+                                {/* Target Leads */}
+                                <td className="px-6 py-4 text-right">
+                                    {(row.target_leads || 0).toLocaleString("id-ID")}
+                                </td>
+
+                                {/* Target Omset */}
+                                <td className="px-6 py-4 text-right">
+                                    {(row.target_omset || 0).toLocaleString("id-ID")}
+                                </td>
+
+                                {/* Cost Per Lead */}
+                                <td className="px-6 py-4 text-right">
+                                    {(row.cost_perlead || 0).toLocaleString("id-ID")}
                                 </td>
 
                                 {/* Google Ads */}

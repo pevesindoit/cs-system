@@ -52,23 +52,30 @@ export default function Advertiser({ platforms, branches }: ReusableCsData) {
     ];
 
     return (
-        <div className="w-full py-3 pr-3 pl-3 md:pl-0 relative gap-3 overflow-x-auto md:overflow-x-visible no-scrollbar min-w-max">
-            {/* SINGLE TABLE WRAPPER */}
+        <div className="w-full py-3 pr-3 pl-3 md:pl-0 relative gap-3">
             <H1>Ads Spend</H1>
-            <table className="w-full border rounded-md text-[10px] bg-white border-separate border-spacing-0">
+            <div className="max-h-[70vh] overflow-auto w-full min-w-max pb-4 border rounded-md border-gray-200">
+                {/* SINGLE TABLE WRAPPER */}
+                <table className="w-full text-[10px] bg-white border-separate border-spacing-0">
 
                 {/* HEADERS DEFINED HERE */}
                 <thead className="bg-gray-50 border-b w-full">
                     <tr>
-                        {headers.map((h, i) => (
-                            <th
-                                key={i}
-                                scope="col"
-                                className={`px-2 py-2 font-medium text-left border-r border-b last:border-r-0 whitespace-nowrap ${i === 0 ? "sticky left-0 z-20 bg-gray-50" : ""}`}
-                            >
-                                {h}
-                            </th>
-                        ))}
+                        {headers.map((h, i) => {
+                            let stickyClass = "sticky top-0 z-20 bg-gray-50";
+                            if (i === 0) stickyClass = "sticky top-0 left-0 z-30 bg-gray-50 min-w-[130px] w-[130px] max-w-[130px] outline outline-1 outline-gray-200";
+                            if (i === 1) stickyClass = "sticky top-0 left-[130px] z-30 bg-gray-50 min-w-[150px] w-[150px] max-w-[150px] outline outline-1 outline-gray-200";
+
+                            return (
+                                <th
+                                    key={i}
+                                    scope="col"
+                                    className={`px-2 py-2 font-medium text-left border-r border-b last:border-r-0 whitespace-nowrap ${stickyClass}`}
+                                >
+                                    {h}
+                                </th>
+                            );
+                        })}
                     </tr>
                 </thead>
 
@@ -89,6 +96,7 @@ export default function Advertiser({ platforms, branches }: ReusableCsData) {
                 </tbody>
 
             </table>
+            </div>
         </div>
     );
 }

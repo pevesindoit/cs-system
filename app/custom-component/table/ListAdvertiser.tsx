@@ -100,7 +100,7 @@ export default function ListAdvertiser({ data, platforms, branches, onDelete }: 
                     <tr key={safeId || index} className="hover:bg-gray-50 border-b last:border-b-0">
 
                         {/* Date */}
-                        <td className="px-2 py-2 border-r whitespace-nowrap sticky left-0 bg-white z-10">
+                        <td className="px-2 py-2 border-r whitespace-nowrap sticky left-0 bg-white z-10 min-w-[130px] w-[130px] max-w-[130px]">
                             <EditableDate
                                 value={row.created_at}
                                 rowId={safeId}
@@ -110,7 +110,7 @@ export default function ListAdvertiser({ data, platforms, branches, onDelete }: 
                         </td>
 
                         {/* Branch */}
-                        <td className="px-2 py-2 border-r whitespace-nowrap">
+                        <td className="px-2 py-2 border-r whitespace-nowrap sticky left-[130px] bg-white z-10 min-w-[150px] w-[150px] max-w-[150px]">
                             <EditableSelect<string>
                                 value={row.cabang_id ?? undefined}
                                 rowId={safeId}

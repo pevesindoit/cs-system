@@ -113,14 +113,14 @@ export default function InputAdvertiser({ onAddData, platforms, branches }: Inpu
     return (
         <tr className="border-b-2 bg-white">
             {/* 1. TANGGAL */}
-            <td className="p-0 bg-white z-10 align-middle sticky left-0 border-r">
+            <td className="p-0 bg-white z-10 align-middle sticky left-0 border-r min-w-[130px] w-[130px] max-w-[130px]">
                 <div className="px-1 py-1">
                     <input type="date" name="date" value={formData.date} onChange={handleChange} className="w-full bg-transparent outline-none focus:bg-gray-50 pl-1" />
                 </div>
             </td>
 
             {/* 2. CABANG */}
-            <td className="p-0 border-r align-middle">
+            <td className="p-0 bg-white z-10 align-middle sticky left-[130px] border-r min-w-[150px] w-[150px] max-w-[150px]">
                 <div className="px-1">
                     <DropDownGrid
                         items={branches}

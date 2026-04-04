@@ -54,6 +54,21 @@ export default function Cs() {
     const [branch, setBranch] = useState<SelectItemData[]>([]);
     const [searchQuery, setSearchQuery] = useState<number>()
 
+    useEffect(() => {
+        const lastPlatformId = localStorage.getItem("last_platform_id");
+        const lastPicId = localStorage.getItem("last_pic_id");
+        const lastBranchId = localStorage.getItem("last_branch_id");
+        const lastDate = localStorage.getItem("last_lead_date");
+
+        setFormData((prev) => ({
+            ...prev,
+            ...(lastPlatformId && { platform_id: lastPlatformId }),
+            ...(lastPicId && { pic_id: parseInt(lastPicId, 10) }),
+            ...(lastBranchId && { branch_id: lastBranchId }),
+            ...(lastDate && { updated_at: lastDate }),
+        }));
+    }, []);
+
     // Pagination & Filter State
     // REMOVED: filterDate (We now use continuous pagination)
     const [currentPage, setCurrentPage] = useState(1);
@@ -412,9 +427,10 @@ export default function Cs() {
                                 <DropDownGrid
                                     items={platforms}
                                     value={formData.platform_id ?? undefined}
-                                    onValueChange={(value) =>
-                                        setFormData((prev) => ({ ...prev, platform_id: value }))
-                                    }
+                                    onValueChange={(value) => {
+                                        setFormData((prev) => ({ ...prev, platform_id: value }));
+                                        localStorage.setItem("last_platform_id", value);
+                                    }}
                                 />
                             </div>
                         </td>
@@ -467,12 +483,13 @@ export default function Cs() {
                                 <DropDownGridInt
                                     items={pic}
                                     value={formData.pic_id ?? undefined}
-                                    onValueChange={(value) =>
+                                    onValueChange={(value) => {
                                         setFormData((prev) => ({
                                             ...prev,
                                             pic_id: value,
-                                        }))
-                                    }
+                                        }));
+                                        localStorage.setItem("last_pic_id", value.toString());
+                                    }}
                                 />
                             </div>
                         </td>
@@ -483,9 +500,10 @@ export default function Cs() {
                                 <DropDownGrid
                                     items={branch}
                                     value={formData.branch_id ?? undefined}
-                                    onValueChange={(value) =>
-                                        setFormData((prev) => ({ ...prev, branch_id: value }))
-                                    }
+                                    onValueChange={(value) => {
+                                        setFormData((prev) => ({ ...prev, branch_id: value }));
+                                        localStorage.setItem("last_branch_id", value);
+                                    }}
                                 />
                             </div>
                         </td>

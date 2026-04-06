@@ -169,7 +169,8 @@ export async function POST(req: NextRequest) {
 
     const branches = (branchRes.data || []) as BranchRow[];
     const adsData = (adsRes.data || []) as AdvertiserRow[];
-    const leadsData = (leadsRes.data || []) as LeadData[];
+    const rawLeadsData = (leadsRes.data || []) as LeadData[];
+    const leadsData = rawLeadsData.filter(l => l.status?.toLowerCase() !== "hold");
     const platforms = (platformRes.data || []) as PlatformRow[];
     // Create a lookup map for Platform ID -> Name
     const platformMap = new Map<string, string>();
@@ -325,7 +326,7 @@ export async function POST(req: NextRequest) {
       if (globalBucket) {
         globalBucket.actual_lead += 1;
         const status = lead.status?.toLowerCase();
-        if (["closing", "followup", "hold"].includes(status)) {
+        if (["closing", "followup"].includes(status)) {
           globalBucket.omset += lead.nominal || 0;
         }
       }
@@ -339,7 +340,7 @@ export async function POST(req: NextRequest) {
           bucket.actual_lead += 1;
           const status = lead.status?.toLowerCase();
 
-          if (["closing", "followup", "hold"].includes(status)) {
+          if (["closing", "followup"].includes(status)) {
             bucket.closing += 1;
             bucket.omset += lead.nominal || 0;
           }
@@ -467,7 +468,7 @@ export async function POST(req: NextRequest) {
 
     const totalActualLead = leadsData.length;
     const totalClosingLeads = leadsData.filter((l) =>
-      ["closing", "followup", "hold"].includes(l.status?.toLowerCase())
+      ["closing", "followup"].includes(l.status?.toLowerCase())
     );
     const totalOmset = totalClosingLeads.reduce(
       (acc, curr) => acc + (curr.nominal || 0),

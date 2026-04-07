@@ -470,6 +470,8 @@ export async function POST(req: NextRequest) {
     const totalClosingLeads = leadsData.filter((l) =>
       ["closing", "followup"].includes(l.status?.toLowerCase())
     );
+    const totalWarmLeads = leadsData.filter((l) => l.status?.toLowerCase() === "warm").length;
+
     const totalOmset = totalClosingLeads.reduce(
       (acc, curr) => acc + (curr.nominal || 0),
       0
@@ -486,7 +488,12 @@ export async function POST(req: NextRequest) {
         totalTarget > 0
           ? `${((totalActualLead / totalTarget) * 100).toFixed(2)}%`
           : "0%",
+      target_vs_actual_omset:
+        totalOmsetTarget > 0
+          ? `${((totalOmset / totalOmsetTarget) * 100).toFixed(2)}%`
+          : "0%",
       closing: totalClosingLeads.length,
+      warm_leads: totalWarmLeads,
       closing_rate:
         totalActualLead > 0
           ? `${((totalClosingLeads.length / totalActualLead) * 100).toFixed(

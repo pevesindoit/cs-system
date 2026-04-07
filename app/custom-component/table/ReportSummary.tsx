@@ -10,9 +10,10 @@ const formatIDR = (value: number | undefined | null) => {
     return "Rp " + safeValue.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
 };
 
-const parsePercent = (valueString: string): number => {
-    if (!valueString) return 0;
-    return parseFloat(valueString.replace('%', '')) || 0;
+const parsePercent = (value: string | number | undefined): number => {
+    if (!value) return 0;
+    if (typeof value === 'number') return value;
+    return parseFloat(value.replace('%', '')) || 0;
 };
 
 // Reusable Card Sub-component
@@ -29,8 +30,8 @@ const StatCard = ({
 }) => (
     <div className="bg-white p-5 border border-gray-200 rounded-xl shadow-sm flex flex-col justify-between h-full">
         <div>
-            <dt className="text-sm font-medium text-gray-500 uppercase tracking-wider">{title}</dt>
-            <dd className={`mt-2 text-2xl font-bold ${valueClassName} truncate`}>{value}</dd>
+            <div className="text-sm font-medium text-gray-500 uppercase tracking-wider">{title}</div>
+            <div className={`mt-2 text-2xl font-bold ${valueClassName} break-words`}>{value}</div>
         </div>
         {subValue && (
             <div className="mt-3 pt-3 border-t border-gray-100 text-xs text-gray-500">
@@ -83,7 +84,7 @@ export function ReportSummary({ data }: { data: ReportSummaryData | null }) {
                             <span>
                                 Target: {formatIDR(data.omset_target)}
                                 <span className={`ml-1 ${getAchievementColor(omsetAchievedNum)}`}>
-                                    ({data.target_vs_actual_leads})
+                                    ({data.target_vs_actual_omset})
                                 </span>
                             </span>
                         }

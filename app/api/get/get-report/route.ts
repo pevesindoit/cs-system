@@ -14,7 +14,7 @@ interface AdvertiserRow {
 
 interface LeadData {
   status: string;
-  updated_at: string;
+  created_at: string;
   platform_id?: string;
   branch_id?: string;
 }
@@ -128,9 +128,9 @@ export async function POST(req: NextRequest) {
 
     let leadsQuery = supabase
       .from("leads")
-      .select("status, platform_id, updated_at, branch_id")
-      .gte("updated_at", start)
-      .lte("updated_at", end);
+      .select("status, platform_id, created_at, branch_id")
+      .gte("created_at", start)
+      .lte("created_at", end);
 
     let realOmsetQuery = supabase
       .from("real_omset")
@@ -333,7 +333,7 @@ export async function POST(req: NextRequest) {
 
     // 4. AGGREGATE LEADS DATA (Fill Branch Map AND Global Map) - leads counts only
     leadsData.forEach((lead) => {
-      const key = getKey(new Date(lead.updated_at));
+      const key = getKey(new Date(lead.created_at));
 
       // Update Global Map
       const globalBucket = globalWeeksMap.get(key);

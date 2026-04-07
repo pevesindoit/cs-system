@@ -12,6 +12,7 @@ import ListRealOmset from "../input/ListRealOmset";
 // Ensure these fetch functions exist in your backend logic
 import { addRealOmset } from "@/app/function/fetch/add/fetch";
 import { getRealOmset } from "@/app/function/fetch/get/fetch";
+import { deleteRealOmset } from "@/app/function/fetch/delete/fetch";
 
 export default function AddRealOmset({ branches }: ReusableCsData) {
     const [tableData, setTableData] = useState<RealOmsetLogData[]>([]);

@@ -56,3 +56,11 @@ export const updateRealOmset = async ({
 
   return res.data;
 };
+
+export const deleteRealOmset = async (id: string) => {
+  const res = await axios.post("/api/delete/delete-real-omset", {
+    id,
+  });
+
+  return res.data;
+};

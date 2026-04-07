@@ -13,10 +13,15 @@ interface AdvertiserRow {
 }
 
 interface LeadData {
-  nominal: number;
   status: string;
   updated_at: string;
   platform_id?: string;
+  branch_id?: string;
+}
+
+interface RealOmsetRow {
+  total: number;
+  created_at: string;
   branch_id?: string;
 }
 
@@ -123,9 +128,15 @@ export async function POST(req: NextRequest) {
 
     let leadsQuery = supabase
       .from("leads")
-      .select("nominal, status, platform_id, updated_at, branch_id")
+      .select("status, platform_id, updated_at, branch_id")
       .gte("updated_at", start)
       .lte("updated_at", end);
+
+    let realOmsetQuery = supabase
+      .from("real_omset")
+      .select("total, created_at, branch_id")
+      .gte("created_at", start)
+      .lte("created_at", end);
     // ==========================================
     // FILTER LOGIC
     // ==========================================
@@ -157,14 +168,16 @@ export async function POST(req: NextRequest) {
     if (branch_id) {
       adsQuery = adsQuery.eq("cabang_id", branch_id);
       leadsQuery = leadsQuery.eq("branch_id", branch_id);
+      realOmsetQuery = realOmsetQuery.eq("branch_id", branch_id);
     }
 
     // --- EXECUTE MAIN QUERIES ---
-    const [branchRes, adsRes, leadsRes, platformRes] = await Promise.all([
+    const [branchRes, adsRes, leadsRes, platformRes, realOmsetRes] = await Promise.all([
       branchQuery,
       adsQuery,
       leadsQuery,
       platformQuery,
+      realOmsetQuery,
     ]);
 
     const branches = (branchRes.data || []) as BranchRow[];
@@ -172,6 +185,7 @@ export async function POST(req: NextRequest) {
     const rawLeadsData = (leadsRes.data || []) as LeadData[];
     const leadsData = rawLeadsData.filter(l => l.status?.toLowerCase() !== "hold");
     const platforms = (platformRes.data || []) as PlatformRow[];
+    const realOmsetData = (realOmsetRes.data || []) as RealOmsetRow[];
     // Create a lookup map for Platform ID -> Name
     const platformMap = new Map<string, string>();
     platforms.forEach((p) => platformMap.set(p.id, p.name.toLowerCase()));
@@ -317,18 +331,14 @@ export async function POST(req: NextRequest) {
       }
     });
 
-    // 4. AGGREGATE LEADS DATA (Fill Branch Map AND Global Map)
+    // 4. AGGREGATE LEADS DATA (Fill Branch Map AND Global Map) - leads counts only
     leadsData.forEach((lead) => {
       const key = getKey(new Date(lead.updated_at));
 
-      // Update Global Map (only Omset needed for ratio)
+      // Update Global Map
       const globalBucket = globalWeeksMap.get(key);
       if (globalBucket) {
         globalBucket.actual_lead += 1;
-        const status = lead.status?.toLowerCase();
-        if (["closing", "followup"].includes(status)) {
-          globalBucket.omset += lead.nominal || 0;
-        }
       }
 
       // Update Branch Map
@@ -342,9 +352,30 @@ export async function POST(req: NextRequest) {
 
           if (["closing", "followup"].includes(status)) {
             bucket.closing += 1;
-            bucket.omset += lead.nominal || 0;
           }
           if (status === "warm") bucket.warm_leads += 1;
+        }
+      }
+    });
+
+    // 4b. AGGREGATE REAL OMSET DATA (Fill Branch Map AND Global Map)
+    realOmsetData.forEach((row) => {
+      const key = getKey(new Date(row.created_at));
+      const total = row.total || 0;
+
+      // Update Global Map
+      const globalBucket = globalWeeksMap.get(key);
+      if (globalBucket) {
+        globalBucket.omset += total;
+      }
+
+      // Update Branch Map
+      if (!row.branch_id) return;
+      const bData = branchMap.get(String(row.branch_id));
+      if (bData) {
+        const bucket = bData.weeks.get(key);
+        if (bucket) {
+          bucket.omset += total;
         }
       }
     });
@@ -472,8 +503,8 @@ export async function POST(req: NextRequest) {
     );
     const totalWarmLeads = leadsData.filter((l) => l.status?.toLowerCase() === "warm").length;
 
-    const totalOmset = totalClosingLeads.reduce(
-      (acc, curr) => acc + (curr.nominal || 0),
+    const totalOmset = realOmsetData.reduce(
+      (acc, curr) => acc + (curr.total || 0),
       0
     );
 

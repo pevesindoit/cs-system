@@ -23,3 +23,15 @@ export const deleteAdvertiserData = async (id: string | number) => {
     return null;
   }
 };
+
+export const deleteRealOmset = async (id: string | number) => {
+  try {
+    const res = await axios.post("/api/delete/delete-real-omset", {
+      id,
+    });
+    return res;
+  } catch (error) {
+    console.log("Failed to delete real omset", error);
+    return null;
+  }
+};

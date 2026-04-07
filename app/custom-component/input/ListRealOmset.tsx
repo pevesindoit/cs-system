@@ -7,7 +7,7 @@ import { RealOmsetLogData, SelectItemData } from "@/app/types/types";
 import EditableDate from "../table/EditableDate";
 import EditableInput from "../table/EditableInput";
 import EditableSelect from "../table/EditableDropdown";
-import { updateRealOmset } from "@/app/function/fetch/update/update-lead/fetch";
+import { updateRealOmset, deleteRealOmset } from "@/app/function/fetch/update/update-lead/fetch";
 
 // IMPORTANT: Import your update function here.
 // You need to create this file based on your project structure
@@ -48,6 +48,26 @@ export default function ListRealOmset({ data, branches }: Props) {
         // Update Database
         await updateRealOmset({ id, field, value });
         console.log(`Saving ${field}: ${value} for ID: ${id}`);
+    };
+
+    const handleDelete = async (id: string) => {
+        if (!id) return;
+
+        if (confirm("Are you sure you want to delete this entry?")) {
+            // Update Local State (Optimistic UI)
+            setRows((prev) => prev.filter((row) => String(row.id) !== id));
+
+            try {
+                // Update Database
+                await deleteRealOmset(id);
+                console.log(`Deleted entry with ID: ${id}`);
+            } catch (error) {
+                console.error("Failed to delete entry:", error);
+                // Revert state on error (optional, but good practice)
+                setRows(prevData);
+                alert("Failed to delete entry. Please try again.");
+            }
+        }
     };
 
     if (!rows || rows.length === 0) {
@@ -112,7 +132,10 @@ export default function ListRealOmset({ data, branches }: Props) {
 
                         {/* 4. Action */}
                         <td className="px-2 py-2 border-b text-center align-middle">
-                            <button className="text-gray-400 hover:text-red-500 text-sm">
+                            <button
+                                onClick={() => handleDelete(safeId)}
+                                className="text-gray-400 hover:text-red-500 text-sm"
+                            >
                                 Delete
                             </button>
                         </td>

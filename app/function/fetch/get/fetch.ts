@@ -117,6 +117,16 @@ export const getReport = async (data: ReportItem) => {
   }
 };
 
+// New function to fetch daily report using get-report-day endpoint
+export const getReportDay = async (data: ReportItem) => {
+  try {
+    const res = await axios.post("/api/get/get-report-day", data);
+    return res;
+  } catch (error) {
+    console.log("Failed to fetch daily report", error);
+  }
+};
+
 export const getDataAdvertiserList = async (id: string) => {
   try {
     const res = await axios.post("/api/get/get-advertiser-data", {

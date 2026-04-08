@@ -15,7 +15,7 @@ interface AdsDataRow {
     ads_ratio: string;
 }
 
-export default function AdsReport({ data }: { data: AdsDataRow[] | null }) {
+export default function AdsReport({ data, omsetLabel = "Real Omset" }: { data: AdsDataRow[] | null, omsetLabel?: string }) {
     // LOADING SKELETON
     if (!data) {
         return (
@@ -58,7 +58,7 @@ export default function AdsReport({ data }: { data: AdsDataRow[] | null }) {
                                 Total Ads
                             </th>
                             <th className="px-3 py-2 text-right text-blue-600">
-                                Real Omset
+                                {omsetLabel}
                             </th>
                             <th className="px-3 py-2 text-center">
                                 Ads vs Omset

@@ -44,7 +44,7 @@ const StatCard = ({
 // --- MAIN COMPONENT ---
 
 // Update: Allow 'null' for the initial loading state
-export function ReportSummary({ data }: { data: ReportSummaryData | null }) {
+export function ReportSummary({ data, omsetLabel = "Total Omset (Revenue)", leadsLabel = "Actual Leads" }: { data: ReportSummaryData | null, omsetLabel?: string, leadsLabel?: string }) {
 
     // --- LOADING STATE ---
     // If data is null, show a simple loading skeleton instead of crashing
@@ -77,7 +77,7 @@ export function ReportSummary({ data }: { data: ReportSummaryData | null }) {
                 {/* --- Row 1: Key Financials & Efficiency --- */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                     <StatCard
-                        title="Total Omset (Revenue)"
+                        title={omsetLabel}
                         value={formatIDR(data.omset)}
                         valueClassName="text-green-700"
                         subValue={
@@ -112,7 +112,7 @@ export function ReportSummary({ data }: { data: ReportSummaryData | null }) {
                 {/* --- Row 2: Lead Funnel Breakdown --- */}
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                     <StatCard
-                        title="Actual Leads"
+                        title={leadsLabel}
                         value={data.actual_lead}
                         subValue={`Target: ${data.target_lead}`}
                     />

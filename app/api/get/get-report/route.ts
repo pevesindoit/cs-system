@@ -18,6 +18,8 @@ interface LeadData {
   created_at: string;
   platform_id?: string;
   branch_id?: string;
+  total?: number;
+  nominal?: number;
 }
 
 interface RealOmsetRow {
@@ -46,8 +48,8 @@ interface WeeklyMetric {
   actual_lead: number;
   closing: number;
   warm_leads: number;
-  omset: number;
-  // New fields for platform breakdown
+  omset: number;         // From real_omset table
+  leads_omset: number;   // From leads table
   google_ads: number;
   meta_ads: number;
   tiktok_ads: number;
@@ -83,25 +85,16 @@ export async function POST(req: NextRequest) {
     const now = new Date();
     const formatDate = (date: Date) => date.toISOString().split("T")[0];
 
-    // Default to last 30 days if no date provided
-    const safeStartDate =
-      start_date || formatDate(new Date(now.setDate(now.getDate() - 30)));
-    // Reset 'now' for end date usage
+    const safeStartDate = start_date || formatDate(new Date(now.setDate(now.getDate() - 30)));
     const today = new Date();
     const safeEndDate = end_date || formatDate(today);
 
-    // Determine Query Range
-    // Extend to full week if interval is 'week' to ensure complete data for the first/last rows
     let queryStartStr = safeStartDate;
     let queryEndStr = safeEndDate;
 
     if (interval === 'week') {
-      // Extend start to Monday
       const s = new Date(safeStartDate);
-      const startMonday = getMonday(s);
-      queryStartStr = formatDate(startMonday);
-
-      // Extend end to Sunday
+      queryStartStr = formatDate(getMonday(s));
       const e = new Date(safeEndDate);
       const endMonday = getMonday(e);
       const endSunday = new Date(endMonday);
@@ -109,27 +102,22 @@ export async function POST(req: NextRequest) {
       queryEndStr = formatDate(endSunday);
     }
 
-    // Use +07 timezone offset for WIB
     const start = `${queryStartStr} 00:00:00+07`;
     const end = `${queryEndStr} 23:59:59+07`;
 
     // Queries
     const branchQuery = supabase.from("branch").select("id, name");
-    // NEW: Fetch platforms to map IDs to Names for the breakdown
     const platformQuery = supabase.from("ads_platform").select("id, name");
 
-    // --- FIX 1: Added 'omset_target' to the select query below ---
     let adsQuery = supabase
       .from("advertiser_data")
-      .select(
-        "spend, total_budget, leads, actual_leads, platform_id, created_at, cabang_id, omset_target"
-      )
+      .select("spend, total_budget, leads, actual_leads, platform_id, created_at, cabang_id, omset_target")
       .gte("created_at", start)
       .lte("created_at", end);
 
     let leadsQuery = supabase
       .from("leads")
-      .select("status, platform_id, created_at, branch_id")
+      .select("status, platform_id, created_at, branch_id, total, nominal")
       .gte("created_at", start)
       .lte("created_at", end);
 
@@ -138,24 +126,14 @@ export async function POST(req: NextRequest) {
       .select("total, created_at, branch_id")
       .gte("created_at", start)
       .lte("created_at", end);
-    // ==========================================
-    // FILTER LOGIC
-    // ==========================================
+
+    // Filters
     if (platform_id) {
       adsQuery = adsQuery.eq("platform_id", platform_id);
-      console.log(adsQuery, "ini ads query")
-
-      // If filtering by specific platform, we need to handle the "child" platforms (e.g. Meta -> FB/IG)
-      const { data: platformData } = await supabase
-        .from("ads_platform")
-        .select("name")
-        .eq("id", platform_id)
-        .single();
-
+      const { data: platformData } = await supabase.from("ads_platform").select("name").eq("id", platform_id).single();
       if (platformData && platformData.name) {
         const pNameLower = platformData.name.toLowerCase();
         const targetNames = PLATFORM_MAPPING[pNameLower];
-
         if (targetNames && targetNames.length > 0) {
           leadsQuery = leadsQuery.in("platform_id", targetNames);
         } else {
@@ -172,13 +150,8 @@ export async function POST(req: NextRequest) {
       realOmsetQuery = realOmsetQuery.eq("branch_id", branch_id);
     }
 
-    // --- EXECUTE MAIN QUERIES ---
     const [branchRes, adsRes, leadsRes, platformRes, realOmsetRes] = await Promise.all([
-      branchQuery,
-      adsQuery,
-      leadsQuery,
-      platformQuery,
-      realOmsetQuery,
+      branchQuery, adsQuery, leadsQuery, platformQuery, realOmsetQuery,
     ]);
 
     const branches = (branchRes.data || []) as BranchRow[];
@@ -187,361 +160,177 @@ export async function POST(req: NextRequest) {
     const leadsData = rawLeadsData.filter(l => l.status?.toLowerCase() !== "hold");
     const platforms = (platformRes.data || []) as PlatformRow[];
     const realOmsetData = (realOmsetRes.data || []) as RealOmsetRow[];
-    // Create a lookup map for Platform ID -> Name
+
     const platformMap = new Map<string, string>();
     platforms.forEach((p) => platformMap.set(p.id, p.name.toLowerCase()));
 
-    // ==========================================
-    // LOGIC: TIME BUCKET BREAKDOWN (WEEKLY OR DAILY)
-    // ==========================================
-
-    const getKey = (d: Date) => {
-      if (interval === 'day') {
-        return formatDate(d);
-      }
-      return formatDate(getMonday(d));
-    };
+    const getKey = (d: Date) => interval === 'day' ? formatDate(d) : formatDate(getMonday(d));
 
     const allKeys = new Set<string>();
     const currentDate = new Date(safeStartDate);
     const lastDate = new Date(safeEndDate);
-
-    // Generate all keys in range
     while (currentDate <= lastDate) {
       allKeys.add(getKey(currentDate));
       currentDate.setUTCDate(currentDate.getUTCDate() + 1);
     }
     const sortedKeys = Array.from(allKeys).sort();
 
-    // 1. Initialize Branch Map
-    const branchMap = new Map<
-      string,
-      { name: string; weeks: Map<string, WeeklyMetric> }
-    >();
-
+    // Initialize Maps
+    const branchMap = new Map<string, { name: string; weeks: Map<string, WeeklyMetric> }>();
     branches.forEach((b) => {
       if (branch_id && String(b.id) !== String(branch_id)) return;
       const weeksMap = new Map<string, WeeklyMetric>();
       sortedKeys.forEach((key) => {
-        // Calculate date range for the bucket
-        let startStr = key;
         let endStr = key;
-
         if (interval === 'week') {
-          const monday = new Date(key);
-          const sunday = new Date(monday);
-          sunday.setUTCDate(monday.getUTCDate() + 6);
-          endStr = formatDate(sunday);
+          const m = new Date(key); const s = new Date(m); s.setUTCDate(m.getUTCDate() + 6); endStr = formatDate(s);
         }
-
-        weeksMap.set(key, {
-          start_date: startStr,
-          end_date: endStr,
-          budget: 0,
-          total_budget: 0,
-          target_lead: 0,
-          omset_target: 0,
-          actual_lead: 0,
-          closing: 0,
-          warm_leads: 0,
-          omset: 0,
-          google_ads: 0,
-          meta_ads: 0,
-          tiktok_ads: 0,
-        });
+        weeksMap.set(key, { start_date: key, end_date: endStr, budget: 0, total_budget: 0, target_lead: 0, omset_target: 0, actual_lead: 0, closing: 0, warm_leads: 0, omset: 0, leads_omset: 0, google_ads: 0, meta_ads: 0, tiktok_ads: 0 });
       });
       branchMap.set(String(b.id), { name: b.name, weeks: weeksMap });
     });
 
-    // 2. Initialize GLOBAL Map for the separate 'ads' table
     const globalWeeksMap = new Map<string, WeeklyMetric>();
     sortedKeys.forEach((key) => {
-      // Calculate date range for the bucket
-      let startStr = key;
       let endStr = key;
-
       if (interval === 'week') {
-        const monday = new Date(key);
-        const sunday = new Date(monday);
-        sunday.setUTCDate(monday.getUTCDate() + 6);
-        endStr = formatDate(sunday);
+        const m = new Date(key); const s = new Date(m); s.setUTCDate(m.getUTCDate() + 6); endStr = formatDate(s);
       }
-
-      globalWeeksMap.set(key, {
-        start_date: startStr,
-        end_date: endStr,
-        budget: 0,
-        total_budget: 0,
-        target_lead: 0,
-        omset_target: 0,
-        actual_lead: 0,
-        closing: 0,
-        warm_leads: 0,
-        omset: 0,
-        google_ads: 0,
-        meta_ads: 0,
-        tiktok_ads: 0,
-      });
+      globalWeeksMap.set(key, { start_date: key, end_date: endStr, budget: 0, total_budget: 0, target_lead: 0, omset_target: 0, actual_lead: 0, closing: 0, warm_leads: 0, omset: 0, leads_omset: 0, google_ads: 0, meta_ads: 0, tiktok_ads: 0 });
     });
 
-    // 3. AGGREGATE ADS DATA (Fill Branch Map AND Global Map)
+    // 1. Ads Data
     adsData.forEach((ad) => {
       const key = getKey(new Date(ad.created_at));
       const pName = platformMap.get(ad.platform_id || "") || "";
       const spend = ad.spend || 0;
 
-      // Update Global Map
-      const globalBucket = globalWeeksMap.get(key);
-      if (globalBucket) {
-        globalBucket.budget += spend;
-        globalBucket.total_budget += ad.total_budget || (spend * 1.11);
-        globalBucket.target_lead += ad.leads || 0;
-        globalBucket.omset_target += ad.omset_target || 0;
-        globalBucket.actual_lead += ad.actual_leads || 0;
+      const processBucket = (bucket: WeeklyMetric | undefined) => {
+        if (!bucket) return;
+        bucket.budget += spend;
+        bucket.total_budget += ad.total_budget || (spend * 1.11);
+        bucket.target_lead += ad.leads || 0;
+        bucket.omset_target += ad.omset_target || 0;
+        if (interval !== 'day') bucket.actual_lead += ad.actual_leads || 0;
+        if (pName.includes("google")) bucket.google_ads += spend;
+        else if (pName.includes("facebook") || pName.includes("instagram") || pName.includes("meta")) bucket.meta_ads += spend;
+        else if (pName.includes("tiktok")) bucket.tiktok_ads += spend;
+      };
 
-        if (pName.includes("google")) globalBucket.google_ads += spend;
-        else if (
-          pName.includes("facebook") ||
-          pName.includes("instagram") ||
-          pName.includes("meta")
-        )
-          globalBucket.meta_ads += spend;
-        else if (pName.includes("tiktok")) globalBucket.tiktok_ads += spend;
-      }
-
-      // Update Branch Map
-      if (!ad.cabang_id) return;
-      const bData = branchMap.get(String(ad.cabang_id));
-      if (bData) {
-        const bucket = bData.weeks.get(key);
-        if (bucket) {
-          bucket.budget += spend;
-          bucket.total_budget += ad.total_budget || (spend * 1.11);
-          bucket.target_lead += ad.leads || 0;
-          bucket.actual_lead += ad.actual_leads || 0;
-          bucket.omset_target += ad.omset_target || 0;
-
-          if (pName.includes("google")) bucket.google_ads += spend;
-          else if (
-            pName.includes("facebook") ||
-            pName.includes("instagram") ||
-            pName.includes("meta")
-          )
-            bucket.meta_ads += spend;
-          else if (pName.includes("tiktok")) bucket.tiktok_ads += spend;
-        }
-      }
+      processBucket(globalWeeksMap.get(key));
+      if (ad.cabang_id) processBucket(branchMap.get(String(ad.cabang_id))?.weeks.get(key));
     });
 
-    // 4. AGGREGATE LEADS DATA (Fill Branch Map AND Global Map) - warm & closing only
+    // 2. Leads Data (Now captures leads_omset strictly here)
     leadsData.forEach((lead) => {
       const key = getKey(new Date(lead.created_at));
+      const status = lead.status?.toLowerCase();
+      const nominalValue = lead.total || 0;
 
-      // Update Branch Map (warm & closing only — actual_lead comes from advertiser_data)
-      if (!lead.branch_id) return;
-      const bData = branchMap.get(String(lead.branch_id));
-      if (bData) {
-        const bucket = bData.weeks.get(key);
-        if (bucket) {
-          const status = lead.status?.toLowerCase();
+      const processBucket = (bucket: WeeklyMetric | undefined) => {
+        if (!bucket) return;
+        bucket.leads_omset += nominalValue;
+        if (interval === 'day') bucket.actual_lead += 1;
+        if (["closing", "followup"].includes(status)) bucket.closing += 1;
+        if (status === "warm") bucket.warm_leads += 1;
+      };
 
-          if (["closing", "followup"].includes(status)) {
-            bucket.closing += 1;
-          }
-          if (status === "warm") bucket.warm_leads += 1;
-        }
-      }
+      processBucket(globalWeeksMap.get(key));
+      if (lead.branch_id) processBucket(branchMap.get(String(lead.branch_id))?.weeks.get(key));
     });
 
-    // 4b. AGGREGATE REAL OMSET DATA (Fill Branch Map AND Global Map)
+    // 3. Real Omset Data
     realOmsetData.forEach((row) => {
       const key = getKey(new Date(row.created_at));
-      const total = row.total || 0;
-
-      // Update Global Map
-      const globalBucket = globalWeeksMap.get(key);
-      if (globalBucket) {
-        globalBucket.omset += total;
-      }
-
-      // Update Branch Map
-      if (!row.branch_id) return;
-      const bData = branchMap.get(String(row.branch_id));
-      if (bData) {
-        const bucket = bData.weeks.get(key);
-        if (bucket) {
-          bucket.omset += total;
-        }
-      }
+      const processBucket = (bucket: WeeklyMetric | undefined) => {
+        if (!bucket) return;
+        bucket.omset += row.total || 0;
+      };
+      processBucket(globalWeeksMap.get(key));
+      if (row.branch_id) processBucket(branchMap.get(String(row.branch_id))?.weeks.get(key));
     });
 
-    // 5. CALCULATE FINAL GLOBAL ADS BREAKDOWN
-    const ads_breakdown = Array.from(globalWeeksMap.values()).map(
-      (w, index) => {
+    // Breakdown Computations
+    const ads_breakdown = Array.from(globalWeeksMap.values()).map((w, index) => {
+      const total_ads = w.google_ads + w.meta_ads + w.tiktok_ads;
+      return {
+        week: interval === 'day' ? w.start_date : `Week ${index + 1}`,
+        budget_iklan: w.budget,
+        total_spend: Math.round(w.total_budget || (w.budget * 1.11)),
+        target_leads: w.target_lead,
+        target_omset: w.omset_target,
+        cost_perlead: Math.round(w.actual_lead > 0 ? (w.total_budget || (w.budget * 1.11)) / w.actual_lead : 0),
+        google_ads: w.google_ads,
+        meta_ads: w.meta_ads,
+        tiktok_ads: w.tiktok_ads,
+        total_ads: total_ads,
+        omset: w.omset,
+        leads_omset: w.leads_omset,
+        ads_ratio: `${w.omset > 0 ? ((total_ads / w.omset) * 100).toFixed(2) : 0}%`,
+      };
+    });
+
+    const branch_breakdown = Array.from(branchMap.entries()).map(([id, data]) => {
+      const weeks = Array.from(data.weeks.values()).map((w, index) => {
+        const total_spend = w.total_budget || (w.budget * 1.11);
         const total_ads = w.google_ads + w.meta_ads + w.tiktok_ads;
-        const ads_ratio = w.omset > 0 ? (total_ads / w.omset) * 100 : 0;
-
-        const budget_iklan = w.budget;
-        const total_spend = w.total_budget || (budget_iklan * 1.11);
-        const target_leads = w.target_lead;
-        const actual_lead = w.actual_lead;
-        const cost_perlead = actual_lead > 0 ? (total_spend / actual_lead) : 0;
-
-        let label = `Week ${index + 1}`;
-        if (interval === 'day') {
-          label = w.start_date; // e.g. "2025-01-01"
-        }
 
         return {
-          week: label, // variable name 'week' preserved for frontend compatibility
-          budget_iklan: budget_iklan,
+          week_name: interval === 'day' ? w.start_date : `Week ${index + 1}`,
+          date_range: interval === 'day' ? w.start_date : `${w.start_date} - ${w.end_date}`,
+          budget: w.budget,
+          ppn: Math.round(total_spend - w.budget),
           total_spend: Math.round(total_spend),
-          target_leads: target_leads,
+          target_leads: w.target_lead,
           target_omset: w.omset_target,
-          cost_perlead: Math.round(cost_perlead),
+          actual_lead: w.actual_lead,
+          cost_per_lead: Math.round(w.actual_lead > 0 ? total_spend / w.actual_lead : 0),
+          target_vs_actual: `${w.target_lead > 0 ? (w.actual_lead / w.target_lead) * 100 : 0}%`,
+          closing: w.closing,
+          warm_leads: w.warm_leads,
+          omset: w.omset,
+          leads_omset: w.leads_omset, // Ensure this passes through!
+          closing_rate: `${w.actual_lead > 0 ? (w.closing / w.actual_lead) * 100 : 0}%`,
+          ads_vs_omset: `${w.omset > 0 ? (total_spend / w.omset) * 100 : 0}%`,
           google_ads: w.google_ads,
           meta_ads: w.meta_ads,
           tiktok_ads: w.tiktok_ads,
           total_ads: total_ads,
-          omset: w.omset,
-          ads_ratio: `${ads_ratio.toFixed(2)}%`,
+          ads_ratio: `${w.omset > 0 ? ((total_ads / w.omset) * 100).toFixed(2) : 0}%`,
         };
-      }
-    );
+      });
+      return { branch_id: id, branch_name: data.name, weeks: weeks };
+    });
 
-    // 6. CALCULATE BRANCH BREAKDOWN (Existing Logic)
-    const branch_breakdown = Array.from(branchMap.entries()).map(
-      ([id, data]) => {
-        const weeks = Array.from(data.weeks.values()).map((w, index) => {
-          // Standard Metrics
-          const budget = w.budget;
-          const total_spend = w.total_budget || (budget * 1.11);
-          const ppn = total_spend - budget;
-
-          const actual_lead = w.actual_lead;
-          const target_lead = w.target_lead;
-          const target_omset = w.omset_target;
-
-          const closing_rate =
-            actual_lead > 0 ? (w.closing / actual_lead) * 100 : 0;
-          const ads_vs_omset = w.omset > 0 ? (total_spend / w.omset) * 100 : 0;
-          const cost_per_lead = actual_lead > 0 ? total_spend / actual_lead : 0;
-          const target_vs_actual =
-            target_lead > 0 ? (actual_lead / target_lead) * 100 : 0;
-
-          // NEW METRICS FOR BRANCH
-          const total_ads = w.google_ads + w.meta_ads + w.tiktok_ads;
-          const ads_ratio = w.omset > 0 ? (total_ads / w.omset) * 100 : 0;
-
-          let label = `Week ${index + 1}`;
-          let dateRange = `${w.start_date} - ${w.end_date}`;
-
-          if (interval === 'day') {
-            label = w.start_date;
-            dateRange = w.start_date;
-          }
-
-          return {
-            week_name: label,
-            date_range: dateRange,
-            budget: budget,
-            ppn: Math.round(ppn),
-            total_spend: Math.round(total_spend),
-            target_leads: target_lead,
-            // --- FIX 3: Passed target_omset here (it was already here but was 0) ---
-            target_omset: target_omset,
-            actual_lead: actual_lead,
-            cost_per_lead: Math.round(cost_per_lead),
-            target_vs_actual: `${target_vs_actual.toFixed(2)}%`,
-            closing: w.closing,
-            warm_leads: w.warm_leads,
-            omset: w.omset,
-            closing_rate: `${closing_rate.toFixed(2)}%`,
-            ads_vs_omset: `${ads_vs_omset.toFixed(2)}%`,
-
-            // New Requested Fields for Branch
-            google_ads: w.google_ads,
-            meta_ads: w.meta_ads,
-            tiktok_ads: w.tiktok_ads,
-            total_ads: total_ads,
-            ads_ratio: `${ads_ratio.toFixed(2)}%`,
-          };
-        });
-        return { branch_id: id, branch_name: data.name, weeks: weeks };
-      }
-    );
-
-    // --- GLOBAL SUMMARY ---
-    const totalBudget = adsData.reduce(
-      (acc, curr) => acc + (curr.spend || 0),
-      0
-    );
-    const totalSpend = adsData.reduce(
-      (acc, curr) => acc + (curr.total_budget || (curr.spend || 0) * 1.11),
-      0
-    );
-    // This will now work correctly because omset_target is in adsData
-    const totalOmsetTarget = adsData.reduce(
-      (acc, curr) => acc + (curr.omset_target || 0),
-      0
-    );
-    const totalTarget = adsData.reduce(
-      (acc, curr) => acc + (curr.leads || 0),
-      0
-    );
-    const totalPPN = totalSpend - totalBudget;
-    const grandTotalSpend = totalSpend;
-
-    const totalActualLead = adsData.reduce((acc, curr) => acc + (curr.actual_leads || 0), 0);
-    const totalClosingLeads = leadsData.filter((l) =>
-      ["closing", "followup"].includes(l.status?.toLowerCase())
-    );
-    const totalWarmLeads = leadsData.filter((l) => l.status?.toLowerCase() === "warm").length;
-
-    const totalOmset = realOmsetData.reduce(
-      (acc, curr) => acc + (curr.total || 0),
-      0
-    );
+    // Global Summary
+    const totalSpend = adsData.reduce((acc, curr) => acc + (curr.total_budget || (curr.spend || 0) * 1.11), 0);
+    const totalTarget = adsData.reduce((acc, curr) => acc + (curr.leads || 0), 0);
+    const totalActualLead = interval === 'day' ? leadsData.length : adsData.reduce((acc, curr) => acc + (curr.actual_leads || 0), 0);
+    const totalOmsetTarget = adsData.reduce((acc, curr) => acc + (curr.omset_target || 0), 0);
+    const totalOmset = realOmsetData.reduce((acc, curr) => acc + (curr.total || 0), 0);
+    const totalLeadsOmset = leadsData.reduce((acc, curr) => acc + (curr.total || 0), 0);
+    const totalClosingLeads = leadsData.filter((l) => ["closing"].includes(l.status?.toLowerCase())).length;
 
     const summary = {
       date_range: { start: safeStartDate, end: safeEndDate },
-      budget: totalBudget,
-      total_spend: Math.round(grandTotalSpend),
+      budget: adsData.reduce((acc, curr) => acc + (curr.spend || 0), 0),
+      total_spend: Math.round(totalSpend),
       actual_lead: totalActualLead,
       target_lead: totalTarget,
       omset_target: totalOmsetTarget,
-      target_vs_actual_leads:
-        totalTarget > 0
-          ? `${((totalActualLead / totalTarget) * 100).toFixed(2)}%`
-          : "0%",
-      target_vs_actual_omset:
-        totalOmsetTarget > 0
-          ? `${((totalOmset / totalOmsetTarget) * 100).toFixed(2)}%`
-          : "0%",
-      closing: totalClosingLeads.length,
-      warm_leads: totalWarmLeads,
-      closing_rate:
-        totalActualLead > 0
-          ? `${((totalClosingLeads.length / totalActualLead) * 100).toFixed(
-            2
-          )}%`
-          : "0%",
+      target_vs_actual_leads: totalTarget > 0 ? `${((totalActualLead / totalTarget) * 100).toFixed(2)}%` : "0%",
+      target_vs_actual_omset: totalOmsetTarget > 0 ? `${((totalOmset / totalOmsetTarget) * 100).toFixed(2)}%` : "0%",
+      closing: totalClosingLeads,
+      warm_leads: leadsData.filter((l) => l.status?.toLowerCase() === "warm").length,
+      closing_rate: totalActualLead > 0 ? `${((totalClosingLeads / totalActualLead) * 100).toFixed(2)}%` : "0%",
       omset: totalOmset,
-      ads_vs_omset:
-        totalOmset > 0
-          ? `${((grandTotalSpend / totalOmset) * 100).toFixed(2)}%`
-          : "0%",
+      leads_omset: totalLeadsOmset,
+      ads_vs_omset: totalOmset > 0 ? `${((totalSpend / totalOmset) * 100).toFixed(2)}%` : "0%",
     };
 
-    return NextResponse.json(
-      { data: { summary, branch_breakdown, ads: ads_breakdown } },
-      { status: 200 }
-    );
+    return NextResponse.json({ data: { summary, branch_breakdown, ads: ads_breakdown } }, { status: 200 });
   } catch (err) {
-    console.error("Error generating report:", err);
-    return NextResponse.json(
-      { error: "Internal Server Error" },
-      { status: 500 }
-    );
+    console.error("Error:", err);
+    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }

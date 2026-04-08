@@ -2,13 +2,14 @@
 
 import { useEffect, useState } from "react";
 import H1 from "../custom-component/H1";
-import { getReport } from "../function/fetch/get/fetch";
+import { getReport, getReportDay } from "../function/fetch/get/fetch";
 import { ReportItem, ReportSummaryData } from "../types/types";
 import { ReportSummary } from "../custom-component/table/ReportSummary";
 import ReportBranch from "../custom-component/card/ReportBranch";
 import DateMountSelector from "../custom-component/formater/DateMountSelector";
 import AdsReport from "../custom-component/table/AdsReport";
 import WeekFilter from "../custom-component/formater/WeekFilter";
+import AdsVsOmset from "../custom-component/card/AdsVsOmset";
 
 export interface AdsDataRow {
     week: string;
@@ -61,6 +62,7 @@ export default function Report() {
 
     const [interval, setInterval] = useState<'day' | 'week'>('week');
     const [loading, setLoading] = useState(true);
+    const [activeTab, setActiveTab] = useState<'monthly' | 'daily' | 'ads_vs_omset'>('monthly');
 
     useEffect(() => {
         setRange(fullMonthRange);
@@ -82,7 +84,7 @@ export default function Report() {
                     interval: interval,
                 };
 
-                const res = await getReport(payload);
+                const res = activeTab === 'daily' ? await getReportDay(payload) : await getReport(payload);
 
                 if (res?.data?.data) {
                     setReportData(res.data.data.summary);
@@ -97,7 +99,7 @@ export default function Report() {
         };
 
         fetchData();
-    }, [range, interval]);
+    }, [range, interval, activeTab]);
 
     // Handler for generating and downloading PDF
     const handlePrint = async () => {
@@ -253,14 +255,17 @@ export default function Report() {
         }
     };
 
-    const [activeTab, setActiveTab] = useState<'monthly' | 'daily'>('monthly');
 
     useEffect(() => {
         if (activeTab === 'monthly') {
             setInterval('week');
             setRange(fullMonthRange);
-        } else {
+        } else if (activeTab === 'daily') {
             setInterval('day');
+            setRange(fullMonthRange);
+        } else {
+            // ads_vs_omset: use weekly interval
+            setInterval('week');
             setRange(fullMonthRange);
         }
     }, [activeTab, fullMonthRange]);
@@ -350,6 +355,15 @@ export default function Report() {
                     >
                         Laporan Harian
                     </button>
+                    <button
+                        className={`py-2 px-4 font-medium text-sm focus:outline-none ${activeTab === 'ads_vs_omset'
+                            ? 'text-blue-600 border-b-2 border-blue-600'
+                            : 'text-gray-500 hover:text-gray-700'
+                            }`}
+                        onClick={() => setActiveTab('ads_vs_omset')}
+                    >
+                        Ads vs Omset
+                    </button>
                 </div>
 
                 <div className="flex flex-row gap-4 items-end">
@@ -370,18 +384,36 @@ export default function Report() {
             </div>
 
             <div id="printable-area" className="border rounded-[5px] h-full py-10 px-9 bg-[#FEFEFE] gap-8 space-y-8 ">
-                <div className="hidden print:block mb-6">
-                    <h1 className="text-2xl font-bold text-gray-900">
-                        {activeTab === 'monthly' ? 'Laporan Bulanan' : 'Laporan Harian'}
-                    </h1>
-                    <p className="text-sm text-gray-500">
-                        Period: {range.start_date} - {range.end_date}
-                    </p>
-                </div>
+                {/* Determine Omset Label */}
+                {(() => {
+                    const omsetLabel = activeTab === 'daily' ? "Omset CS" : "Real Omset";
+                    const summaryOmsetLabel = activeTab === 'daily' ? "Omset CS" : "Total Omset (Revenue)";
+                    const leadsLabel = activeTab === 'daily' ? "Total Leads" : "Actual Leads";
 
-                <ReportBranch data={reportBranch} />
-                <AdsReport data={adsReport} />
-                <ReportSummary data={reportData} />
+                    return (
+                        <>
+                            <div className="hidden print:block mb-6">
+                                <h1 className="text-2xl font-bold text-gray-900">
+                                    {activeTab === 'monthly' ? 'Laporan Bulanan' : activeTab === 'daily' ? 'Laporan Harian' : 'Ads vs Omset'}
+                                </h1>
+                                <p className="text-sm text-gray-500">
+                                    Period: {range.start_date} - {range.end_date}
+                                </p>
+                            </div>
+
+                            {activeTab !== 'ads_vs_omset' && (
+                                <>
+                                    <ReportBranch data={reportBranch} omsetLabel={omsetLabel} leadsLabel={leadsLabel} />
+                                    <AdsReport data={adsReport} omsetLabel={omsetLabel} />
+                                    <ReportSummary data={reportData} omsetLabel={summaryOmsetLabel} leadsLabel={leadsLabel} />
+                                </>
+                            )}
+                            {activeTab === 'ads_vs_omset' && (
+                                <AdsVsOmset data={reportBranch} summary={reportData} />
+                            )}
+                        </>
+                    );
+                })()}
             </div>
         </div>
     );

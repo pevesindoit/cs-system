@@ -78,7 +78,7 @@ export default function ListAdvertiser({ data, platforms, branches, onDelete }: 
     if (rows.length === 0) {
         return (
             <tr>
-                <td colSpan={12} className="text-center p-4 text-sm text-gray-500">
+                <td colSpan={13} className="text-center p-4 text-sm text-gray-500">
                     Belum ada data
                 </td>
             </tr>
@@ -165,7 +165,7 @@ export default function ListAdvertiser({ data, platforms, branches, onDelete }: 
                             />
                         </td>
 
-                        {/* Leads */}
+                        {/* Leads (Target) */}
                         <td className="px-2 py-2 border-r whitespace-nowrap text-right">
                             <div className="px-1">
                                 <EditableInput<number>
@@ -178,7 +178,20 @@ export default function ListAdvertiser({ data, platforms, branches, onDelete }: 
                             </div>
                         </td>
 
-                        {/* Spend */}
+                        {/* Actual Leads */}
+                        <td className="px-2 py-2 border-r whitespace-nowrap text-right">
+                            <div className="px-1">
+                                <EditableInput<number>
+                                    value={row.actual_leads ?? 0}
+                                    rowId={safeId}
+                                    field="actual_leads"
+                                    isNumeric={true}
+                                    onSave={handleSave}
+                                />
+                            </div>
+                        </td>
+
+                        {/* Target Omset */}
                         <td className="px-2 py-2 border-r whitespace-nowrap text-right">
                             <div className="px-1">
                                 <EditableInput<number>

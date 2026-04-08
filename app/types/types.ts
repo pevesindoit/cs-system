@@ -232,6 +232,7 @@ export interface AdvertiserData {
   total_budget: number;
   platform_id: string;
   leads: number;
+  actual_leads?: number;
   cost_per_lead: number;
   conversi_google: number;
   cost_per_konversi: number;

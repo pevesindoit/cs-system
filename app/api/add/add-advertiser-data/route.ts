@@ -12,6 +12,7 @@ export async function POST(req: NextRequest) {
       total_budget,
       platform_id,
       leads,
+      actual_leads,
       omset_target,
       konversi_google,
       keterangan,
@@ -63,6 +64,7 @@ export async function POST(req: NextRequest) {
       spend: Number(spend),
       total_budget: Number(total_budget),
       leads: Number(leads),
+      actual_leads: Number(actual_leads) || 0,
       omset_target: Number(omset_target),
       // Ensure these match your actual DB column names in the 'ads' table
       conversi_google: Number(konversi_google),

@@ -7,6 +7,7 @@ interface AdvertiserRow {
   spend: number;
   total_budget: number;
   leads: number;
+  actual_leads: number;
   created_at: string;
   platform_id?: string;
   cabang_id?: string;
@@ -121,7 +122,7 @@ export async function POST(req: NextRequest) {
     let adsQuery = supabase
       .from("advertiser_data")
       .select(
-        "spend, total_budget, leads, platform_id, created_at, cabang_id, omset_target"
+        "spend, total_budget, leads, actual_leads, platform_id, created_at, cabang_id, omset_target"
       )
       .gte("created_at", start)
       .lte("created_at", end);
@@ -296,6 +297,7 @@ export async function POST(req: NextRequest) {
         globalBucket.total_budget += ad.total_budget || (spend * 1.11);
         globalBucket.target_lead += ad.leads || 0;
         globalBucket.omset_target += ad.omset_target || 0;
+        globalBucket.actual_lead += ad.actual_leads || 0;
 
         if (pName.includes("google")) globalBucket.google_ads += spend;
         else if (
@@ -316,7 +318,7 @@ export async function POST(req: NextRequest) {
           bucket.budget += spend;
           bucket.total_budget += ad.total_budget || (spend * 1.11);
           bucket.target_lead += ad.leads || 0;
-          // --- FIX 2: Added accumulation for target_omset here ---
+          bucket.actual_lead += ad.actual_leads || 0;
           bucket.omset_target += ad.omset_target || 0;
 
           if (pName.includes("google")) bucket.google_ads += spend;
@@ -331,23 +333,16 @@ export async function POST(req: NextRequest) {
       }
     });
 
-    // 4. AGGREGATE LEADS DATA (Fill Branch Map AND Global Map) - leads counts only
+    // 4. AGGREGATE LEADS DATA (Fill Branch Map AND Global Map) - warm & closing only
     leadsData.forEach((lead) => {
       const key = getKey(new Date(lead.created_at));
 
-      // Update Global Map
-      const globalBucket = globalWeeksMap.get(key);
-      if (globalBucket) {
-        globalBucket.actual_lead += 1;
-      }
-
-      // Update Branch Map
+      // Update Branch Map (warm & closing only — actual_lead comes from advertiser_data)
       if (!lead.branch_id) return;
       const bData = branchMap.get(String(lead.branch_id));
       if (bData) {
         const bucket = bData.weeks.get(key);
         if (bucket) {
-          bucket.actual_lead += 1;
           const status = lead.status?.toLowerCase();
 
           if (["closing", "followup"].includes(status)) {
@@ -497,7 +492,7 @@ export async function POST(req: NextRequest) {
     const totalPPN = totalSpend - totalBudget;
     const grandTotalSpend = totalSpend;
 
-    const totalActualLead = leadsData.length;
+    const totalActualLead = adsData.reduce((acc, curr) => acc + (curr.actual_leads || 0), 0);
     const totalClosingLeads = leadsData.filter((l) =>
       ["closing", "followup"].includes(l.status?.toLowerCase())
     );

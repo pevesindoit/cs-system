@@ -22,6 +22,7 @@ export default function InputAdvertiser({ onAddData, platforms, branches }: Inpu
         ppn: 0,
         platform_id: "",
         leads: 0,
+        actual_leads: 0,
         conversi_google: 0,
         keterangan: "",
         omset_target: 0
@@ -101,6 +102,7 @@ export default function InputAdvertiser({ onAddData, platforms, branches }: Inpu
             ppn: 0,
             platform_id: "",
             leads: 0,
+            actual_leads: 0,
             conversi_google: 0,
             keterangan: "",
             omset_target: 0
@@ -166,14 +168,21 @@ export default function InputAdvertiser({ onAddData, platforms, branches }: Inpu
                 </div>
             </td>
 
-            {/* 7. LEADS */}
+            {/* 7. TARGET LEADS */}
             <td className="p-0 border-r align-middle">
                 <div className="px-1">
                     <input type="number" name="leads" placeholder="0" value={formData.leads || ""} onChange={handleChange} className="w-full h-8 px-1 bg-transparent outline-none focus:bg-gray-50 text-right" />
                 </div>
             </td>
 
-            {/* 7. LEADS */}
+            {/* 7b. ACTUAL LEADS */}
+            <td className="p-0 border-r align-middle">
+                <div className="px-1">
+                    <input type="number" name="actual_leads" placeholder="0" value={formData.actual_leads || ""} onChange={handleChange} className="w-full h-8 px-1 bg-transparent outline-none focus:bg-gray-50 text-right" />
+                </div>
+            </td>
+
+            {/* TARGET OMSET */}
             <td className="p-0 border-r align-middle">
                 <div className="px-1">
                     <input type="number" name="omset_target" placeholder="0" value={formData.omset_target || ""} onChange={handleChange} className="w-full h-8 px-1 bg-transparent outline-none focus:bg-gray-50 text-right" />

@@ -7,6 +7,7 @@ interface AdvertiserRow {
     spend: number;
     total_budget: number;
     leads: number;
+    actual_leads: number;
     created_at: string;
     platform_id?: string;
     cabang_id?: string;
@@ -116,7 +117,7 @@ export async function POST(req: NextRequest) {
         let adsQuery = supabase
             .from("advertiser_data")
             .select(
-                "spend, total_budget, leads, platform_id, created_at, cabang_id, omset_target"
+                "spend, total_budget, leads, actual_leads, platform_id, created_at, cabang_id, omset_target"
             )
             .gte("created_at", start)
             .lte("created_at", end);
@@ -280,6 +281,8 @@ export async function POST(req: NextRequest) {
                 globalBucket.budget += spend;
                 globalBucket.total_budget += ad.total_budget || (spend * 1.11);
                 globalBucket.target_lead += ad.leads || 0;
+                // actual_lead for Laporan Harian uses actual_leads field from advertiser_data
+                globalBucket.actual_lead += ad.actual_leads || 0;
                 globalBucket.omset_target += ad.omset_target || 0;
 
                 if (pName.includes("google")) globalBucket.google_ads += spend;
@@ -301,7 +304,8 @@ export async function POST(req: NextRequest) {
                     bucket.budget += spend;
                     bucket.total_budget += ad.total_budget || (spend * 1.11);
                     bucket.target_lead += ad.leads || 0;
-                    // --- FIX 2: Added accumulation for target_omset here ---
+                    // actual_lead for Laporan Harian uses actual_leads field from advertiser_data
+                    bucket.actual_lead += ad.actual_leads || 0;
                     bucket.omset_target += ad.omset_target || 0;
 
                     if (pName.includes("google")) bucket.google_ads += spend;
@@ -317,15 +321,16 @@ export async function POST(req: NextRequest) {
         });
 
         // 4. AGGREGATE LEADS DATA (Fill Branch Map AND Global Map)
+        // actual_lead is now sourced from advertiser_data.leads (step 3 above)
+        // leads table is only used for closing, warm_leads, and omset
         leadsData.forEach((lead) => {
             const key = getKey(new Date(lead.updated_at));
 
-            // Update Global Map (only Omset needed for ratio)
+            // Update Global Map (Omset only)
             const globalBucket = globalWeeksMap.get(key);
             if (globalBucket) {
-                globalBucket.actual_lead += 1;
                 const status = lead.status?.toLowerCase();
-                if (["closing", "followup", "hold"].includes(status)) {
+                if (["closing"].includes(status)) {
                     globalBucket.omset += lead.nominal || 0;
                 }
             }
@@ -336,10 +341,9 @@ export async function POST(req: NextRequest) {
             if (bData) {
                 const bucket = bData.weeks.get(key);
                 if (bucket) {
-                    bucket.actual_lead += 1;
                     const status = lead.status?.toLowerCase();
 
-                    if (["closing", "followup", "hold"].includes(status)) {
+                    if (["closing"].includes(status)) {
                         bucket.closing += 1;
                         bucket.omset += lead.nominal || 0;
                     }
@@ -465,9 +469,10 @@ export async function POST(req: NextRequest) {
         const totalPPN = totalSpend - totalBudget;
         const grandTotalSpend = totalSpend;
 
-        const totalActualLead = leadsData.length;
+        // actual_lead in summary uses actual_leads field from advertiser_data
+        const totalActualLead = adsData.reduce((acc, curr) => acc + (curr.actual_leads || 0), 0);
         const totalClosingLeads = leadsData.filter((l) =>
-            ["closing", "followup", "hold"].includes(l.status?.toLowerCase())
+            ["closing"].includes(l.status?.toLowerCase())
         );
         const totalOmset = totalClosingLeads.reduce(
             (acc, curr) => acc + (curr.nominal || 0),

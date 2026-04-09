@@ -96,7 +96,7 @@ export default function InputAdvertiser({ onAddData, platforms, branches }: Inpu
 
         // Reset Form...
         setFormData({
-            date: new Date().toISOString().split("T")[0],
+            date: formData.date,
             cabang_id: "",
             spend: 0,
             ppn: 0,

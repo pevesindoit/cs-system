@@ -285,8 +285,9 @@ export async function POST(req: NextRequest) {
             if (globalBucket) {
                 // Modified: Only include Meta for budget fields
                 if (isMeta) {
-                    globalBucket.budget += spend;
-                    globalBucket.total_budget += ad.total_budget || spend * 1.11;
+                    const totalForThisAd = ad.total_budget || spend;
+                    globalBucket.budget += totalForThisAd / 1.11;
+                    globalBucket.total_budget += totalForThisAd;
                 }
                 globalBucket.target_lead += ad.leads || 0;
                 // actual_lead for Laporan Harian uses actual_leads field from advertiser_data
@@ -306,8 +307,9 @@ export async function POST(req: NextRequest) {
                 if (bucket) {
                     // Modified: Only include Meta for budget fields
                     if (isMeta) {
-                        bucket.budget += spend;
-                        bucket.total_budget += ad.total_budget || spend * 1.11;
+                        const totalForThisAd = ad.total_budget || spend;
+                        bucket.budget += totalForThisAd / 1.11;
+                        bucket.total_budget += totalForThisAd;
                     }
                     bucket.target_lead += ad.leads || 0;
                     // actual_lead for Laporan Harian uses actual_leads field from advertiser_data
@@ -460,11 +462,12 @@ export async function POST(req: NextRequest) {
         });
 
         const totalBudget = metaAdsData.reduce(
-            (acc, curr) => acc + (curr.spend || 0),
+            (acc, curr) =>
+                acc + (curr.total_budget || curr.spend || 0) / 1.11,
             0
         );
         const totalSpend = metaAdsData.reduce(
-            (acc, curr) => acc + (curr.total_budget || (curr.spend || 0) * 1.11),
+            (acc, curr) => acc + (curr.total_budget || curr.spend || 0),
             0
         );
         // This will now work correctly because omset_target is in adsData

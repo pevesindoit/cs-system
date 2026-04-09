@@ -27,7 +27,7 @@ export interface BranchWeeklyReport {
 
 
 
-export default function ReportBranch({ data }: { data: BranchWeeklyReport[] | null }) {
+export default function ReportBranch({ data, omsetLabel, leadsLabel }: { data: BranchWeeklyReport[] | null; omsetLabel?: string; leadsLabel?: string }) {
     console.log(data, "ini data")
     // LOADING SKELETON
     if (!data) {

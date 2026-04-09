@@ -275,23 +275,26 @@ export async function POST(req: NextRequest) {
             const pName = platformMap.get(ad.platform_id || "") || "";
             const spend = ad.spend || 0;
 
+            const isMeta =
+                pName.includes("facebook") ||
+                pName.includes("instagram") ||
+                pName.includes("meta");
+
             // Update Global Map
             const globalBucket = globalWeeksMap.get(key);
             if (globalBucket) {
-                globalBucket.budget += spend;
-                globalBucket.total_budget += ad.total_budget || (spend * 1.11);
+                // Modified: Only include Meta for budget fields
+                if (isMeta) {
+                    globalBucket.budget += spend;
+                    globalBucket.total_budget += ad.total_budget || spend * 1.11;
+                }
                 globalBucket.target_lead += ad.leads || 0;
                 // actual_lead for Laporan Harian uses actual_leads field from advertiser_data
                 globalBucket.actual_lead += ad.actual_leads || 0;
                 globalBucket.omset_target += ad.omset_target || 0;
 
                 if (pName.includes("google")) globalBucket.google_ads += spend;
-                else if (
-                    pName.includes("facebook") ||
-                    pName.includes("instagram") ||
-                    pName.includes("meta")
-                )
-                    globalBucket.meta_ads += spend;
+                else if (isMeta) globalBucket.meta_ads += spend;
                 else if (pName.includes("tiktok")) globalBucket.tiktok_ads += spend;
             }
 
@@ -301,20 +304,18 @@ export async function POST(req: NextRequest) {
             if (bData) {
                 const bucket = bData.weeks.get(key);
                 if (bucket) {
-                    bucket.budget += spend;
-                    bucket.total_budget += ad.total_budget || (spend * 1.11);
+                    // Modified: Only include Meta for budget fields
+                    if (isMeta) {
+                        bucket.budget += spend;
+                        bucket.total_budget += ad.total_budget || spend * 1.11;
+                    }
                     bucket.target_lead += ad.leads || 0;
                     // actual_lead for Laporan Harian uses actual_leads field from advertiser_data
                     bucket.actual_lead += ad.actual_leads || 0;
                     bucket.omset_target += ad.omset_target || 0;
 
                     if (pName.includes("google")) bucket.google_ads += spend;
-                    else if (
-                        pName.includes("facebook") ||
-                        pName.includes("instagram") ||
-                        pName.includes("meta")
-                    )
-                        bucket.meta_ads += spend;
+                    else if (isMeta) bucket.meta_ads += spend;
                     else if (pName.includes("tiktok")) bucket.tiktok_ads += spend;
                 }
             }
@@ -449,11 +450,20 @@ export async function POST(req: NextRequest) {
         );
 
         // --- GLOBAL SUMMARY ---
-        const totalBudget = adsData.reduce(
+        const metaAdsData = adsData.filter((ad) => {
+            const pName = platformMap.get(ad.platform_id || "") || "";
+            return (
+                pName.includes("facebook") ||
+                pName.includes("instagram") ||
+                pName.includes("meta")
+            );
+        });
+
+        const totalBudget = metaAdsData.reduce(
             (acc, curr) => acc + (curr.spend || 0),
             0
         );
-        const totalSpend = adsData.reduce(
+        const totalSpend = metaAdsData.reduce(
             (acc, curr) => acc + (curr.total_budget || (curr.spend || 0) * 1.11),
             0
         );

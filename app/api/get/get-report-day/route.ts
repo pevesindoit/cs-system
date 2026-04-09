@@ -361,8 +361,8 @@ export async function POST(req: NextRequest) {
                 const total_ads = w.google_ads + w.meta_ads + w.tiktok_ads;
                 const ads_ratio = w.omset > 0 ? (total_ads / w.omset) * 100 : 0;
 
-                const budget_iklan = w.budget;
-                const total_spend = w.total_budget || (budget_iklan * 1.11);
+                const budget_iklan = Math.round(w.budget);
+                const total_spend = w.total_budget || budget_iklan * 1.11;
                 const target_leads = w.target_lead;
                 const actual_lead = w.actual_lead;
                 const cost_perlead = actual_lead > 0 ? (total_spend / actual_lead) : 0;
@@ -394,8 +394,8 @@ export async function POST(req: NextRequest) {
             ([id, data]) => {
                 const weeks = Array.from(data.weeks.values()).map((w, index) => {
                     // Standard Metrics
-                    const budget = w.budget;
-                    const total_spend = w.total_budget || (budget * 1.11);
+                    const budget = Math.round(w.budget);
+                    const total_spend = w.total_budget || budget * 1.11;
                     const ppn = total_spend - budget;
 
                     const actual_lead = w.actual_lead;
@@ -494,7 +494,7 @@ export async function POST(req: NextRequest) {
 
         const summary = {
             date_range: { start: safeStartDate, end: safeEndDate },
-            budget: totalBudget,
+            budget: Math.round(totalBudget),
             total_spend: Math.round(grandTotalSpend),
             actual_lead: totalActualLead,
             target_lead: totalTarget,

@@ -280,13 +280,13 @@ export default function AdsVsOmset({
                         accent={(summary ? adsVsOmsetNum : grandRatioNum) > 30 ? "border-red-400" : "border-blue-400"}
                         subValue="Lower % = better efficiency"
                     />
-                    <StatCard
+                    {/* <StatCard
                         title="Closing Rate"
                         value={summary?.closing_rate ?? "—"}
                         valueClassName="text-purple-700"
                         accent="border-purple-400"
                         subValue={summary ? `${summary.closing} closing from ${summary.actual_lead} leads` : undefined}
-                    />
+                    /> */}
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">

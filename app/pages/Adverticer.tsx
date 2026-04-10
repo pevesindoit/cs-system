@@ -6,13 +6,14 @@ import ListAdvertiser from "../custom-component/table/ListAdvertiser";
 import { AdvertiserData, ReusableCsData } from "@/app/types/types";
 import { addAdvertise } from "../function/fetch/add/fetch";
 import { supabaseBrowser } from "@/lib/supabaseBrowser";
-import { getDataAdvertiserList } from "../function/fetch/get/fetch";
+import { getDataAdvertiserList, getTarget } from "../function/fetch/get/fetch";
 import H1 from "../custom-component/H1";
 
 
 export default function Advertiser({ platforms, branches }: ReusableCsData) {
     const [tableData, setTableData] = useState<AdvertiserData[]>([]);
     const [userId, setUserId] = useState("");
+    const [targets, setTargets] = useState<any[]>([]);
 
     useEffect(() => {
         const getUser = async () => {
@@ -25,9 +26,16 @@ export default function Advertiser({ platforms, branches }: ReusableCsData) {
     useEffect(() => {
         if (!userId) return;
         const fetchData = async () => {
-            const res = await getDataAdvertiserList(userId)
+            const [res, targetRes] = await Promise.all([
+                getDataAdvertiserList(userId),
+                getTarget()
+            ]);
+            
             if (res?.status === 200) {
                 setTableData(res?.data.data);
+            }
+            if (targetRes?.data?.data) {
+                setTargets(targetRes.data.data);
             }
         }
         fetchData()
@@ -83,7 +91,8 @@ export default function Advertiser({ platforms, branches }: ReusableCsData) {
                     {/* INPUT ROW (Sticky below header) */}
                     {/* We pass the handler here, but it renders a TR inside */}
                     <InputAdvertiser onAddData={handleNewData} platforms={platforms} // Pass prop
-                        branches={branches} />
+                        branches={branches}
+                        targets={targets} />
 
                     {/* DATA ROWS */}
                     {/* We pass the data here, it renders multiple TRs inside */}

@@ -9,10 +9,11 @@ interface InputProps {
     onAddData: (newItem: AdvertiserData) => void;
     platforms: SelectItemData[];
     branches: SelectItemData[];
+    targets: any[];
 }
 
 // 3. Update Component to accept props
-export default function InputAdvertiser({ onAddData, platforms, branches }: InputProps) {
+export default function InputAdvertiser({ onAddData, platforms, branches, targets }: InputProps) {
 
     // State
     const [formData, setFormData] = useState({
@@ -27,6 +28,25 @@ export default function InputAdvertiser({ onAddData, platforms, branches }: Inpu
         keterangan: "",
         omset_target: 0
     });
+
+    // Auto-fill Target leads when branch and platform (meta) is selected
+    useEffect(() => {
+        if (!formData.cabang_id || !formData.platform_id) return;
+
+        const selectedPlatform = platforms.find(p => p.value === formData.platform_id);
+        const isMeta = selectedPlatform?.label.toLowerCase().includes("meta");
+
+        if (isMeta) {
+            const branchTarget = targets.find(t => t.branch_id === formData.cabang_id);
+            if (branchTarget) {
+                setFormData(prev => ({
+                    ...prev,
+                    leads: branchTarget.leads_target || 0,
+                    omset_target: branchTarget.omset_target || 0
+                }));
+            }
+        }
+    }, [formData.cabang_id, formData.platform_id, targets, platforms]);
 
     // Helpers & Calculations
     const isGoogle = formData.platform_id === "google";

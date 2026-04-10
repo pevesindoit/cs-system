@@ -90,6 +90,7 @@ export default function Target() {
                     hari_kerja: Number(bt.hari_kerja) || 24,
                     pic_cs: bt.pic_cs || "",
                     leads_target: Math.ceil(metrics.fbLeads) || 0,
+                    omset_target: Number(metrics.closingValue.toFixed(0)) || 0,
                 });
             });
 

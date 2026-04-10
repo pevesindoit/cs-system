@@ -35,6 +35,7 @@ export async function POST(req: NextRequest) {
         google_ads_cpl: payload.google_ads_cpl,
         fb_ads_cpl: payload.fb_ads_cpl,
         leads_target: payload.leads_target,
+        omset_target: payload.omset_target,
       })
       .select()
       .single();

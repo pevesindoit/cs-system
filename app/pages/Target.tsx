@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import H1 from "../custom-component/H1";
 import { getBranch, getTarget } from "../function/fetch/get/fetch";
 import { updateTarget } from "../function/fetch/update/update-lead/fetch";
+import { useAuth } from "../custom-component/global/AuthProfider";
+import { useRouter } from "next/navigation";
 
 interface BranchTarget {
     id?: string;
@@ -19,9 +21,22 @@ interface BranchTarget {
 }
 
 export default function Target() {
+    const { user, loading: authLoading } = useAuth();
+    const router = useRouter();
     const [branchTargets, setBranchTargets] = useState<BranchTarget[]>([]);
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
+
+    // Get User Type safely (1 = CS, 2 = Manager)
+    const userType = user?.identities?.[0]?.identity_data?.type_id;
+
+    useEffect(() => {
+        if (!authLoading) {
+            if (!user || userType !== 2) {
+                router.push("/");
+            }
+        }
+    }, [user, userType, authLoading, router]);
 
     useEffect(() => {
         const fetchData = async () => {
@@ -48,8 +63,8 @@ export default function Target() {
                             google_ads: existingTarget?.google_ads ?? "",
                             google_ads_cpl: existingTarget?.google_ads_cpl ?? "",
                             fb_ads_cpl: existingTarget?.fb_ads_cpl ?? "",
-                            hari_kerja: getWorkDaysInMonth(),
-                            pic_cs: "",
+                            hari_kerja: existingTarget?.hari_kerja ?? getWorkDaysInMonth(),
+                            pic_cs: existingTarget?.pic_cs ?? "",
                         };
                     });
                     setBranchTargets(formattedBranches);
@@ -113,10 +128,10 @@ export default function Target() {
                     };
                 }));
             }
-            alert("✓ Target berhasil disimpan!");
+            alert("✓ Konfigurasi target berhasil disimpan!");
         } catch (error) {
             console.error("Error saving targets:", error);
-            alert("❌ Gagal menyimpan target.");
+            alert("❌ Gagal menyimpan konfigurasi.");
         } finally {
             setSaving(false);
         }
@@ -146,30 +161,14 @@ export default function Target() {
         const googleCPL = Number(bt.google_ads_cpl) || 0;
         const fbCPL = Number(bt.fb_ads_cpl) || 0;
 
-        // Formula: budget ads is target * ads
         const budgetAds = target * (adsPerc / 100);
-        
-        // Formula: budget harian is budget ads / hari kerja
         const budgetHarian = budgetAds / hariKerja;
-        
-        // Formula: meta ads is budget harian - google ads
         const metaAds = Math.max(0, budgetHarian - googleAds);
-        
-        // Formula: GA Daily leads is google ads / google ads CPL
         const gaLeads = googleCPL > 0 ? googleAds / googleCPL : 0;
-        
-        // Formula: FB Daily leads is meta ads / FB Ads CPL
         const fbLeads = fbCPL > 0 ? metaAds / fbCPL : 0;
-        
         const totalLeads = gaLeads + fbLeads;
-        
-        // Formula: target warm is (GA Daily Leads + FB Daily Leads) * 7%
         const targetWarm = totalLeads * 0.07;
-        
-        // Formula: target closing is (FB Daily Leads + GA Daily Leads) * 3%
         const targetClosing = totalLeads * 0.03;
-        
-        // Formula: Target Closing Value is budget Harian * 14
         const closingValue = budgetHarian * 14;
 
         return {
@@ -184,302 +183,175 @@ export default function Target() {
         };
     };
 
-    const totals = branchTargets.reduce((acc, bt) => {
-        const m = calculateMetrics(bt);
-        return {
-            target: acc.target + (Number(bt.target_omset) || 0),
-            budgetAds: acc.budgetAds + m.budgetAds,
-            budgetHarian: acc.budgetHarian + m.budgetHarian,
-            googleAds: acc.googleAds + (Number(bt.google_ads) || 0),
-            metaAds: acc.metaAds + m.metaAds,
-            gaLeads: acc.gaLeads + m.gaLeads,
-            fbLeads: acc.fbLeads + m.fbLeads,
-            warm: acc.warm + m.targetWarm,
-            closing: acc.closing + m.targetClosing,
-            closingValue: acc.closingValue + m.closingValue,
-        };
-    }, { target: 0, budgetAds: 0, budgetHarian: 0, googleAds: 0, metaAds: 0, gaLeads: 0, fbLeads: 0, warm: 0, closing: 0, closingValue: 0 });
-
-    if (loading) {
+    if (authLoading || loading) {
         return (
-            <div className="flex items-center justify-center h-full">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+            <div className="flex items-center justify-center min-h-[400px]">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-slate-900"></div>
             </div>
         );
     }
 
+    if (!user || userType !== 2) {
+        return null; 
+    }
+
     return (
-        <div className="space-y-6 pb-20 animate-in fade-in duration-700">
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white/50 backdrop-blur-md p-6 rounded-3xl border border-white/20 shadow-xl">
+        <div className="p-8 max-w-[1400px] mx-auto space-y-8 animate-in fade-in duration-500">
+            {/* Header Section */}
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-gray-200 pb-6">
                 <div>
-                    <H1>Target KPI Cabang</H1>
-                    <div className="flex items-center gap-2 mt-1">
-                        <span className="px-2 py-0.5 bg-blue-100 text-blue-700 text-[10px] font-black rounded-lg uppercase tracking-wider">Periode: April 2026</span>
-                    </div>
+                    <h1 className="text-2xl font-bold text-slate-900">Konfigurasi Target Strategis</h1>
+                    <p className="text-sm text-slate-500 mt-1">Kelola target KPI dan alokasi budget iklan untuk setiap cabang.</p>
                 </div>
                 <button 
                     onClick={handleSave}
                     disabled={saving}
-                    className="group relative px-8 py-3.5 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl font-black text-sm transition-all shadow-lg hover:shadow-blue-200 active:scale-95 disabled:opacity-50 overflow-hidden"
+                    className="px-6 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-lg font-semibold text-sm transition-all disabled:opacity-50 shadow-sm"
                 >
-                    <span className="relative z-10">{saving ? "MENYIMPAN..." : "SIMPAN KONFIGURASI"}</span>
-                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
+                    {saving ? "Menyimpan..." : "Simpan Perubahan"}
                 </button>
             </div>
 
-            <div className="bg-white/80 backdrop-blur-xl rounded-[2.5rem] border border-white/40 shadow-2xl overflow-hidden">
-                <div className="overflow-x-auto scrollbar-hide">
-                    <table className="w-full border-collapse text-left">
-                        <thead>
-                            <tr className="bg-gray-50/50">
-                                <th className="sticky left-0 z-20 bg-gray-50/80 backdrop-blur-md p-5 text-[11px] font-black text-gray-400 uppercase tracking-widest border-b border-gray-100 min-w-[200px]">Metrics / Cabang</th>
-                                {branchTargets.map(bt => (
-                                    <th key={bt.branch_id} className="p-5 text-sm font-black text-gray-800 uppercase tracking-tight border-b border-gray-100 text-center min-w-[160px] bg-white/40">
-                                        {bt.branch_name}
-                                    </th>
-                                ))}
-                                <th className="sticky right-0 z-20 bg-blue-50/80 backdrop-blur-md p-5 text-sm font-black text-blue-600 uppercase tracking-tight border-b border-blue-100 text-center min-w-[180px]">TOTAL</th>
+            {/* Main Table Card */}
+            <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
+                <div className="overflow-x-auto">
+                    <table className="w-full border-collapse text-left text-sm">
+                        <thead className="bg-slate-50 border-b border-gray-200">
+                            <tr>
+                                <th className="p-4 font-bold text-slate-700 min-w-[180px]">Cabang</th>
+                                <th className="p-4 font-bold text-slate-700 min-w-[150px]">Target Omset (Rp)</th>
+                                <th className="p-4 font-bold text-slate-700 min-w-[100px] text-center">% Ads</th>
+                                <th className="p-4 font-bold text-slate-700 min-w-[150px] text-center">Budget Iklan</th>
+                                <th className="p-4 font-bold text-slate-700 min-w-[130px] text-center">Google Ads (Daily)</th>
+                                <th className="p-4 font-bold text-slate-700 min-w-[130px] text-center">Meta Ads (Daily)</th>
+                                <th className="p-4 font-bold text-slate-700 min-w-[120px] text-center">Google CPL</th>
+                                <th className="p-4 font-bold text-slate-700 min-w-[120px] text-center">FB CPL Target</th>
+                                <th className="p-4 font-bold text-slate-700 min-w-[100px] text-center">Daily Leads</th>
+                                <th className="p-4 font-bold text-slate-700 min-w-[150px]">PIC (CS)</th>
                             </tr>
                         </thead>
-                        <tbody>
-                            {/* CABANG SECTION */}
-                            <tr className="bg-blue-50/20"><td colSpan={branchTargets.length + 2} className="px-5 py-2 text-[10px] font-black text-blue-500 uppercase tracking-[0.3em]">Cabang Metrics</td></tr>
-                            
-                            {/* row: Target */}
-                            <tr className="group hover:bg-blue-50/30 transition-colors">
-                                <td className="sticky left-0 z-10 bg-white/95 backdrop-blur-sm p-4 text-xs font-bold text-gray-600 border-b border-gray-50 border-r border-gray-50 shadow-[4px_0_8px_rgba(0,0,0,0,0.02)]">Target Omset</td>
-                                {branchTargets.map(bt => (
-                                    <td key={bt.branch_id} className="p-2 border-b border-gray-50">
-                                        <input 
-                                            type="number" 
-                                            value={bt.target_omset}
-                                            onChange={(e) => handleInputChange(bt.branch_id, "target_omset", e.target.value)}
-                                            className="w-full p-3 bg-transparent text-center font-black text-gray-700 outline-none focus:bg-white focus:ring-2 focus:ring-blue-500 rounded-xl transition-all" 
-                                        />
-                                    </td>
-                                ))}
-                                <td className="sticky right-0 z-10 bg-blue-50/60 p-4 text-center font-black text-blue-700 border-b border-blue-100">
-                                    Rp {totals.target.toLocaleString()}
-                                </td>
-                            </tr>
+                        <tbody className="divide-y divide-gray-100">
+                            {branchTargets.map((bt) => {
+                                const m = calculateMetrics(bt);
+                                return (
+                                    <tr key={bt.branch_id} className="hover:bg-slate-50/50 transition-colors">
+                                        {/* Branch Name */}
+                                        <td className="p-4">
+                                            <div className="font-bold text-slate-900 leading-none">{bt.branch_name}</div>
+                                            <div className="text-[10px] text-slate-400 mt-1 uppercase tracking-wider">{bt.hari_kerja} Hari Kerja</div>
+                                        </td>
 
-                            {/* row: %Ads */}
-                            <tr className="group hover:bg-blue-50/30 transition-colors">
-                                <td className="sticky left-0 z-10 bg-white/95 backdrop-blur-sm p-4 text-xs font-bold text-gray-600 border-b border-gray-50 border-r border-gray-50">% Ads</td>
-                                {branchTargets.map(bt => (
-                                    <td key={bt.branch_id} className="p-2 border-b border-gray-50">
-                                        <div className="relative">
+                                        {/* Target Omset */}
+                                        <td className="p-4">
+                                            <div className="relative group">
+                                                <input 
+                                                    type="number" 
+                                                    value={bt.target_omset}
+                                                    onChange={(e) => handleInputChange(bt.branch_id, "target_omset", e.target.value)}
+                                                    className="w-full p-2 bg-slate-50/50 border border-gray-200 rounded-md font-bold text-slate-800 outline-none focus:ring-1 focus:ring-slate-900 focus:bg-white transition-all" 
+                                                />
+                                            </div>
+                                        </td>
+
+                                        {/* % Ads */}
+                                        <td className="p-4">
                                             <input 
                                                 type="number" 
                                                 value={bt.ads_percent}
                                                 onChange={(e) => handleInputChange(bt.branch_id, "ads_percent", e.target.value)}
-                                                className="w-full p-3 bg-transparent text-center font-black text-blue-600 outline-none focus:bg-white focus:ring-2 focus:ring-blue-500 rounded-xl transition-all" 
+                                                className="w-full p-2 bg-slate-50/50 border border-gray-200 rounded-md font-bold text-center text-blue-600 outline-none focus:ring-1 focus:ring-slate-900 focus:bg-white transition-all" 
                                             />
-                                            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-black text-blue-300">%</span>
-                                        </div>
-                                    </td>
-                                ))}
-                                <td className="sticky right-0 z-10 bg-blue-50/60 p-4 text-center font-black text-blue-700 border-b border-blue-100">
-                                    {(totals.target > 0 ? (totals.budgetAds / totals.target) * 100 : 0).toFixed(1)}%
-                                </td>
-                            </tr>
+                                        </td>
 
-                            {/* row: Budget Ads (Calc) */}
-                            <tr className="bg-yellow-50/30">
-                                <td className="sticky left-0 z-10 bg-yellow-50/80 backdrop-blur-sm p-4 text-xs font-black text-amber-700 border-b border-amber-50 border-r border-amber-50">Budget Ads</td>
-                                {branchTargets.map(bt => (
-                                    <td key={bt.branch_id} className="p-4 text-center font-black text-amber-600 border-b border-amber-50">
-                                        Rp {calculateMetrics(bt).budgetAds.toLocaleString()}
-                                    </td>
-                                ))}
-                                <td className="sticky right-0 z-10 bg-amber-100/60 p-4 text-center font-black text-amber-700 border-b border-amber-200">
-                                    Rp {totals.budgetAds.toLocaleString()}
-                                </td>
-                            </tr>
+                                        {/* Budget Iklan (Calc) */}
+                                        <td className="p-4 text-center">
+                                            <div className="font-bold text-slate-800">Rp {m.budgetAds.toLocaleString()}</div>
+                                            <div className="text-[10px] text-slate-400">Total Perbulan</div>
+                                        </td>
 
-                            {/* row: Hari Kerja */}
-                            <tr className="group hover:bg-gray-50 transition-colors">
-                                <td className="sticky left-0 z-10 bg-white/95 backdrop-blur-sm p-4 text-xs font-bold text-gray-600 border-b border-gray-50 border-r border-gray-50">Hari Kerja</td>
-                                {branchTargets.map(bt => (
-                                    <td key={bt.branch_id} className="p-2 border-b border-gray-50">
-                                        <input 
-                                            type="number" 
-                                            value={bt.hari_kerja}
-                                            onChange={(e) => handleInputChange(bt.branch_id, "hari_kerja", e.target.value)}
-                                            className="w-full p-3 bg-transparent text-center font-black text-gray-500 outline-none focus:bg-white focus:ring-2 focus:ring-gray-300 rounded-xl transition-all" 
-                                        />
-                                    </td>
-                                ))}
-                                <td className="sticky right-0 z-10 bg-gray-50 p-4 text-center font-black text-gray-700 border-b border-gray-100">-</td>
-                            </tr>
+                                        {/* Google Ads (Daily) */}
+                                        <td className="p-4 text-center">
+                                            <input 
+                                                type="number" 
+                                                value={bt.google_ads}
+                                                onChange={(e) => handleInputChange(bt.branch_id, "google_ads", e.target.value)}
+                                                className="w-full p-2 bg-green-50/30 border border-green-100 rounded-md font-bold text-center text-green-700 outline-none focus:ring-1 focus:ring-green-500 focus:bg-white transition-all" 
+                                            />
+                                        </td>
 
-                            {/* row: Budget Harian (Calc) */}
-                            <tr className="group hover:bg-gray-50 transition-colors">
-                                <td className="sticky left-0 z-10 bg-white/95 backdrop-blur-sm p-4 text-xs font-bold text-gray-600 border-b border-gray-50 border-r border-gray-50">Budget Harian</td>
-                                {branchTargets.map(bt => (
-                                    <td key={bt.branch_id} className="p-4 text-center font-black text-gray-700 border-b border-gray-50">
-                                        Rp {calculateMetrics(bt).budgetHarian.toLocaleString(undefined, {maximumFractionDigits: 0})}
-                                    </td>
-                                ))}
-                                <td className="sticky right-0 z-10 bg-gray-50 p-4 text-center font-black text-gray-700 border-b border-gray-100">
-                                    Rp {totals.budgetHarian.toLocaleString(undefined, {maximumFractionDigits: 0})}
-                                </td>
-                            </tr>
+                                        {/* Meta Ads (Calc) */}
+                                        <td className="p-4 text-center">
+                                            <div className="font-bold text-indigo-700">Rp {m.metaAds.toLocaleString(undefined, {maximumFractionDigits: 0})}</div>
+                                            <div className="text-[10px] text-slate-400">Sisa Alokasi</div>
+                                        </td>
 
-                            {/* ALOKASI SECTION */}
-                            <tr className="bg-indigo-50/20"><td colSpan={branchTargets.length + 2} className="px-5 py-2 text-[10px] font-black text-indigo-500 uppercase tracking-[0.3em]">Alokasi Harian</td></tr>
+                                        {/* Google CPL */}
+                                        <td className="p-4 text-center">
+                                            <input 
+                                                type="number" 
+                                                value={bt.google_ads_cpl}
+                                                onChange={(e) => handleInputChange(bt.branch_id, "google_ads_cpl", e.target.value)}
+                                                className="w-full p-2 border border-gray-200 rounded-md font-bold text-center text-orange-600 outline-none focus:ring-1 focus:ring-slate-900 transition-all" 
+                                            />
+                                        </td>
 
-                            {/* row: Google Ads */}
-                            <tr className="group hover:bg-indigo-50/30 transition-colors">
-                                <td className="sticky left-0 z-10 bg-white/95 backdrop-blur-sm p-4 text-xs font-bold text-gray-600 border-b border-gray-50 border-r border-gray-50">Google Ads</td>
-                                {branchTargets.map(bt => (
-                                    <td key={bt.branch_id} className="p-2 border-b border-gray-50">
-                                        <input 
-                                            type="number" 
-                                            value={bt.google_ads}
-                                            onChange={(e) => handleInputChange(bt.branch_id, "google_ads", e.target.value)}
-                                            className="w-full p-3 bg-transparent text-center font-black text-green-600 outline-none focus:bg-white focus:ring-2 focus:ring-green-300 rounded-xl transition-all" 
-                                        />
-                                    </td>
-                                ))}
-                                <td className="sticky right-0 z-10 bg-indigo-50/60 p-4 text-center font-black text-indigo-700 border-b border-indigo-100">
-                                    Rp {totals.googleAds.toLocaleString()}
-                                </td>
-                            </tr>
+                                        {/* FB CPL */}
+                                        <td className="p-4 text-center">
+                                            <input 
+                                                type="number" 
+                                                value={bt.fb_ads_cpl}
+                                                onChange={(e) => handleInputChange(bt.branch_id, "fb_ads_cpl", e.target.value)}
+                                                className="w-full p-2 border border-gray-200 rounded-md font-bold text-center text-orange-600 outline-none focus:ring-1 focus:ring-slate-900 transition-all" 
+                                            />
+                                        </td>
 
-                            {/* row: Meta Ads (Calc) */}
-                            <tr className="group hover:bg-indigo-50/30 transition-colors">
-                                <td className="sticky left-0 z-10 bg-white/95 backdrop-blur-sm p-4 text-xs font-bold text-gray-600 border-b border-gray-50 border-r border-gray-50">Meta Ads</td>
-                                {branchTargets.map(bt => (
-                                    <td key={bt.branch_id} className="p-4 text-center font-black text-indigo-600 border-b border-gray-50">
-                                        Rp {calculateMetrics(bt).metaAds.toLocaleString(undefined, {maximumFractionDigits: 0})}
-                                    </td>
-                                ))}
-                                <td className="sticky right-0 z-10 bg-indigo-50/60 p-4 text-center font-black text-indigo-700 border-b border-indigo-100">
-                                    Rp {totals.metaAds.toLocaleString(undefined, {maximumFractionDigits: 0})}
-                                </td>
-                            </tr>
+                                        {/* Daily Leads (Calc) */}
+                                        <td className="p-4 text-center">
+                                            <div className="font-bold text-slate-800">{Math.ceil(m.gaLeads + m.fbLeads)}</div>
+                                            <div className="text-[10px] text-slate-400">Target Harian</div>
+                                        </td>
 
-                            {/* row: Google CPL */}
-                            <tr className="group hover:bg-orange-50/30 transition-colors">
-                                <td className="sticky left-0 z-10 bg-white/95 backdrop-blur-sm p-4 text-xs font-bold text-gray-600 border-b border-gray-50 border-r border-gray-50">Google CPL</td>
-                                {branchTargets.map(bt => (
-                                    <td key={bt.branch_id} className="p-2 border-b border-gray-50">
-                                        <input 
-                                            type="number" 
-                                            value={bt.google_ads_cpl}
-                                            onChange={(e) => handleInputChange(bt.branch_id, "google_ads_cpl", e.target.value)}
-                                            className="w-full p-3 bg-transparent text-center font-black text-orange-600 outline-none focus:bg-white focus:ring-2 focus:ring-orange-300 rounded-xl transition-all" 
-                                        />
-                                    </td>
-                                ))}
-                                <td className="sticky right-0 z-10 bg-orange-50/60 p-4 text-center font-black text-orange-700 border-b border-orange-100">-</td>
-                            </tr>
-
-                            {/* row: FB CPL */}
-                            <tr className="group hover:bg-orange-50/30 transition-colors">
-                                <td className="sticky left-0 z-10 bg-white/95 backdrop-blur-sm p-4 text-xs font-bold text-gray-600 border-b border-gray-50 border-r border-gray-50">FB CPL Target</td>
-                                {branchTargets.map(bt => (
-                                    <td key={bt.branch_id} className="p-2 border-b border-gray-50">
-                                        <input 
-                                            type="number" 
-                                            value={bt.fb_ads_cpl}
-                                            onChange={(e) => handleInputChange(bt.branch_id, "fb_ads_cpl", e.target.value)}
-                                            className="w-full p-3 bg-transparent text-center font-black text-orange-600 outline-none focus:bg-white focus:ring-2 focus:ring-orange-300 rounded-xl transition-all" 
-                                        />
-                                    </td>
-                                ))}
-                                <td className="sticky right-0 z-10 bg-orange-50/60 p-4 text-center font-black text-orange-700 border-b border-orange-100">-</td>
-                            </tr>
-
-                            {/* row: GA Daily Leads (Calc) */}
-                            <tr className="bg-emerald-50/20">
-                                <td className="sticky left-0 z-10 bg-emerald-50/60 backdrop-blur-sm p-4 text-xs font-bold text-emerald-700 border-b border-emerald-50 border-r border-emerald-50">GA Daily Leads</td>
-                                {branchTargets.map(bt => (
-                                    <td key={bt.branch_id} className="p-4 text-center font-black text-emerald-600 border-b border-emerald-50">
-                                        {calculateMetrics(bt).gaLeads.toFixed(1)}
-                                    </td>
-                                ))}
-                                <td className="sticky right-0 z-10 bg-emerald-100/60 p-4 text-center font-black text-emerald-700 border-b border-emerald-200">
-                                    {totals.gaLeads.toFixed(1)}
-                                </td>
-                            </tr>
-
-                            {/* row: FB Daily Leads (Calc) */}
-                            <tr className="bg-emerald-50/20">
-                                <td className="sticky left-0 z-10 bg-emerald-50/60 backdrop-blur-sm p-4 text-xs font-bold text-emerald-700 border-b border-emerald-50 border-r border-emerald-50">FB Daily Leads</td>
-                                {branchTargets.map(bt => (
-                                    <td key={bt.branch_id} className="p-4 text-center font-black text-emerald-600 border-b border-emerald-50">
-                                        {Math.ceil(calculateMetrics(bt).fbLeads)}
-                                    </td>
-                                ))}
-                                <td className="sticky right-0 z-10 bg-emerald-100/60 p-4 text-center font-black text-emerald-700 border-b border-emerald-200">
-                                    {Math.ceil(totals.fbLeads)}
-                                </td>
-                            </tr>
-
-                            {/* row: Target Warm (Calc) */}
-                            <tr className="group hover:bg-gray-50 transition-colors">
-                                <td className="sticky left-0 z-10 bg-white/95 backdrop-blur-sm p-4 text-xs font-bold text-gray-400 border-b border-gray-50 border-r border-gray-50">Target Warm (7%)</td>
-                                {branchTargets.map(bt => (
-                                    <td key={bt.branch_id} className="p-4 text-center font-black text-gray-500 border-b border-gray-50">
-                                        {calculateMetrics(bt).targetWarm.toFixed(0)}
-                                    </td>
-                                ))}
-                                <td className="sticky right-0 z-10 bg-gray-50 p-4 text-center font-black text-gray-700 border-b border-gray-100">
-                                    {totals.warm.toFixed(0)}
-                                </td>
-                            </tr>
-
-                            {/* row: Target Closing (Calc) */}
-                            <tr className="group hover:bg-gray-50 transition-colors">
-                                <td className="sticky left-0 z-10 bg-white/95 backdrop-blur-sm p-4 text-xs font-bold text-gray-400 border-b border-gray-50 border-r border-gray-50">Target Closing (3%)</td>
-                                {branchTargets.map(bt => (
-                                    <td key={bt.branch_id} className="p-4 text-center font-black text-gray-500 border-b border-gray-50">
-                                        {calculateMetrics(bt).targetClosing.toFixed(0)}
-                                    </td>
-                                ))}
-                                <td className="sticky right-0 z-10 bg-gray-50 p-4 text-center font-black text-gray-700 border-b border-gray-100">
-                                    {totals.closing.toFixed(0)}
-                                </td>
-                            </tr>
-
-                            {/* row: Target Closing Value (Calc) */}
-                            <tr className="group hover:bg-gray-50 transition-colors">
-                                <td className="sticky left-0 z-10 bg-white/95 backdrop-blur-sm p-4 text-xs font-bold text-gray-400 border-b border-gray-50 border-r border-gray-50">Target Closing Value</td>
-                                {branchTargets.map(bt => (
-                                    <td key={bt.branch_id} className="p-4 text-center font-black text-green-700 border-b border-gray-50 bg-green-50/10">
-                                        Rp {calculateMetrics(bt).closingValue.toLocaleString(undefined, {maximumFractionDigits: 0})}
-                                    </td>
-                                ))}
-                                <td className="sticky right-0 z-10 bg-green-50/40 p-4 text-center font-black text-green-800 border-b border-green-100">
-                                    Rp {totals.closingValue.toLocaleString(undefined, {maximumFractionDigits: 0})}
-                                </td>
-                            </tr>
-
-                            {/* row: PIC CS */}
-                            <tr className="group hover:bg-gray-50 transition-colors">
-                                <td className="sticky left-0 z-10 bg-white/95 backdrop-blur-sm p-4 text-xs font-bold text-gray-600 border-b border-gray-50 border-r border-gray-50">PIC (CS)</td>
-                                {branchTargets.map(bt => (
-                                    <td key={bt.branch_id} className="p-2 border-b border-gray-50">
-                                        <input 
-                                            type="text" 
-                                            value={bt.pic_cs}
-                                            onChange={(e) => handleInputChange(bt.branch_id, "pic_cs", e.target.value)}
-                                            placeholder="..."
-                                            className="w-full p-3 bg-transparent text-center font-bold text-gray-500 outline-none focus:bg-white focus:ring-2 focus:ring-indigo-300 rounded-xl transition-all" 
-                                        />
-                                    </td>
-                                ))}
-                                <td className="sticky right-0 z-10 bg-gray-50 p-4 text-center font-black text-gray-700 border-b border-gray-100">-</td>
-                            </tr>
+                                        {/* PIC */}
+                                        <td className="p-4">
+                                            <input 
+                                                type="text" 
+                                                value={bt.pic_cs}
+                                                onChange={(e) => handleInputChange(bt.branch_id, "pic_cs", e.target.value)}
+                                                placeholder="Nama PIC..."
+                                                className="w-full p-2 bg-slate-50/50 border border-gray-200 rounded-md font-medium text-slate-600 outline-none focus:ring-1 focus:ring-slate-900 focus:bg-white transition-all" 
+                                            />
+                                        </td>
+                                    </tr>
+                                );
+                            })}
                         </tbody>
                     </table>
                 </div>
             </div>
-            
-            <div className="text-center text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-8">
-                &copy; 2026 Pevesindo CS System &bull; Dynamic Strategy Visualization
+
+            {/* Footer Summary */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="p-6 bg-slate-900 text-white rounded-xl shadow-sm">
+                    <div className="text-xs text-slate-400 uppercase font-bold tracking-wider">Total Target Omset</div>
+                    <div className="text-2xl font-black mt-1">Rp {branchTargets.reduce((acc, bt) => acc + (Number(bt.target_omset) || 0), 0).toLocaleString()}</div>
+                </div>
+                <div className="p-6 bg-white border border-gray-200 rounded-xl shadow-sm">
+                    <div className="text-xs text-slate-400 uppercase font-bold tracking-wider">Total Marketing Budget</div>
+                    {/* Reusing existing totals logic or calculating here for simplicity */}
+                    <div className="text-2xl font-black text-slate-900 mt-1">
+                        Rp {branchTargets.reduce((acc, bt) => acc + calculateMetrics(bt).budgetAds, 0).toLocaleString()}
+                    </div>
+                </div>
+                <div className="p-6 bg-white border border-gray-200 rounded-xl shadow-sm">
+                    <div className="text-xs text-slate-400 uppercase font-bold tracking-wider">Estimated Total Leads</div>
+                    <div className="text-2xl font-black text-slate-900 mt-1">
+                        {branchTargets.reduce((acc, bt) => acc + Math.ceil(calculateMetrics(bt).gaLeads + calculateMetrics(bt).fbLeads), 0)}
+                    </div>
+                </div>
+            </div>
+
+            <div className="text-center text-[11px] font-medium text-slate-400 uppercase tracking-[0.2em] pt-8">
+                Pevesindo Strategic Management &bull; 2026 Internal System
             </div>
         </div>
     );

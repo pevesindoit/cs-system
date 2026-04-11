@@ -171,3 +171,11 @@ export const getCsPerformance = async (data: csPerformanceType) => {
     console.log("Failed to fetch organisations", error);
   }
 };
+export const getTarget = async () => {
+  try {
+    const res = await axios.get("/api/get/get-target");
+    return res;
+  } catch (error) {
+    console.log("Failed to fetch targets", error);
+  }
+};

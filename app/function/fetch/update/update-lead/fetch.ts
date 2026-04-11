@@ -64,3 +64,7 @@ export const deleteRealOmset = async (id: string) => {
 
   return res.data;
 };
+export const updateTarget = async (payload: any) => {
+  const res = await axios.post("/api/update/update-target", payload);
+  return res.data;
+};

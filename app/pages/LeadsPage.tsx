@@ -9,6 +9,7 @@ import { useRouter } from "next/navigation";
 import { DropDownLeads } from "../custom-component/DropDownLeads";
 import { ChartCard } from "../custom-component/table/ChartCard";
 import { itemType } from "@/app/types/types"
+import { useAuth } from "../custom-component/global/AuthProfider";
 
 const GetDefaultate = () => {
     const today = new Date();
@@ -36,25 +37,14 @@ export function LeadsPage() {
     const router = useRouter()
     const [data, setData] = useState([])
     const [statusSelected, setStatusSelected] = useState("")
-    const [user, setUser] = useState("")
-
+    const { user, loading: authLoading } = useAuth();
+    const userType = user?.identities?.[0]?.identity_data?.type_id;
 
     useEffect(() => {
-        async function loadUser() {
-            try {
-                const { data } = await supabaseBrowser.auth.getUser();
-
-                if (!data?.user) {
-                    router.push("/login");
-                    return;
-                }
-                setUser(data.user.id);
-            } catch (error) {
-                console.log(error)
-            }
+        if (!authLoading && !user) {
+            router.push("/login");
         }
-        loadUser();
-    }, [router]);
+    }, [user, authLoading, router]);
 
     useEffect(() => {
         const fetch = async () => {
@@ -145,7 +135,7 @@ export function LeadsPage() {
 
                     </div>
                     <ChartCard data={chart} />
-                    <LeadsTableManager data={data} />
+                    <LeadsTableManager data={data} userType={userType} />
                 </div>
             </div>
         </div>

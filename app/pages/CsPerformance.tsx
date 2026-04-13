@@ -7,6 +7,7 @@ import { getCs, getCsPerformance, getFilterData } from "../function/fetch/get/fe
 import { supabaseBrowser } from "@/lib/supabaseBrowser";
 import { useRouter } from "next/navigation";
 import { DropDownLeads } from "../custom-component/DropDownLeads";
+import { useAuth } from "../custom-component/global/AuthProfider";
 
 // ✅ FIX 1: Removed curly braces { } because ChartCard is likely a default export
 import { ChartCard } from "../custom-component/table/ChartCard";
@@ -49,24 +50,15 @@ export function CsPerformance() {
 
     const router = useRouter();
     const [statusSelected, setStatusSelected] = useState("");
-    const [user, setUser] = useState("");
+    const { user, loading: authLoading } = useAuth();
+    const userType = user?.identities?.[0]?.identity_data?.type_id;
 
     // Auth Check
     useEffect(() => {
-        async function loadUser() {
-            try {
-                const { data } = await supabaseBrowser.auth.getUser();
-                if (!data?.user) {
-                    router.push("/login");
-                    return;
-                }
-                setUser(data.user.id);
-            } catch (error) {
-                console.log(error)
-            }
+        if (!authLoading && !user) {
+            router.push("/login");
         }
-        loadUser();
-    }, [router]);
+    }, [user, authLoading, router]);
 
     // Initial Fetch (Options)
     useEffect(() => {
@@ -188,7 +180,7 @@ export function CsPerformance() {
 
                     {/* Table & Pagination */}
                     <div>
-                        <LeadsTableManager data={data} />
+                        <LeadsTableManager data={data} userType={userType} />
 
                         <div className="mt-4">
                             <Pagination

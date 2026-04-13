@@ -2,6 +2,7 @@ import { leadsType } from "@/app/types/types";
 
 type leadDataType = {
     data: leadsType[];
+    userType?: number;
 };
 
 const statusColors: Record<string, string> = {
@@ -13,7 +14,17 @@ const statusColors: Record<string, string> = {
     hot: "#FFD3E2",
 };
 
-export function LeadsTableManager({ data }: leadDataType) {
+export function LeadsTableManager({ data, userType }: leadDataType) {
+    const columns = [
+        "Tanggal",
+        "Nama",
+        ...(userType === 2 ? ["No HP"] : []),
+        "Status",
+        "PIC",
+        "Cabang",
+        "Keterangan",
+    ];
+
     return (
         <div className="text-[.7rem]">
             {/* 1. Adjusted outer container: Removed 'overflow-hidden' so scrollbars can appear */}
@@ -25,14 +36,7 @@ export function LeadsTableManager({ data }: leadDataType) {
                     <table className="w-full">
                         <thead className="bg-gray-50 border-b">
                             <tr>
-                                {[
-                                    "Tanggal",
-                                    "Nama",
-                                    "Status",
-                                    "PIC",
-                                    "Cabang",
-                                    "Keterangan",
-                                ].map((h, i) => (
+                                {columns.map((h, i) => (
                                     <th
                                         key={i}
                                         scope="col"
@@ -47,7 +51,7 @@ export function LeadsTableManager({ data }: leadDataType) {
                             {data.length === 0 ? (
                                 <tr>
                                     <td
-                                        colSpan={6}
+                                        colSpan={columns.length}
                                         className="px-2 py-4 text-center text-gray-500"
                                     >
                                         Data tidak tersedia
@@ -63,6 +67,12 @@ export function LeadsTableManager({ data }: leadDataType) {
                                         <td className="px-2 py-2 whitespace-nowrap">
                                             {item.name}
                                         </td>
+
+                                        {userType === 2 && (
+                                            <td className="px-2 py-2 whitespace-nowrap font-medium text-blue-600">
+                                                {item.nomor_hp || "-"}
+                                            </td>
+                                        )}
 
                                         <td className="px-2 py-2 whitespace-nowrap">
                                             <span

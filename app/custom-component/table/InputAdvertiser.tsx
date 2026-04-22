@@ -55,7 +55,9 @@ export default function InputAdvertiser({ onAddData, platforms, branches, target
     // This is "derived state". It updates instantly whenever spend or ppn changes.
     const totalBudget = Number(formData.spend) + Number(formData.ppn);
 
-    const costPerLead = formData.leads > 0 ? Math.round(totalBudget / formData.leads) : 0;
+    const costPerLead = formData.actual_leads > 0
+        ? Math.round(totalBudget / formData.actual_leads)
+        : (formData.leads > 0 ? Math.round(totalBudget / formData.leads) : 0);
     const costPerKonversi = formData.conversi_google > 0 ? Math.round(totalBudget / formData.conversi_google) : 0;
 
     // Handle Changes
@@ -101,14 +103,16 @@ export default function InputAdvertiser({ onAddData, platforms, branches, target
     // 4. Update Handle Submit
     const handleAdd = () => {
         // Construct the full payload
+        const { ppn, ...rest } = formData;
         const payload: AdvertiserData = {
-            ...formData,
+            ...rest,
             platform_id: formData.platform_id,
             total_budget: totalBudget,
-            cost_per_lead: costPerLead,
-            cost_per_konversi: costPerKonversi,
             // ✅ ADD THIS LINE
             created_at: new Date().toISOString(),
+            ppn: 0,
+            cost_per_lead: 0,
+            cost_per_konversi: 0
         };
 
         // Send data to Parent

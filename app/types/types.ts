@@ -277,3 +277,17 @@ export interface ReusableCsDataAdvertiser {
   platforms: SelectItemData[];
   branches: SelectItemData[];
 }
+
+// types/meta.ts
+export interface MetaAction {
+  action_type: string;
+  value: string;
+}
+
+export interface MetaCampaignInsight {
+  campaign_name: string;
+  spend: string;
+  actions?: MetaAction[];
+  date_start: string;
+  date_stop: string;
+}

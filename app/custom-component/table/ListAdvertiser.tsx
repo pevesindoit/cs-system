@@ -89,7 +89,9 @@ export default function ListAdvertiser({ data, platforms, branches, onDelete }: 
         <>
             {rows.map((row, index) => {
                 const ppn = row.total_budget - row.spend;
-                const costPerLead = row.leads > 0 ? row.spend / row.leads : 0;
+                const costPerLead = (row.actual_leads ?? 0) > 0 
+                    ? row.spend / (row.actual_leads ?? 0) 
+                    : (row.leads > 0 ? row.spend / row.leads : 0);
                 const platformName = row.platform?.name || row.platform_id;
                 const isGoogle = platformName?.toLowerCase() === 'google';
                 const safeConversiGoogle = row.conversi_google || 0;

@@ -14,10 +14,35 @@ export async function POST() {
       );
     }
 
+    // 2. Format account ID
     const accountId = AD_ACCOUNT_ID.startsWith("act_")
       ? AD_ACCOUNT_ID
       : `act_${AD_ACCOUNT_ID}`;
-    const metaUrl = `https://graph.facebook.com/v19.0/${accountId}/insights?fields=campaign_name,spend,actions&level=campaign&date_preset=today&access_token=${ACCESS_TOKEN}`;
+
+    // Dynamic Date Logic (Saturday if Monday, else Yesterday)
+    const today = new Date();
+    const targetDate = new Date();
+
+    if (today.getDay() === 1) {
+      // If Monday, subtract 2 days to get Saturday
+      targetDate.setDate(today.getDate() - 2);
+    } else {
+      // Otherwise, subtract 1 day to get yesterday
+      targetDate.setDate(today.getDate() - 1);
+    }
+
+    const yyyy = targetDate.getFullYear();
+    const mm = String(targetDate.getMonth() + 1).padStart(2, '0');
+    const dd = String(targetDate.getDate()).padStart(2, '0');
+    const formattedDate = `${yyyy}-${mm}-${dd}`;
+
+    const timeRange = {
+      since: formattedDate,
+      until: formattedDate,
+    };
+    const encodedTimeRange = encodeURIComponent(JSON.stringify(timeRange));
+
+    const metaUrl = `https://graph.facebook.com/v19.0/${accountId}/insights?fields=campaign_name,spend,actions&level=campaign&time_range=${encodedTimeRange}&access_token=${ACCESS_TOKEN}`;
 
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 15000);
@@ -48,7 +73,7 @@ export async function POST() {
 
     if (!campaigns.length) {
       return NextResponse.json(
-        { message: "No campaigns returned from Meta for today.", inserted: 0 },
+        { message: `No campaigns returned from Meta for ${formattedDate}.`, inserted: 0 },
         { status: 200 }
       );
     }
@@ -109,14 +134,13 @@ export async function POST() {
     const skipped: string[] = [];
     const upsertPayloads: Array<Record<string, unknown>> = [];
 
-    // Fetch existing records for today to handle updates (upsert)
-    const todayStr = new Date().toISOString().split('T')[0];
+    // Fetch existing records for the target date to handle updates (upsert)
     const { data: existingRecords } = await supabase
       .from("advertiser_data")
       .select("id, cabang_id")
       .eq("platform_id", metaPlatform.id)
-      .gte("created_at", `${todayStr}T00:00:00`)
-      .lte("created_at", `${todayStr}T23:59:59`);
+      .gte("created_at", `${formattedDate}T00:00:00`)
+      .lte("created_at", `${formattedDate}T23:59:59`);
 
     const existingMap = new Map(existingRecords?.map(r => [r.cabang_id, r.id]) || []);
 

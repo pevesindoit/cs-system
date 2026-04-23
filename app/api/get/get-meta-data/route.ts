@@ -16,7 +16,7 @@ export async function GET() {
   // 2. Format account ID
   const accountId = AD_ACCOUNT_ID.startsWith('act_') ? AD_ACCOUNT_ID : `act_${AD_ACCOUNT_ID}`;
 
-  // 3. Dynamic Date Logic (Saturday if Monday, else Yesterday)
+  // Dynamic Date Logic (Saturday if Monday, else Yesterday)
   const today = new Date();
   const targetDate = new Date();
 

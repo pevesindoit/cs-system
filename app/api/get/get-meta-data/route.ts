@@ -13,12 +13,39 @@ export async function GET() {
     }, { status: 500 });
   }
 
-  // 2. Format URL carefully
+  // 2. Format account ID
   const accountId = AD_ACCOUNT_ID.startsWith('act_') ? AD_ACCOUNT_ID : `act_${AD_ACCOUNT_ID}`;
-  const url = `https://graph.facebook.com/v19.0/${accountId}/insights?fields=campaign_name,spend,actions&level=campaign&date_preset=today&access_token=${ACCESS_TOKEN}`;
+
+  // 3. Dynamic Date Logic (Saturday if Monday, else Yesterday)
+  const today = new Date();
+  const targetDate = new Date();
+
+  if (today.getDay() === 1) {
+    // If Monday, subtract 2 days to get Saturday
+    targetDate.setDate(today.getDate() - 2);
+  } else {
+    // Otherwise, subtract 1 day to get yesterday
+    targetDate.setDate(today.getDate() - 1);
+  }
+
+  // Format to YYYY-MM-DD
+  const yyyy = targetDate.getFullYear();
+  const mm = String(targetDate.getMonth() + 1).padStart(2, '0');
+  const dd = String(targetDate.getDate()).padStart(2, '0');
+  const formattedDate = `${yyyy}-${mm}-${dd}`;
+
+  // Encode for URL
+  const timeRange = {
+    since: formattedDate,
+    until: formattedDate
+  };
+  const encodedTimeRange = encodeURIComponent(JSON.stringify(timeRange));
+
+  // 4. Format URL with time_range instead of date_preset
+  const url = `https://graph.facebook.com/v19.0/${accountId}/insights?fields=campaign_name,spend,actions&level=campaign&time_range=${encodedTimeRange}&access_token=${ACCESS_TOKEN}`;
 
   try {
-    // 3. Set a timeout controller (Meta can be slow)
+    // 5. Set a timeout controller (Meta can be slow)
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 15000); // 15s timeout
 
@@ -32,7 +59,7 @@ export async function GET() {
 
     const result = await response.json();
 
-    // 4. Return Meta's specific error if it exists
+    // 6. Return Meta's specific error if it exists
     if (result.error) {
       return NextResponse.json({
         source: "Meta API",
@@ -44,7 +71,7 @@ export async function GET() {
     return NextResponse.json(result.data);
 
   } catch (error: any) {
-    // 5. Detailed error logging for your terminal
+    // 7. Detailed error logging for your terminal
     console.error("Fetch Error:", error.name, error.message);
 
     return NextResponse.json({

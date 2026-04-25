@@ -153,7 +153,7 @@ export function CsPerformance() {
 
                     {/* Status Cards */}
                     <div className="bg-white rounded-[10px] py-7 px-8 border overflow-hidden text-[.7rem]">
-                        <div className="grid md:grid-cols-6 grid-cols-2 gap-2">
+                        <div className="grid md:grid-cols-7 grid-cols-2 gap-2">
                             {Object.entries(totalLeads).map(([status, total]) => (
                                 <div
                                     key={status}

@@ -12,6 +12,7 @@ const statusColors: Record<string, string> = {
     los: "#F7DDD5",
     closed: "#A6EEB9",
     hot: "#FFD3E2",
+    survey: "#FFD3E2",
 };
 
 export function LeadsTableManager({ data, userType }: leadDataType) {

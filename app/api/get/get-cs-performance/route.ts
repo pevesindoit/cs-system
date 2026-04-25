@@ -95,6 +95,7 @@ export async function POST(req: NextRequest) {
     const initialCounts: Record<string, number> = {
       closing: 0,
       followup: 0,
+      survey: 0,
       los: 0,
       hold: 0,
       warm: 0,

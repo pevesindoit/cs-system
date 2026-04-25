@@ -82,7 +82,8 @@ export default function Cs() {
         { label: "Los", value: "los", classname: "bg-[#A6EEB9] text-[#372E2E]" },
         { label: "Hold", value: "hold", classname: "bg-[#E1C3FD] text-[#372E2E]" },
         { label: "Warm", value: "warm", classname: "bg-[#FAFCDE] text-[#372E2E]" },
-        { label: "Hot", value: "hot", classname: "bg-[#FDCBF1] text-[#372E2E]" }
+        { label: "Hot", value: "hot", classname: "bg-[#FDCBF1] text-[#372E2E]" },
+        { label: "Survey", value: "survey", classname: "bg-[#FDCBF1] text-[#372E2E]" }
     ]
     const [leads, setLeads] = useState<leadsTypeError[]>([]);
 

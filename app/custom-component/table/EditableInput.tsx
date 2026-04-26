@@ -38,7 +38,6 @@ export default function EditableInput<T extends string | number>({
 }: EditableInputProps<T>) {
 
     // Helper: is this field acting as a formatted number/currency?
-    const isFormattedNumber = isCurrency;
 
     const [isEditing, setIsEditing] = useState(false);
     const [localValue, setLocalValue] = useState<string>("");
@@ -47,15 +46,18 @@ export default function EditableInput<T extends string | number>({
     useEffect(() => {
         if (value !== null && value !== undefined) {
             // Only add dots if it is Currency
-            if (isFormattedNumber) {
+            if (isCurrency) {
                 setLocalValue(formatThousands(String(value)));
+            } else if (isNumeric) {
+                // Strip all non-digits (like hyphens) when editing
+                setLocalValue(String(value).replace(/\D/g, ""));
             } else {
                 setLocalValue(String(value));
             }
         } else {
             setLocalValue("");
         }
-    }, [value, isFormattedNumber]);
+    }, [value, isCurrency, isNumeric]);
 
     const handleSave = async () => {
         // If empty and was null, cancel
@@ -68,7 +70,7 @@ export default function EditableInput<T extends string | number>({
 
         if (parseValue) {
             finalValue = parseValue(localValue);
-        } else if (isFormattedNumber) {
+        } else if (isCurrency) {
             // If currency, strip dots before saving
             finalValue = Number(localValue.replace(/\./g, "")) as T;
         } else if (isNumeric) {

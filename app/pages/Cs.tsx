@@ -45,7 +45,7 @@ export default function Cs() {
         reason: "",
         user_id: user,
         updated_at: GetToday(),
-        nomor_hp: ""
+        nomor_hp: "",
     });
     const [platforms, setPlatforms] = useState<SelectItemData[]>([]);
     const [channel, setChannel] = useState<SelectItemDataInt[]>([]);
@@ -202,7 +202,6 @@ export default function Cs() {
                     label: item.name,
                     classname: item.classname
                 }));
-
                 setPlatforms(formattedListPlatform);
                 setChannel(formattedListChannel);
                 setKeteranganLeads(formattedListketeranganLeads);
@@ -220,11 +219,18 @@ export default function Cs() {
     ) => {
         const { name, value } = e.target;
 
+        let finalValue = value;
+        if (name === "nomor_hp") {
+            // Keep it as raw input, but we'll clean it on save.
+            // Or better, clean it now to follow "always use one format only"
+            finalValue = value.replace(/\D/g, ""); 
+        }
+
         setFormData((prev) => ({
             ...prev,
             [name]: name === "nominal"
                 ? (value === "" ? null : value) // If empty, set null. If not, keep string.
-                : value,
+                : finalValue,
         }));
     };
 
@@ -233,7 +239,10 @@ export default function Cs() {
         setLoading(true)
         try {
             // 1. Prepare Data
-            const cleanedNomorHp = formData.nomor_hp?.trim() === "" ? null : formData.nomor_hp;
+            // Format phone number: strip all non-digits, then remove any '62' or '0' prefixes to start with '8'
+            let rawHp = formData.nomor_hp?.replace(/\D/g, "") || "";
+            rawHp = rawHp.replace(/^(62|0)+/, "");
+            const finalHp = rawHp.length > 0 ? rawHp : null;
 
             // --- TAMBAHAN PENTING ---
             // Bersihkan nominal dari karakter non-angka (jika ada) lalu convert ke Number
@@ -249,7 +258,7 @@ export default function Cs() {
 
             const finalData = {
                 ...formData,
-                nomor_hp: cleanedNomorHp,
+                nomor_hp: finalHp,
                 user_id: user,
 
                 updated_at: formData.updated_at,

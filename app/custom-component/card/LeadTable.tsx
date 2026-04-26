@@ -63,13 +63,20 @@ export default function LeadTableGrid({
         field: string,
         value: string | number
     ) => {
+        let finalValue = value;
+        if (field === "nomor_hp" && typeof value === "string") {
+            let cleaned = value.replace(/\D/g, "");
+            cleaned = cleaned.replace(/^(62|0)+/, "");
+            finalValue = cleaned;
+        }
+
         // Optimistic update
         setRows((prev) =>
             prev.map((row) =>
-                row.id === id ? { ...row, [field]: value } : row
+                row.id === id ? { ...row, [field]: finalValue } : row
             )
         );
-        await updateLead({ id, field, value });
+        await updateLead({ id, field, value: finalValue });
     };
 
     const toggleExpand = async (id: string) => {
@@ -341,7 +348,6 @@ export default function LeadTableGrid({
                                     />
                                 </div>
                             </td>
-
                             {/* Action Buttons */}
                             <td className="p-0 text-center align-middle">
                                 <div className="flex justify-center items-center px-1 space-x-2">

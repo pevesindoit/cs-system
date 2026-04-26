@@ -12,7 +12,8 @@ import {
     X,
     List,
     ClipboardPlus,
-    Target
+    Target,
+    Workflow
 } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -53,6 +54,7 @@ export default function SideBar() {
                 { link: "/dashboard", icon: <LayoutDashboard size={16} />, text: "Dashboard" },
                 { link: "/cs-performance", icon: <List size={16} />, text: "Leads" },
                 { link: "/target", icon: <Target size={16} />, text: "Target" },
+                { link: "/customers-jurney", icon: <Workflow size={16} />, text: "Costumer Jurney" },
             ],
         },
     ];

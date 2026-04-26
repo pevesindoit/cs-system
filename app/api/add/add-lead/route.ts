@@ -4,29 +4,73 @@ import { NextRequest, NextResponse } from "next/server";
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { name, user_id, ...rest } = body;
+    const { name, address, nomor_hp, channel_id, user_id, ...rest } = body;
 
     // 1. Validate required fields
-    if (!user_id) {
+    if (!user_id || !nomor_hp) {
       return NextResponse.json(
-        { error: "Missing required fields: name or user_id" },
+        { error: "Missing required fields: user_id or nomor_hp" },
         { status: 400 }
       );
     }
 
-    // 2. Build the payload
+    // Clean phone number: remove non-digits, then remove any '62' or '0' prefixes to start with '8'
+    const cleanedHpStr = nomor_hp.replace(/\D/g, "").replace(/^(62|0)+/, "");
+    const cleanedHp = parseInt(cleanedHpStr, 10); // Store as number
+
+    // 2. Check/Upsert Customer
+    let costumer_id;
+
+    // Check if customer exists by phone number
+    const { data: existingCustomer, error: findError } = await supabase
+      .from("costumers")
+      .select("id")
+      .eq("number", cleanedHp)
+      .maybeSingle();
+
+    if (findError) {
+      console.error("Supabase Find Error:", findError);
+      return NextResponse.json({ error: findError.message }, { status: 500 });
+    }
+
+    if (existingCustomer) {
+      costumer_id = existingCustomer.id;
+    } else {
+      // Create new customer
+      const { data: newCustomer, error: customerError } = await supabase
+        .from("costumers")
+        .insert({
+          name,
+          address,
+          number: cleanedHp,
+          costumers_type: channel_id || 1
+        })
+        .select("id")
+        .single();
+
+      if (customerError) {
+        console.error("Customer Insert Error:", customerError);
+        return NextResponse.json({ error: customerError.message }, { status: 500 });
+      }
+      costumer_id = newCustomer.id;
+    }
+
+    // 3. Build the payload for the lead
     const insertPayload = {
       name,
+      address,
+      nomor_hp: cleanedHpStr, // leads table keeps as string
       user_id,
+      channel_id,
+      costumer_id,
       ...rest,
     };
 
-    // 3. Insert and return ONLY the new record
-    // We select specific fields or '*' to get the ID back immediately
+    // 4. Insert and return ONLY the new record
     const { data: newLead, error: insertError } = await supabase
       .from("leads")
       .insert(insertPayload)
-      .select("*, platform:platform_id(name)") // Try to join immediately if Supabase allows, otherwise just select '*'
+      .select("*, platform:platform_id(name)")
       .single();
 
     if (insertError) {
@@ -34,13 +78,10 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: insertError.message }, { status: 500 });
     }
 
-    // --- DELETED: The "Fetch All" block that was crashing your server ---
-
-    // 4. Return just the new lead
     return NextResponse.json(
       {
         message: "Lead created successfully",
-        newLead: newLead, // Send the full object so frontend can use it
+        newLead: newLead,
       },
       { status: 200 }
     );

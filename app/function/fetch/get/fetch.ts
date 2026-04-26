@@ -179,3 +179,12 @@ export const getTarget = async () => {
     console.log("Failed to fetch targets", error);
   }
 };
+
+export const getCustomerJourney = async (data: { page?: number; limit?: number; search?: string }) => {
+  try {
+    const res = await axios.post("/api/get/get-customer-journey", data);
+    return res;
+  } catch (error) {
+    console.log("Failed to fetch customer journey", error);
+  }
+};

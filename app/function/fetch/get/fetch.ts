@@ -180,7 +180,7 @@ export const getTarget = async () => {
   }
 };
 
-export const getCustomerJourney = async (data: { page?: number; limit?: number; search?: string }) => {
+export const getCustomerJourney = async (data: { page?: number; limit?: number; search?: string; start_date?: string; end_date?: string }) => {
   try {
     const res = await axios.post("/api/get/get-customer-journey", data);
     return res;

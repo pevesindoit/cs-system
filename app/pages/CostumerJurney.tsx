@@ -6,6 +6,7 @@ import H1 from "../custom-component/H1";
 import { Pagination } from "../custom-component/table/Pagination";
 import { useAuth } from "../custom-component/global/AuthProfider";
 import { getCustomerJourney } from "../function/fetch/get/fetch";
+import DateRangePicker from "../custom-component/DateRangePicker";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -315,6 +316,7 @@ export default function CustomerJourney() {
     const [loading, setLoading] = useState(true);
     const [search, setSearch] = useState("");
     const [searchInput, setSearchInput] = useState("");
+    const [range, setRange] = useState({ start_date: "", end_date: "" });
     const LIMIT = 5;
 
     const router = useRouter();
@@ -336,7 +338,13 @@ export default function CustomerJourney() {
     const fetchData = useCallback(async () => {
         setLoading(true);
         try {
-            const res = await getCustomerJourney({ page: currentPage, limit: LIMIT, search });
+            const res = await getCustomerJourney({
+                page: currentPage,
+                limit: LIMIT,
+                search,
+                start_date: range.start_date,
+                end_date: range.end_date,
+            });
             if (res?.data) {
                 setCustomers(res.data.data || []);
                 setTotalPages(res.data.pagination?.totalPages || 0);
@@ -347,16 +355,16 @@ export default function CustomerJourney() {
         } finally {
             setLoading(false);
         }
-    }, [currentPage, search]);
+    }, [currentPage, search, range]);
 
     useEffect(() => {
         fetchData();
     }, [fetchData]);
 
-    // Reset to page 1 when search changes
+    // Reset to page 1 when search or date changes
     useEffect(() => {
         setCurrentPage(1);
-    }, [search]);
+    }, [search, range]);
 
     // Show spinner while auth is resolving
     if (authLoading || (loading && customers.length === 0 && !search)) {
@@ -380,13 +388,17 @@ export default function CustomerJourney() {
     return (
         <div className="space-y-6 pb-10">
             {/* Page Header */}
-            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-                <div>
-                    <H1>Customer Journey</H1>
-                    <p className="text-xs text-gray-400 mt-0.5">
-                        Pantau perjalanan setiap customer dari pertama masuk hingga closing.
-                    </p>
-                </div>
+            <div>
+                <H1>Customer Journey</H1>
+                <p className="text-xs text-gray-400 mt-0.5">
+                    Pantau perjalanan setiap customer dari pertama masuk hingga closing.
+                </p>
+            </div>
+
+            {/* Filter Bar: DateRange + Search */}
+            <div className="flex flex-col md:flex-row md:items-center gap-3">
+                {/* Date range */}
+                <DateRangePicker onChange={setRange} />
 
                 {/* Search */}
                 <form onSubmit={handleSearchSubmit} className="flex items-center gap-2">

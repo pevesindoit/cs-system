@@ -7,52 +7,56 @@ export async function POST(req: NextRequest) {
     const { name, address, nomor_hp, channel_id, user_id, ...rest } = body;
 
     // 1. Validate required fields
-    if (!user_id || !nomor_hp) {
+    if (!user_id) {
       return NextResponse.json(
-        { error: "Missing required fields: user_id or nomor_hp" },
+        { error: "Missing required fields: user_id" },
         { status: 400 }
       );
     }
 
-    // Clean phone number: remove non-digits, then remove any '62' or '0' prefixes to start with '8'
-    const cleanedHpStr = nomor_hp.replace(/\D/g, "").replace(/^(62|0)+/, "");
-    const cleanedHp = parseInt(cleanedHpStr, 10); // Store as number
+    // Clean phone number (only if provided)
+    const cleanedHpStr = nomor_hp
+      ? nomor_hp.replace(/\D/g, "").replace(/^(62|0)+/, "")
+      : "";
+    const cleanedHp = cleanedHpStr ? parseInt(cleanedHpStr, 10) : null;
 
-    // 2. Check/Upsert Customer
-    let costumer_id;
+    // 2. Check/Upsert Customer (only if phone number is provided)
+    let costumer_id = null;
 
-    // Check if customer exists by phone number
-    const { data: existingCustomer, error: findError } = await supabase
-      .from("costumers")
-      .select("id")
-      .eq("number", cleanedHp)
-      .maybeSingle();
-
-    if (findError) {
-      console.error("Supabase Find Error:", findError);
-      return NextResponse.json({ error: findError.message }, { status: 500 });
-    }
-
-    if (existingCustomer) {
-      costumer_id = existingCustomer.id;
-    } else {
-      // Create new customer
-      const { data: newCustomer, error: customerError } = await supabase
+    if (cleanedHp) {
+      // Check if customer exists by phone number
+      const { data: existingCustomer, error: findError } = await supabase
         .from("costumers")
-        .insert({
-          name,
-          address,
-          number: cleanedHp,
-          costumers_type: channel_id || 1
-        })
         .select("id")
-        .single();
+        .eq("number", cleanedHp)
+        .maybeSingle();
 
-      if (customerError) {
-        console.error("Customer Insert Error:", customerError);
-        return NextResponse.json({ error: customerError.message }, { status: 500 });
+      if (findError) {
+        console.error("Supabase Find Error:", findError);
+        return NextResponse.json({ error: findError.message }, { status: 500 });
       }
-      costumer_id = newCustomer.id;
+
+      if (existingCustomer) {
+        costumer_id = existingCustomer.id;
+      } else {
+        // Create new customer
+        const { data: newCustomer, error: customerError } = await supabase
+          .from("costumers")
+          .insert({
+            name,
+            address,
+            number: cleanedHp,
+            costumers_type: channel_id || 1
+          })
+          .select("id")
+          .single();
+
+        if (customerError) {
+          console.error("Customer Insert Error:", customerError);
+          return NextResponse.json({ error: customerError.message }, { status: 500 });
+        }
+        costumer_id = newCustomer.id;
+      }
     }
 
     // 3. Build the payload for the lead

@@ -96,97 +96,141 @@ export default function ReportBranch({ data, omsetLabel, leadsLabel }: { data: B
                             </thead>
                             <tbody>
                                 {branch.weeks && branch.weeks.length > 0 ? (
-                                    branch.weeks.map((week, idx) => {
-                                        // Calculations: Use data if provided, or calculate fallback
-                                        // Note: Your data provides 'ppn' and 'cost_per_lead', so we use them directly
-                                        // but we keep the fallback || 0 for safety.
+                                    <>
+                                        {branch.weeks.map((week, idx) => {
+                                            // Calculations: Use data if provided, or calculate fallback
+                                            // Note: Your data provides 'ppn' and 'cost_per_lead', so we use them directly
+                                            // but we keep the fallback || 0 for safety.
 
-                                        return (
-                                            <tr
-                                                key={idx}
-                                                className="bg-white border-b hover:bg-gray-50 transition-colors"
-                                            >
-                                                {/* 1. Period */}
-                                                <td className="px-4 py-3 whitespace-nowrap">
-                                                    <div className="font-semibold text-gray-900">
-                                                        {week.week_name}
-                                                    </div>
-                                                    <div className="text-xs text-gray-400">
-                                                        {week.date_range}
-                                                    </div>
-                                                </td>
+                                            return (
+                                                <tr
+                                                    key={idx}
+                                                    className="bg-white border-b hover:bg-gray-50 transition-colors"
+                                                >
+                                                    {/* 1. Period */}
+                                                    <td className="px-4 py-3 whitespace-nowrap">
+                                                        <div className="font-semibold text-gray-900">
+                                                            {week.week_name}
+                                                        </div>
+                                                        <div className="text-xs text-gray-400">
+                                                            {week.date_range}
+                                                        </div>
+                                                    </td>
 
-                                                {/* 2. Budget */}
-                                                <td className="px-4 py-3 text-right">
-                                                    {(week.budget || 0).toLocaleString("id-ID")}
-                                                </td>
+                                                    {/* 2. Budget */}
+                                                    <td className="px-4 py-3 text-right">
+                                                        {(week.budget || 0).toLocaleString("id-ID")}
+                                                    </td>
 
-                                                {/* 3. PPN */}
-                                                <td className="px-4 py-3 text-right text-gray-500">
-                                                    {(week.ppn || 0).toLocaleString("id-ID")}
-                                                </td>
+                                                    {/* 3. PPN */}
+                                                    <td className="px-4 py-3 text-right text-gray-500">
+                                                        {(week.ppn || 0).toLocaleString("id-ID")}
+                                                    </td>
 
-                                                {/* 4. Total Spend */}
-                                                <td className="px-4 py-3 text-right font-medium text-gray-900">
-                                                    {(week.total_spend || 0).toLocaleString("id-ID")}
-                                                </td>
+                                                    {/* 4. Total Spend */}
+                                                    <td className="px-4 py-3 text-right font-medium text-gray-900">
+                                                        {(week.total_spend || 0).toLocaleString("id-ID")}
+                                                    </td>
 
-                                                {/* 5. Target Leads */}
-                                                <td className="px-4 py-3 text-center text-gray-600">
-                                                    {(week.target_leads || 0).toLocaleString("id-ID")}
-                                                </td>
+                                                    {/* 5. Target Leads */}
+                                                    <td className="px-4 py-3 text-center text-gray-600">
+                                                        {(week.target_leads || 0).toLocaleString("id-ID")}
+                                                    </td>
 
-                                                {/* Target Omset */}
-                                                <td className="px-4 py-3 text-center font-medium text-gray-900">
-                                                    {(week.target_omset || 0).toLocaleString("id-ID")}
-                                                </td>
+                                                    {/* Target Omset */}
+                                                    <td className="px-4 py-3 text-center font-medium text-gray-900">
+                                                        {(week.target_omset || 0).toLocaleString("id-ID")}
+                                                    </td>
 
-                                                {/* 6. Actual Leads */}
-                                                <td className="px-4 py-3 text-right font-bold text-gray-900">
-                                                    {week.actual_lead || 0}
-                                                </td>
+                                                    {/* 6. Actual Leads */}
+                                                    <td className="px-4 py-3 text-right font-bold text-gray-900">
+                                                        {week.actual_lead || 0}
+                                                    </td>
 
-                                                {/* 7. Cost Per Lead */}
-                                                <td className="px-4 py-3 text-right text-xs">
-                                                    {/* Using the pre-calculated value from your DB if available */}
-                                                    {(week.cost_per_lead || 0).toLocaleString("id-ID")}
-                                                </td>
+                                                    {/* 7. Cost Per Lead */}
+                                                    <td className="px-4 py-3 text-right text-xs">
+                                                        {/* Using the pre-calculated value from your DB if available */}
+                                                        {(week.cost_per_lead || 0).toLocaleString("id-ID")}
+                                                    </td>
 
-                                                {/* 8. Target vs Actual */}
-                                                <td className={`px-4 py-3 text-center text-xs font-semibold ${parseFloat(week.target_vs_actual) >= 100
-                                                    ? "text-green-600"
-                                                    : "text-red-500"
-                                                    }`}>
-                                                    {week.target_vs_actual || "0%"}
-                                                </td>
+                                                    {/* 8. Target vs Actual */}
+                                                    <td className={`px-4 py-3 text-center text-xs font-semibold ${parseFloat(week.target_vs_actual) >= 100
+                                                        ? "text-green-600"
+                                                        : "text-red-500"
+                                                        }`}>
+                                                        {`${parseFloat(week.target_vs_actual || "0").toFixed(2)}%`}
+                                                    </td>
 
-                                                {/* 9. Warm */}
-                                                <td className="px-4 py-3 text-center text-orange-600 font-medium">
-                                                    {week.warm_leads || 0}
-                                                </td>
+                                                    {/* 9. Warm */}
+                                                    <td className="px-4 py-3 text-center text-orange-600 font-medium">
+                                                        {week.warm_leads || 0}
+                                                    </td>
 
-                                                {/* 10. Closing */}
-                                                <td className="px-4 py-3 text-right text-green-600 font-bold">
-                                                    {week.closing || 0}
-                                                </td>
+                                                    {/* 10. Closing */}
+                                                    <td className="px-4 py-3 text-right text-green-600 font-bold">
+                                                        {week.closing || 0}
+                                                    </td>
 
-                                                {/* 11. Real Omset (Added) */}
-                                                <td className="px-4 py-3 text-right font-bold text-blue-600">
-                                                    {(week.omset || 0).toLocaleString("id-ID")}
-                                                </td>
+                                                    {/* 11. Real Omset (Added) */}
+                                                    <td className="px-4 py-3 text-right font-bold text-blue-600">
+                                                        {(week.omset || 0).toLocaleString("id-ID")}
+                                                    </td>
 
-                                                {/* 12. Closing Rate */}
-                                                <td className="px-4 py-3 text-right text-gray-600">
-                                                    {week.closing_rate || "0%"}
-                                                </td>
+                                                    {/* 12. Closing Rate */}
+                                                    <td className="px-4 py-3 text-right text-gray-600">
+                                                        {week.closing_rate || "0%"}
+                                                    </td>
 
-                                                {/* 13. Ads vs Omset (Added) */}
-                                                <td className="px-4 py-3 text-right text-xs text-gray-500">
-                                                    {week.ads_vs_omset || "0%"}
-                                                </td>
-                                            </tr>
-                                        );
-                                    })
+                                                    {/* 13. Ads vs Omset (Added) */}
+                                                    <td className="px-4 py-3 text-right text-xs text-gray-500">
+                                                        {`${parseFloat(week.ads_vs_omset || "0").toFixed(2)}%`}
+                                                    </td>
+                                                </tr>
+                                            );
+                                        })}
+
+                                        {/* TOTAL ROW */}
+                                        {(() => {
+                                            const totalBudget = branch.weeks.reduce((s, w) => s + (w.budget || 0), 0);
+                                            const totalPpn = branch.weeks.reduce((s, w) => s + (w.ppn || 0), 0);
+                                            const totalSpend = branch.weeks.reduce((s, w) => s + (w.total_spend || 0), 0);
+                                            const totalTargetLeads = branch.weeks.reduce((s, w) => s + (w.target_leads || 0), 0);
+                                            const totalTargetOmset = branch.weeks.reduce((s, w) => s + (w.target_omset || 0), 0);
+                                            const totalActualLead = branch.weeks.reduce((s, w) => s + (w.actual_lead || 0), 0);
+                                            const totalWarm = branch.weeks.reduce((s, w) => s + (w.warm_leads || 0), 0);
+                                            const totalClosing = branch.weeks.reduce((s, w) => s + (w.closing || 0), 0);
+                                            const totalOmset = branch.weeks.reduce((s, w) => s + (w.omset || 0), 0);
+
+                                            // Derived totals
+                                            const totalCpl = totalActualLead > 0 ? totalSpend / totalActualLead : 0;
+                                            const totalTva = totalTargetLeads > 0 ? (totalActualLead / totalTargetLeads) * 100 : 0;
+                                            const totalClosingRate = totalActualLead > 0 ? (totalClosing / totalActualLead) * 100 : 0;
+                                            const totalAdsVsOmset = totalOmset > 0 ? (totalSpend / totalOmset) * 100 : 0;
+
+                                            return (
+                                                <tr className="bg-gray-100 border-t-2 border-gray-300 font-bold text-gray-800">
+                                                    <td className="px-4 py-3 whitespace-nowrap text-gray-900 font-bold">
+                                                        Total
+                                                    </td>
+                                                    <td className="px-4 py-3 text-right">{totalBudget.toLocaleString("id-ID")}</td>
+                                                    <td className="px-4 py-3 text-right text-gray-600">{totalPpn.toLocaleString("id-ID")}</td>
+                                                    <td className="px-4 py-3 text-right">{totalSpend.toLocaleString("id-ID")}</td>
+                                                    <td className="px-4 py-3 text-center">{totalTargetLeads.toLocaleString("id-ID")}</td>
+                                                    <td className="px-4 py-3 text-center">{totalTargetOmset.toLocaleString("id-ID")}</td>
+                                                    <td className="px-4 py-3 text-right">{totalActualLead}</td>
+                                                    <td className="px-4 py-3 text-right text-xs">{Math.round(totalCpl).toLocaleString("id-ID")}</td>
+                                                    <td className={`px-4 py-3 text-center text-xs font-bold ${totalTva >= 100 ? "text-green-600" : "text-red-500"}`}>
+                                                        {totalTva.toFixed(2)}%
+                                                    </td>
+                                                    <td className="px-4 py-3 text-center text-orange-600">{totalWarm}</td>
+                                                    <td className="px-4 py-3 text-right text-green-600">{totalClosing}</td>
+                                                    <td className="px-4 py-3 text-right text-blue-600">{totalOmset.toLocaleString("id-ID")}</td>
+                                                    <td className="px-4 py-3 text-right text-gray-600">{totalClosingRate.toFixed(2)}%</td>
+                                                    <td className="px-4 py-3 text-right text-xs text-gray-500">{totalAdsVsOmset.toFixed(2)}%</td>
+                                                </tr>
+                                            );
+                                        })()}
+                                    </>
                                 ) : (
                                     <tr>
                                         <td

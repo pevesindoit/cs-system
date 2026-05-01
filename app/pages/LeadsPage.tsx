@@ -92,7 +92,7 @@ export function LeadsPage() {
                 <H1>Leads Management</H1>
                 <div className="space-y-4">
                     <div className="md:flex md:space-x-3">
-                        <DateRangePicker onChange={setRange} />
+                        <DateRangePicker value={range} onChange={setRange} />
                         <div className="grid md:grid-cols-3 w-full gap-3">
                             <DropDownLeads
                                 items={css}

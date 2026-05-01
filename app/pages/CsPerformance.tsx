@@ -131,7 +131,7 @@ export function CsPerformance() {
 
                     {/* Filter Section */}
                     <div className="md:flex md:space-x-3">
-                        <DateRangePicker onChange={setRange} />
+                        <DateRangePicker value={range} onChange={setRange} />
                         <div className="grid md:grid-cols-3 w-full gap-3">
                             <DropDownLeads
                                 items={css}

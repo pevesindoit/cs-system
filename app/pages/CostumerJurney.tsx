@@ -47,6 +47,7 @@ const statusColors: Record<string, { bg: string; text: string; dot: string }> = 
     warm: { bg: "bg-yellow-50", text: "text-yellow-700", dot: "bg-yellow-400" },
     hold: { bg: "bg-blue-50", text: "text-blue-700", dot: "bg-blue-400" },
     los: { bg: "bg-gray-50", text: "text-gray-500", dot: "bg-gray-400" },
+    cold: { bg: "bg-slate-50", text: "text-slate-600", dot: "bg-slate-400" },
 };
 
 const getStatusStyle = (status: string) => {
@@ -73,7 +74,15 @@ const formatRupiah = (value: number | null) => {
 
 // ─── Customer Journey Timeline / Lead Table ───────────────────────────────────
 
-function CustomerLeadTable({ leads }: { leads: LeadItem[] }) {
+function CustomerLeadTable({ 
+    leads, 
+    statusFilter, 
+    range 
+}: { 
+    leads: LeadItem[]; 
+    statusFilter?: string; 
+    range?: { start_date: string; end_date: string } 
+}) {
     const [leadsPage, setLeadsPage] = useState(1);
     const LEADS_PER_PAGE = 5;
 
@@ -112,8 +121,27 @@ function CustomerLeadTable({ leads }: { leads: LeadItem[] }) {
                     <tbody className="divide-y divide-gray-50">
                         {paginatedLeads.map((lead) => {
                             const st = getStatusStyle(lead.status);
+                            
+                            // Check if this specific lead matches the current filters
+                            let isMatch = false;
+                            if (statusFilter || (range?.start_date || range?.end_date)) {
+                                const statusMatches = !statusFilter || lead.status?.toLowerCase() === statusFilter.toLowerCase();
+                                
+                                let dateMatches = true;
+                                if (range?.start_date || range?.end_date) {
+                                    // Direct string comparison is safe for YYYY-MM-DD
+                                    const leadDate = lead.updated_at.split(' ')[0]; // Handle if it's a timestamp string
+                                    if (range.start_date && leadDate < range.start_date) dateMatches = false;
+                                    if (range.end_date && leadDate > range.end_date) dateMatches = false;
+                                }
+                                isMatch = statusMatches && dateMatches;
+                            }
+
                             return (
-                                <tr key={lead.id} className="bg-white hover:bg-gray-50/60 transition-colors">
+                                <tr 
+                                    key={lead.id} 
+                                    className={`transition-colors ${isMatch ? "bg-blue-50/40 hover:bg-blue-50/60" : "bg-white hover:bg-gray-50/60"}`}
+                                >
                                     <td className="px-3 py-2 whitespace-nowrap text-gray-500">
                                         {formatDate(lead.updated_at)}
                                     </td>
@@ -168,7 +196,15 @@ function CustomerLeadTable({ leads }: { leads: LeadItem[] }) {
 
 // ─── Customer Journey Card ────────────────────────────────────────────────────
 
-function CustomerJourneyCard({ customer }: { customer: CustomerItem }) {
+function CustomerJourneyCard({ 
+    customer, 
+    statusFilter, 
+    range 
+}: { 
+    customer: CustomerItem; 
+    statusFilter: string; 
+    range: { start_date: string; end_date: string } 
+}) {
     const [expanded, setExpanded] = useState(false);
 
     // Summary stats from leads
@@ -277,7 +313,11 @@ function CustomerJourneyCard({ customer }: { customer: CustomerItem }) {
                         <p className="text-xs font-semibold text-gray-500 mb-1 uppercase tracking-wide">
                             Riwayat Leads ({totalLeads})
                         </p>
-                        <CustomerLeadTable leads={customer.leads} />
+                        <CustomerLeadTable 
+                            leads={customer.leads} 
+                            statusFilter={statusFilter}
+                            range={range}
+                        />
                     </div>
                 </div>
             )}
@@ -317,6 +357,7 @@ export default function CustomerJourney() {
     const [search, setSearch] = useState("");
     const [searchInput, setSearchInput] = useState("");
     const [range, setRange] = useState({ start_date: "", end_date: "" });
+    const [statusFilter, setStatusFilter] = useState("");
     const LIMIT = 5;
 
     const router = useRouter();
@@ -344,6 +385,7 @@ export default function CustomerJourney() {
                 search,
                 start_date: range.start_date,
                 end_date: range.end_date,
+                status: statusFilter,
             });
             if (res?.data) {
                 setCustomers(res.data.data || []);
@@ -355,16 +397,16 @@ export default function CustomerJourney() {
         } finally {
             setLoading(false);
         }
-    }, [currentPage, search, range]);
+    }, [currentPage, search, range, statusFilter]);
 
     useEffect(() => {
         fetchData();
     }, [fetchData]);
 
-    // Reset to page 1 when search or date changes
+    // Reset to page 1 when search, date, or status changes
     useEffect(() => {
         setCurrentPage(1);
-    }, [search, range]);
+    }, [search, range, statusFilter]);
 
     // Show spinner while auth is resolving
     if (authLoading || (loading && customers.length === 0 && !search)) {
@@ -395,10 +437,59 @@ export default function CustomerJourney() {
                 </p>
             </div>
 
-            {/* Filter Bar: DateRange + Search */}
-            <div className="flex flex-col md:flex-row md:items-center gap-3">
+            {/* Filter Bar: Status pills + DateRange + Search */}
+            <div className="flex flex-col gap-3">
+                {/* Status Filter Pills */}
+                <div className="flex flex-wrap items-center gap-2">
+                    <span className="text-xs text-gray-400 font-medium">Filter Status:</span>
+                    {[
+                        { label: "Semua", value: "" },
+                        { label: "Hold", value: "hold" },
+                        { label: "Survey", value: "survey" },
+                        { label: "Closing", value: "closing" },
+                        { label: "Warm", value: "warm" },
+                        { label: "Cold", value: "cold" },
+                        { label: "Lost", value: "los" },
+                    ].map((item) => {
+                        const isActive = statusFilter === item.value;
+                        const colorMap: Record<string, string> = {
+                            "": isActive ? "bg-gray-800 text-white border-gray-800" : "bg-white text-gray-500 border-gray-200 hover:border-gray-400",
+                            hold: isActive ? "bg-blue-600 text-white border-blue-600" : "bg-white text-blue-600 border-blue-200 hover:border-blue-400",
+                            survey: isActive ? "bg-pink-500 text-white border-pink-500" : "bg-white text-pink-600 border-pink-200 hover:border-pink-400",
+                            closing: isActive ? "bg-emerald-600 text-white border-emerald-600" : "bg-white text-emerald-600 border-emerald-200 hover:border-emerald-400",
+                            warm: isActive ? "bg-yellow-500 text-white border-yellow-500" : "bg-white text-yellow-600 border-yellow-200 hover:border-yellow-400",
+                            cold: isActive ? "bg-slate-500 text-white border-slate-500" : "bg-white text-slate-600 border-slate-200 hover:border-slate-400",
+                            los: isActive ? "bg-gray-600 text-white border-gray-600" : "bg-white text-gray-600 border-gray-200 hover:border-gray-400",
+                        };
+                        return (
+                            <button
+                                key={item.value}
+                                onClick={() => setStatusFilter(item.value)}
+                                className={`px-3 py-1.5 text-xs font-semibold rounded-full border transition-all duration-150 ${colorMap[item.value]}`}
+                            >
+                                {item.label}
+                            </button>
+                        );
+                    })}
+                </div>
+
+                <div className="flex flex-col md:flex-row md:items-center gap-3">
                 {/* Date range */}
-                <DateRangePicker onChange={setRange} />
+                <div className="flex items-center gap-2">
+                    <DateRangePicker value={range} onChange={setRange} />
+                    {(range.start_date || range.end_date) && (
+                        <button
+                            type="button"
+                            onClick={() => setRange({ start_date: "", end_date: "" })}
+                            className="p-2 text-gray-400 hover:text-red-500 transition-colors"
+                            title="Reset Tanggal"
+                        >
+                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        </button>
+                    )}
+                </div>
 
                 {/* Search */}
                 <form onSubmit={handleSearchSubmit} className="flex items-center gap-2">
@@ -432,6 +523,7 @@ export default function CustomerJourney() {
                         </button>
                     )}
                 </form>
+                </div>
             </div>
 
             {/* Summary Bar */}
@@ -464,7 +556,34 @@ export default function CustomerJourney() {
                             <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2a1 1 0 01-.293.707L13 13.414V19a1 1 0 01-.553.894l-4 2A1 1 0 017 21v-7.586L3.293 6.707A1 1 0 013 6V4z" />
                             </svg>
-                            Filter: <span className="font-semibold">"{search}"</span>
+                            Nama: <span className="font-semibold">"{search}"</span>
+                        </div>
+                    )}
+                    {statusFilter && (
+                        <div className="flex items-center gap-1.5 text-xs text-emerald-700 bg-emerald-50 px-3 py-1.5 rounded-full">
+                            <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            Status: <span className="font-semibold">
+                                {{
+                                    hold: "Hold",
+                                    survey: "Survey",
+                                    closing: "Closing",
+                                    warm: "Warm",
+                                    cold: "Cold",
+                                    los: "Lost"
+                                }[statusFilter] || statusFilter}
+                            </span>
+                        </div>
+                    )}
+                    {(range.start_date || range.end_date) && (
+                        <div className="flex items-center gap-1.5 text-xs text-amber-700 bg-amber-50 px-3 py-1.5 rounded-full">
+                            <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                            </svg>
+                            Periode: <span className="font-semibold">
+                                {range.start_date ? formatDate(range.start_date) : "..."} - {range.end_date ? formatDate(range.end_date) : "..."}
+                            </span>
                         </div>
                     )}
                 </div>
@@ -482,7 +601,12 @@ export default function CustomerJourney() {
                     </div>
                 ) : (
                     customers.map((customer) => (
-                        <CustomerJourneyCard key={customer.id} customer={customer} />
+                        <CustomerJourneyCard 
+                            key={customer.id} 
+                            customer={customer} 
+                            statusFilter={statusFilter}
+                            range={range}
+                        />
                     ))
                 )}
             </div>

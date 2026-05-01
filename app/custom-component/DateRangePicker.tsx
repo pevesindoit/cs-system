@@ -1,51 +1,44 @@
 "use client";
 
-import { useState } from "react";
+interface Range {
+    start_date: string;
+    end_date: string;
+}
 
 export default function DateRangePicker({
-    onChange
+    onChange,
+    value
 }: {
-    onChange: (range: { start_date: string; end_date: string }) => void;
+    onChange: (range: Range) => void;
+    value: Range;
 }) {
-    const [range, setRange] = useState({
-        start_date: "",
-        end_date: ""
-    });
-
-    const handleChange = (key: "start_date" | "end_date", value: string) => {
-        const updated = { ...range, [key]: value };
-
-        setRange(updated);
-
-        // Only update parent when both dates exist
-        if (updated.start_date && updated.end_date) {
-            onChange(updated);
-        }
+    const handleChange = (key: "start_date" | "end_date", val: string) => {
+        const updated = { ...value, [key]: val };
+        onChange(updated);
     };
 
     return (
         <div className="flex flex-col space-y-2 text-[.7rem] md:w-auto w-full">
-            {/* <label className="font-medium">Select Date Range</label> */}
             <div className="flex items-center gap-3 w-full">
                 {/* Start */}
                 <div className="flex flex-col w-full">
                     <input
                         type="date"
                         className="border p-2 rounded"
-                        value={range.start_date}
+                        value={value.start_date}
                         onChange={(e) => handleChange("start_date", e.target.value)}
                     />
                 </div>
 
-                <span className="font-medium">to</span>
+                <span className="font-medium text-gray-500">to</span>
 
                 {/* End */}
                 <div className="flex flex-col w-full">
                     <input
                         type="date"
                         className="border p-2 rounded"
-                        value={range.end_date}
-                        min={range.start_date} // disable dates before start_date
+                        value={value.end_date}
+                        min={value.start_date}
                         onChange={(e) => handleChange("end_date", e.target.value)}
                     />
                 </div>

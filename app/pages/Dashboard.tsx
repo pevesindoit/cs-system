@@ -62,7 +62,7 @@ export default function Dashboard() {
                 <H1>Dashboard</H1>
 
                 {/* Single Date Picker Component */}
-                <DateRangePicker onChange={setRange} />
+                <DateRangePicker value={range} onChange={setRange} />
                 <div className="space-y-8">
                     <div className="pt-4 md:grid md:grid-cols-[60%_37%] md:gap-6 space-x-2">
                         <div className="md:grid md:grid-cols-2 md:gap-8">

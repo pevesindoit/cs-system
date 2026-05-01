@@ -24,54 +24,30 @@ export async function POST(req: NextRequest) {
     // We use !inner on leads to filter customers by their leads' attributes
     // but still return the customer data.
     // However, if we want the FULL history of those customers (even non-matching leads),
-    // we have to be careful. If we use !inner with a filter, it only returns the MATCHING leads.
-    // So we'll use a two-step approach but more robustly.
+    // we fetch customers first (filtered by leads) and then fetch all leads for those customers.
 
-    let customerIdsQuery = supabase
-      .from("leads")
-      .select("costumer_id");
-
-    if (start_date) {
-      customerIdsQuery = customerIdsQuery.gte("updated_at", start_date);
-    }
-    if (end_date) {
-      customerIdsQuery = customerIdsQuery.lte("updated_at", end_date);
-    }
-    if (status) {
-      customerIdsQuery = customerIdsQuery.ilike("status", status);
-    }
-
-    // To handle large datasets, we'll get the distinct costumer_ids 
-    // that match the filter. We'll use a limit to avoid fetching too many rows,
-    // but a large enough one to cover recent activity.
-    const { data: matchedLeads, error: leadsError } = await customerIdsQuery.limit(5000);
-
-    if (leadsError) {
-      return NextResponse.json({ error: leadsError.message }, { status: 500 });
-    }
-
-    const matchedCustomerIds = [...new Set((matchedLeads || []).map(l => l.costumer_id).filter(Boolean))];
-
-    // Main query for customers
     let query = supabase
       .from("costumers")
-      .select("*", { count: "exact" })
+      .select(isFiltered ? "*, leads!inner(id)" : "*", { count: "exact" })
       .order("created_at", { ascending: false });
 
     // Apply filters
     if (isFiltered) {
-      if (matchedCustomerIds.length === 0) {
-        return NextResponse.json({
-          data: [],
-          pagination: { totalItems: 0, totalPages: 0, currentPage: pageInt, limit: limitInt }
-        }, { status: 200 });
+      if (start_date) {
+        query = query.gte("leads.updated_at", start_date);
       }
-      query = query.in("id", matchedCustomerIds);
+      if (end_date) {
+        query = query.lte("leads.updated_at", end_date);
+      }
+      if (status) {
+        query = query.ilike("leads.status", status);
+      }
     }
 
     if (search) {
       query = query.ilike("name", `%${search}%`);
     }
+
 
     // Paginate customers
     const { data: customers, error: customersError, count } = await query.range(startIndex, endIndex);

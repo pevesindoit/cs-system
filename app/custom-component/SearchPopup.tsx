@@ -8,8 +8,8 @@ import { Input } from "@/components/ui/input"
 
 // 1. Update props to match your parent state (number | undefined)
 interface SearchPopupProps {
-    value: number | undefined
-    onChange: (value: number | undefined) => void
+    value: string | undefined
+    onChange: (value: string | undefined) => void
 }
 
 export function SearchPopup({ value, onChange }: SearchPopupProps) {
@@ -46,18 +46,17 @@ export function SearchPopup({ value, onChange }: SearchPopupProps) {
             >
                 <Input
                     ref={inputRef}
-                    type="number"
-                    placeholder="Search ID..."
+                    type="text"
+                    placeholder="Cari Nama atau Nomor HP..."
                     className="border-none shadow-none focus-visible:ring-0 px-3"
 
                     // 2. Handle the display value (convert undefined to empty string)
                     value={value ?? ""}
 
-                    // 3. Handle the change (convert string back to number)
+                    // 3. Handle the change
                     onChange={(e) => {
                         const val = e.target.value;
-                        // Jika kosong, kirim undefined atau null, jangan biarkan string kosong memicu search "0" jika tipe number
-                        onChange(val === "" ? undefined : Number(val));
+                        onChange(val === "" ? undefined : val);
                     }}
 
                     onKeyDown={handleKeyDown}

@@ -28,7 +28,7 @@ export async function POST(req: NextRequest) {
 
     let query = supabase
       .from("costumers")
-      .select(isFiltered ? "*, leads!inner(id)" : "*", { count: "exact" })
+      .select((isFiltered ? "*,leads!inner(id)" : "*") as any, { count: "exact" })
       .order("created_at", { ascending: false });
 
     // Apply filters
@@ -45,12 +45,14 @@ export async function POST(req: NextRequest) {
     }
 
     if (search) {
-      query = query.ilike("name", `%${search}%`);
+      const cleanedSearch = search.replace(/\D/g, "").replace(/^(62|0)+/, "");
+      query = query.or(`name.ilike.%${search}%,number.cast.text.ilike.%${cleanedSearch || search}%`);
     }
 
 
     // Paginate customers
-    const { data: customers, error: customersError, count } = await query.range(startIndex, endIndex);
+    const { data: customersRaw, error: customersError, count } = await query.range(startIndex, endIndex);
+    const customers = customersRaw as any[] | null;
 
     if (customersError) {
       return NextResponse.json({ error: customersError.message }, { status: 500 });

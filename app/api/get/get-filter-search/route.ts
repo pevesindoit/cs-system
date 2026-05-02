@@ -2,7 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import supabase from "@/lib/db";
 
 export async function POST(req: NextRequest) {
-  const { user_id, number } = await req.json();
+  const { user_id, query } = await req.json();
+
+  // Clean the query for phone matching (remove non-digits and leading 0/62)
+  const cleanedQuery = query.replace(/\D/g, "").replace(/^(62|0)+/, "");
 
   try {
     const { data, error } = await supabase
@@ -10,8 +13,9 @@ export async function POST(req: NextRequest) {
       .select(
         "*, platform:platform_id(name,id), channel:channel_id(name,id), keterangan_leads:keterangan_leads(name,id), branch:branch_id(name,id), pic:pic_id(name,id)"
       )
-      .eq("user_id", user_id) // <-- filter by user id
-      .filter("nomor_hp::text", "ilike", `%${number}%`) // <-- filter by user id
+      .eq("user_id", user_id)
+      // Search name with raw query, but search phone with cleaned query
+      .or(`name.ilike.%${query}%,nomor_hp.ilike.%${cleanedQuery || query}%`)
       .order("created_at", { ascending: false });
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 });

@@ -52,7 +52,7 @@ export default function Cs() {
     const [keteranganLeads, setKeteranganLeads] = useState<SelectItemDataInt[]>([]);
     const [pic, setPic] = useState<SelectItemDataInt[]>([]);
     const [branch, setBranch] = useState<SelectItemData[]>([]);
-    const [searchQuery, setSearchQuery] = useState<number>()
+    const [searchQuery, setSearchQuery] = useState<string>()
 
     useEffect(() => {
         const lastPlatformId = localStorage.getItem("last_platform_id");
@@ -117,7 +117,7 @@ export default function Cs() {
                 if (searchQuery) {
                     const payload = {
                         user_id: user,
-                        number: searchQuery
+                        query: searchQuery
                     };
                     const res = await getFilterSearch(payload);
                     fetchedData = res?.data.data || [];

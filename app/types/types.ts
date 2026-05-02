@@ -23,9 +23,9 @@ export interface SelectItemDataInt {
   classname?: string;
 }
 
-export interface FilterNumber {
+export interface FilterSearch {
   user_id: string;
-  number: number;
+  query: string;
 }
 
 export interface SelectItemDataMap {

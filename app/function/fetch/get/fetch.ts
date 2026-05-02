@@ -2,7 +2,7 @@ import {
   csPerformanceType,
   dashboardFilterType,
   dashboardPayloadType,
-  FilterNumber,
+  FilterSearch,
   ReportItem,
 } from "@/app/types/types";
 import axios from "axios";
@@ -56,7 +56,7 @@ export const getLeads = async (user_id: string, date?: string, page: number = 1,
   }
 };
 
-export const getFilterSearch = async (data: FilterNumber) => {
+export const getFilterSearch = async (data: FilterSearch) => {
   try {
     const res = await axios.post("/api/get/get-filter-search", data);
     return res;

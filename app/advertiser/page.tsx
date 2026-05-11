@@ -19,6 +19,10 @@ export default function Page() {
     const [syncStatus, setSyncStatus] = useState<SyncStatus>("idle");
     const [syncMessage, setSyncMessage] = useState<string>("");
 
+    // Accurate Sync state
+    const [accurateSyncStatus, setAccurateSyncStatus] = useState<SyncStatus>("idle");
+    const [accurateSyncMessage, setAccurateSyncMessage] = useState<string>("");
+
     useEffect(() => {
         const fetchGlobalData = async () => {
             const res = await getCs();
@@ -83,6 +87,34 @@ export default function Page() {
         }, 6000);
     };
 
+    const handleAccurateSync = async () => {
+        setAccurateSyncStatus("loading");
+        setAccurateSyncMessage("");
+        try {
+            const res = await fetch("/api/get/get-invoice-data", { method: "GET" });
+            const data = await res.json();
+
+            if (!res.ok || data.error) {
+                setAccurateSyncStatus("error");
+                setAccurateSyncMessage(data.error ?? "Unknown error");
+            } else {
+                const inserted: number = data.totalBranchesInserted ?? 0;
+                const processed: number = data.totalReceiptsProcessed ?? 0;
+                setAccurateSyncStatus("success");
+                setAccurateSyncMessage(`Synced ${processed} receipts, updated ${inserted} branches`);
+            }
+        } catch {
+            setAccurateSyncStatus("error");
+            setAccurateSyncMessage("Failed to reach sync endpoint");
+        }
+
+        // Reset to idle after 6 seconds
+        setTimeout(() => {
+            setAccurateSyncStatus("idle");
+            setAccurateSyncMessage("");
+        }, 6000);
+    };
+
     return (
         <div className="p-4 max-w-7xl mx-auto space-y-4">
             <div className="w-full flex justify-end items-center gap-3 text-[.8rem]">
@@ -105,6 +137,27 @@ export default function Page() {
                         </svg>
                     )}
                     {syncStatus === "loading" ? "Syncing..." : "Sync Meta"}
+                </button>
+
+                {accurateSyncMessage && (
+                    <span className={`text-xs font-medium ${
+                        accurateSyncStatus === "error" ? "text-red-500" : "text-green-600"
+                    }`}>
+                        {accurateSyncMessage}
+                    </span>
+                )}
+                <button
+                    onClick={handleAccurateSync}
+                    disabled={accurateSyncStatus === "loading"}
+                    className="bg-[#007bff] px-3 py-1 rounded-lg text-white hover:bg-[#0056b3] transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5"
+                >
+                    {accurateSyncStatus === "loading" && (
+                        <svg className="animate-spin h-3 w-3" viewBox="0 0 24 24" fill="none">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+                        </svg>
+                    )}
+                    {accurateSyncStatus === "loading" ? "Syncing..." : "Sync Accurate"}
                 </button>
             </div>
 

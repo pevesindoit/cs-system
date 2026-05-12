@@ -2,32 +2,33 @@ import { NextResponse } from 'next/server';
 import axios from 'axios';
 import crypto from 'crypto';
 import supabase from "@/lib/db";
+import { toZonedTime, format } from 'date-fns-tz';
+import { subDays, isMonday, startOfDay, endOfDay } from 'date-fns';
 
 export const maxDuration = 60;
 
 export async function GET() {
   try {
-    const now = new Date();
-    const tsDay = String(now.getDate()).padStart(2, '0');
-    const tsMonth = String(now.getMonth() + 1).padStart(2, '0');
-    const tsYear = now.getFullYear();
-    const tsTime = now.toTimeString().split(' ')[0];
-    const currentTimestamp = `${tsDay}/${tsMonth}/${tsYear} ${tsTime}`;
+    const timeZone = 'Asia/Jakarta';
+
+    // 1. Get current time strictly in WIB
+    const nowWIB = toZonedTime(new Date(), timeZone);
+
+    // 2. Format the timestamp for the Accurate Signature (dd/MM/yyyy HH:mm:ss)
+    const currentTimestamp = format(nowWIB, 'dd/MM/yyyy HH:mm:ss', { timeZone });
+
+    // 3. Calculate target date based on WIB time
+    const checkMonday = isMonday(nowWIB);
+    const targetDateWIB = subDays(nowWIB, checkMonday ? 2 : 1);
+
+    // 4. Format the filter date for Accurate API (dd/MM/yyyy)
+    const filterDate = format(targetDateWIB, 'dd/MM/yyyy', { timeZone });
 
     const secretKey = process.env.ACCURATE_SIGNATURE || '';
     const signature = crypto
       .createHmac('sha256', secretKey)
       .update(currentTimestamp)
       .digest('base64');
-
-    const targetDate = new Date();
-    const isMonday = now.getDay() === 1;
-    targetDate.setDate(now.getDate() - (isMonday ? 2 : 1));
-
-    // 👇 FIX 1: Normalize the time to exactly midnight so timestamps are perfectly consistent
-    targetDate.setHours(0, 0, 0, 0);
-
-    const filterDate = `${String(targetDate.getDate()).padStart(2, '0')}/${String(targetDate.getMonth() + 1).padStart(2, '0')}/${targetDate.getFullYear()}`;
 
     const url = 'https://iris.accurate.id/accurate/api/sales-receipt/list.do';
     const response = await axios.get(url, {
@@ -60,6 +61,7 @@ export async function GET() {
 
     const SYSTEM_USER_ID = "174bd8d4-749a-4300-bc54-2d43de0248fb";
 
+    // 5. Aggregate Omset (Updated to use targetDateWIB)
     const aggregatedOmset = accurateData.reduce((acc: any, item: any) => {
       const rawBranchName = item.branch?.name || "";
       const cleanBranchName = rawBranchName.replace("PEVESINDO CABANG ", "").trim().toUpperCase();
@@ -70,7 +72,7 @@ export async function GET() {
           acc[branchId] = {
             branch_id: branchId,
             total: 0,
-            created_at: targetDate.toISOString(),
+            created_at: targetDateWIB.toISOString(),
             user_id: SYSTEM_USER_ID
           };
         }
@@ -82,24 +84,19 @@ export async function GET() {
 
     const insertPayload = Object.values(aggregatedOmset);
 
-    // 5. Insert into Supabase (With Duplication Prevention)
     if (insertPayload.length > 0) {
+      // 6. Create start and end bounds natively in WIB for Supabase
+      const startWIB = startOfDay(targetDateWIB);
+      const endWIB = endOfDay(targetDateWIB);
 
-      // 👇 FIX 2: Create start and end bounds for the target day
-      const startOfDay = new Date(targetDate);
-      const endOfDay = new Date(targetDate);
-      endOfDay.setHours(23, 59, 59, 999);
-
-      // A. Delete any existing data for this specific day to prevent duplicates
       const { error: deleteError } = await supabase
         .from('real_omset')
         .delete()
-        .gte('created_at', startOfDay.toISOString())
-        .lte('created_at', endOfDay.toISOString());
+        .gte('created_at', startWIB.toISOString())
+        .lte('created_at', endWIB.toISOString());
 
       if (deleteError) throw deleteError;
 
-      // B. Insert the fresh, deduplicated data
       const { error: insertError } = await supabase
         .from('real_omset')
         .insert(insertPayload);

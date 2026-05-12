@@ -23,44 +23,59 @@ export async function POST(req: NextRequest) {
     const isFiltered = !!(start_date || end_date || status);
 
     // ── STEP 1: Get customer IDs (paginated) ─────────────────────────────────
-    // Use a lightweight query that only selects `id` for pagination counting.
-    // This avoids the heavy joins that cause timeouts.
     let countQuery = supabase
       .from("costumers")
-      .select(
-        isFiltered ? "id,leads!inner(id)" : "id",
-        { count: "exact" }
-      )
+      .select("id", { count: "exact" })
       .order("created_at", { ascending: false });
 
-    // Apply lead-level filters
+    // If filtered by lead attributes (status/date), we fetch the IDs from leads first
+    // This is MUCH faster than a join-based count on a large table
     if (isFiltered) {
-      if (start_date) {
-        countQuery = countQuery.gte("leads.updated_at", start_date);
+      let leadFilterQuery = supabase.from("leads").select("costumer_id");
+      
+      if (start_date) leadFilterQuery = leadFilterQuery.gte("updated_at", start_date);
+      if (end_date) leadFilterQuery = leadFilterQuery.lte("updated_at", end_date);
+      if (status) leadFilterQuery = leadFilterQuery.ilike("status", status);
+
+      const { data: filteredLeads, error: filterError } = await leadFilterQuery;
+      
+      if (filterError) {
+        console.error("Lead Filter Error:", filterError);
+        return NextResponse.json({ error: filterError.message }, { status: 500 });
       }
-      if (end_date) {
-        countQuery = countQuery.lte("leads.updated_at", end_date);
+
+      const matchingCustomerIds = Array.from(new Set((filteredLeads || []).map(l => l.costumer_id)));
+      
+      if (matchingCustomerIds.length === 0) {
+        return NextResponse.json({
+          data: [],
+          pagination: { totalItems: 0, totalPages: 0, currentPage: pageInt, limit: limitInt },
+        }, { status: 200 });
       }
-      if (status) {
-        countQuery = countQuery.ilike("leads.status", status);
-      }
+
+      countQuery = countQuery.in("id", matchingCustomerIds);
     }
 
     if (search) {
-      const cleanedSearch = search.replace(/\D/g, "").replace(/^(62|0)+/, "");
-      countQuery = countQuery.or(
-        `name.ilike.%${search}%,number.cast.text.ilike.%${cleanedSearch || search}%`
-      );
+      const cleanedSearch = search.replace(/\D/g, "");
+      if (cleanedSearch && cleanedSearch.length > 3) {
+        countQuery = countQuery.or(
+          `name.ilike.%${search}%,number.gte.${cleanedSearch}00,number.lte.${cleanedSearch}99`
+        );
+      } else {
+        countQuery = countQuery.ilike("name", `%${search}%`);
+      }
     }
 
     // Paginate
     const { data: customerRows, error: customersError, count } = await countQuery.range(startIndex, endIndex);
 
     if (customersError) {
+      console.error("Customers Error:", customersError);
       return NextResponse.json({ error: customersError.message }, { status: 500 });
     }
 
-    const customerIds = (customerRows || []).map((c: any) => c.id);
+    const customerIds = Array.from(new Set((customerRows || []).map((c: any) => c.id)));
 
     if (customerIds.length === 0) {
       return NextResponse.json({
@@ -75,7 +90,6 @@ export async function POST(req: NextRequest) {
     }
 
     // ── STEP 2: Fetch customer details + leads in parallel ───────────────────
-    // Run both queries at the same time to cut latency in half.
     const [customersResult, leadsResult] = await Promise.all([
       supabase
         .from("costumers")
@@ -85,9 +99,23 @@ export async function POST(req: NextRequest) {
 
       supabase
         .from("leads")
-        .select(
-          "*, platform:platform_id(name,id), channel:channel_id(name,id), keterangan_leads:keterangan_leads(name,id), branch:branch_id(name,id), pic:pic_id(name,id)"
-        )
+        .select(`
+          id,
+          costumer_id,
+          name,
+          nomor_hp,
+          status,
+          updated_at,
+          created_at,
+          nominal,
+          reason,
+          address,
+          platform:platform_id(name,id),
+          channel:channel_id(name,id),
+          keterangan_leads:keterangan_leads(name,id),
+          branch:branch_id(name,id),
+          pic:pic_id(name,id)
+        `)
         .in("costumer_id", customerIds)
         .order("updated_at", { ascending: false }),
     ]);
@@ -100,7 +128,6 @@ export async function POST(req: NextRequest) {
     const leadsData = leadsResult.error ? [] : (leadsResult.data || []);
 
     // ── STEP 3: Merge leads into customers ───────────────────────────────────
-    // Build a map for O(n) merge instead of O(n*m) filter
     const leadsMap = new Map<string, any[]>();
     for (const lead of leadsData) {
       const cid = lead.costumer_id;

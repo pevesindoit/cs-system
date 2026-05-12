@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import supabase from "@/lib/db";
 
+export const maxDuration = 10; // Vercel free tier max
+
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
@@ -20,65 +22,95 @@ export async function POST(req: NextRequest) {
 
     const isFiltered = !!(start_date || end_date || status);
 
-    // Build the query
-    // We use !inner on leads to filter customers by their leads' attributes
-    // but still return the customer data.
-    // However, if we want the FULL history of those customers (even non-matching leads),
-    // we fetch customers first (filtered by leads) and then fetch all leads for those customers.
-
-    let query = supabase
+    // ── STEP 1: Get customer IDs (paginated) ─────────────────────────────────
+    // Use a lightweight query that only selects `id` for pagination counting.
+    // This avoids the heavy joins that cause timeouts.
+    let countQuery = supabase
       .from("costumers")
-      .select((isFiltered ? "*,leads!inner(id)" : "*") as any, { count: "exact" })
+      .select(
+        isFiltered ? "id,leads!inner(id)" : "id",
+        { count: "exact" }
+      )
       .order("created_at", { ascending: false });
 
-    // Apply filters
+    // Apply lead-level filters
     if (isFiltered) {
       if (start_date) {
-        query = query.gte("leads.updated_at", start_date);
+        countQuery = countQuery.gte("leads.updated_at", start_date);
       }
       if (end_date) {
-        query = query.lte("leads.updated_at", end_date);
+        countQuery = countQuery.lte("leads.updated_at", end_date);
       }
       if (status) {
-        query = query.ilike("leads.status", status);
+        countQuery = countQuery.ilike("leads.status", status);
       }
     }
 
     if (search) {
       const cleanedSearch = search.replace(/\D/g, "").replace(/^(62|0)+/, "");
-      query = query.or(`name.ilike.%${search}%,number.cast.text.ilike.%${cleanedSearch || search}%`);
+      countQuery = countQuery.or(
+        `name.ilike.%${search}%,number.cast.text.ilike.%${cleanedSearch || search}%`
+      );
     }
 
-
-    // Paginate customers
-    const { data: customersRaw, error: customersError, count } = await query.range(startIndex, endIndex);
-    const customers = customersRaw as any[] | null;
+    // Paginate
+    const { data: customerRows, error: customersError, count } = await countQuery.range(startIndex, endIndex);
 
     if (customersError) {
       return NextResponse.json({ error: customersError.message }, { status: 500 });
     }
 
-    // Fetch ALL leads for the current page's customers to show full history
-    const customerIdsOnPage = (customers || []).map(c => c.id);
-    let leadsData: any[] = [];
+    const customerIds = (customerRows || []).map((c: any) => c.id);
 
-    if (customerIdsOnPage.length > 0) {
-      const { data: leads, error: historyError } = await supabase
+    if (customerIds.length === 0) {
+      return NextResponse.json({
+        data: [],
+        pagination: {
+          totalItems: count || 0,
+          totalPages: Math.ceil((count || 0) / limitInt),
+          currentPage: pageInt,
+          limit: limitInt,
+        },
+      }, { status: 200 });
+    }
+
+    // ── STEP 2: Fetch customer details + leads in parallel ───────────────────
+    // Run both queries at the same time to cut latency in half.
+    const [customersResult, leadsResult] = await Promise.all([
+      supabase
+        .from("costumers")
+        .select("id,name,number,address,costumers_type,created_at")
+        .in("id", customerIds)
+        .order("created_at", { ascending: false }),
+
+      supabase
         .from("leads")
         .select(
           "*, platform:platform_id(name,id), channel:channel_id(name,id), keterangan_leads:keterangan_leads(name,id), branch:branch_id(name,id), pic:pic_id(name,id)"
         )
-        .in("costumer_id", customerIdsOnPage)
-        .order("updated_at", { ascending: false });
+        .in("costumer_id", customerIds)
+        .order("updated_at", { ascending: false }),
+    ]);
 
-      if (!historyError) {
-        leadsData = leads || [];
-      }
+    if (customersResult.error) {
+      return NextResponse.json({ error: customersResult.error.message }, { status: 500 });
     }
 
-    const customersWithLeads = (customers || []).map((customer: any) => ({
+    const customers = customersResult.data || [];
+    const leadsData = leadsResult.error ? [] : (leadsResult.data || []);
+
+    // ── STEP 3: Merge leads into customers ───────────────────────────────────
+    // Build a map for O(n) merge instead of O(n*m) filter
+    const leadsMap = new Map<string, any[]>();
+    for (const lead of leadsData) {
+      const cid = lead.costumer_id;
+      if (!leadsMap.has(cid)) leadsMap.set(cid, []);
+      leadsMap.get(cid)!.push(lead);
+    }
+
+    const customersWithLeads = customers.map((customer: any) => ({
       ...customer,
-      leads: leadsData.filter((lead: any) => lead.costumer_id === customer.id),
+      leads: leadsMap.get(customer.id) || [],
     }));
 
     const pagination = {

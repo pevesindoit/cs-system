@@ -31,10 +31,10 @@ export async function POST(req: NextRequest) {
     // If filtered by lead attributes (status/date), we fetch the IDs from leads first
     // This is MUCH faster than a join-based count on a large table
     if (isFiltered) {
-      let leadFilterQuery = supabase.from("leads").select("costumer_id");
+      let leadFilterQuery = supabase.from("leads").select("costumer_id").limit(1000);
       
-      if (start_date) leadFilterQuery = leadFilterQuery.gte("updated_at", start_date);
-      if (end_date) leadFilterQuery = leadFilterQuery.lte("updated_at", end_date);
+      if (start_date) leadFilterQuery = leadFilterQuery.gte("updated_at", `${start_date} 00:00:00+00`);
+      if (end_date) leadFilterQuery = leadFilterQuery.lte("updated_at", `${end_date} 23:59:59+00`);
       if (status) leadFilterQuery = leadFilterQuery.ilike("status", status);
 
       const { data: filteredLeads, error: filterError } = await leadFilterQuery;
@@ -44,7 +44,7 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: filterError.message }, { status: 500 });
       }
 
-      const matchingCustomerIds = Array.from(new Set((filteredLeads || []).map(l => l.costumer_id)));
+      const matchingCustomerIds = Array.from(new Set((filteredLeads || []).map(l => l.costumer_id).filter(Boolean))).slice(0, 100);
       
       if (matchingCustomerIds.length === 0) {
         return NextResponse.json({
@@ -60,7 +60,7 @@ export async function POST(req: NextRequest) {
       const cleanedSearch = search.replace(/\D/g, "");
       if (cleanedSearch && cleanedSearch.length > 3) {
         countQuery = countQuery.or(
-          `name.ilike.%${search}%,number.gte.${cleanedSearch}00,number.lte.${cleanedSearch}99`
+          `name.ilike.*${search}*,number.gte.${cleanedSearch}00,number.lte.${cleanedSearch}99`
         );
       } else {
         countQuery = countQuery.ilike("name", `%${search}%`);
@@ -75,7 +75,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: customersError.message }, { status: 500 });
     }
 
-    const customerIds = Array.from(new Set((customerRows || []).map((c: any) => c.id)));
+    const customerIds = Array.from(new Set((customerRows || []).map((c: any) => c.id).filter(Boolean)));
 
     if (customerIds.length === 0) {
       return NextResponse.json({

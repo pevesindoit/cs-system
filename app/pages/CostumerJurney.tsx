@@ -440,37 +440,32 @@ export default function CustomerJourney() {
             {/* Filter Bar: Status pills + DateRange + Search */}
             <div className="flex flex-col gap-3">
                 {/* Status Filter Pills */}
-                <div className="flex flex-wrap items-center gap-2">
-                    <span className="text-xs text-gray-400 font-medium">Filter Status:</span>
-                    {[
-                        { label: "Semua", value: "" },
-                        { label: "Hold", value: "hold" },
-                        { label: "Survey", value: "survey" },
-                        { label: "Closing", value: "closing" },
-                        { label: "Warm", value: "warm" },
-                        { label: "Cold", value: "cold" },
-                        { label: "Lost", value: "los" },
-                    ].map((item) => {
-                        const isActive = statusFilter === item.value;
-                        const colorMap: Record<string, string> = {
-                            "": isActive ? "bg-gray-800 text-white border-gray-800" : "bg-white text-gray-500 border-gray-200 hover:border-gray-400",
-                            hold: isActive ? "bg-blue-600 text-white border-blue-600" : "bg-white text-blue-600 border-blue-200 hover:border-blue-400",
-                            survey: isActive ? "bg-pink-500 text-white border-pink-500" : "bg-white text-pink-600 border-pink-200 hover:border-pink-400",
-                            closing: isActive ? "bg-emerald-600 text-white border-emerald-600" : "bg-white text-emerald-600 border-emerald-200 hover:border-emerald-400",
-                            warm: isActive ? "bg-yellow-500 text-white border-yellow-500" : "bg-white text-yellow-600 border-yellow-200 hover:border-yellow-400",
-                            cold: isActive ? "bg-slate-500 text-white border-slate-500" : "bg-white text-slate-600 border-slate-200 hover:border-slate-400",
-                            los: isActive ? "bg-gray-600 text-white border-gray-600" : "bg-white text-gray-600 border-gray-200 hover:border-gray-400",
-                        };
-                        return (
-                            <button
-                                key={item.value}
-                                onClick={() => setStatusFilter(item.value)}
-                                className={`px-3 py-1.5 text-xs font-semibold rounded-full border transition-all duration-150 ${colorMap[item.value]}`}
+                {/* Status Filter Dropdown */}
+                <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2">
+                        <span className="text-xs text-gray-400 font-medium whitespace-nowrap">Filter Status:</span>
+                        <div className="relative">
+                            <select
+                                value={statusFilter}
+                                onChange={(e) => setStatusFilter(e.target.value)}
+                                className="appearance-none pl-3 pr-8 py-2 text-xs font-semibold rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 bg-white transition-all duration-150 cursor-pointer min-w-[140px]"
                             >
-                                {item.label}
-                            </button>
-                        );
-                    })}
+                                <option value="">Semua Status</option>
+                                <option value="closing">Closing</option>
+                                <option value="followup">Follow Up</option>
+                                <option value="warm">Warm</option>
+                                <option value="survey">Survey</option>
+                                <option value="los">Lost (Los)</option>
+                                <option value="hold">Hold</option>
+                                <option value="hot">Hot</option>
+                            </select>
+                            <div className="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400">
+                                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                                </svg>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
                 <div className="flex flex-col md:flex-row md:items-center gap-3">
@@ -570,7 +565,8 @@ export default function CustomerJourney() {
                                     survey: "Survey",
                                     closing: "Closing",
                                     warm: "Warm",
-                                    cold: "Cold",
+                                    followup: "Follow Up",
+                                    hot: "Hot",
                                     los: "Lost"
                                 }[statusFilter] || statusFilter}
                             </span>

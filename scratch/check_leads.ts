@@ -1,5 +1,5 @@
 
-import supabase from "./lib/db";
+import supabase from "../lib/db";
 
 async function checkLeadsSchema() {
     const { data, error } = await supabase.from('leads').select('*').limit(1);

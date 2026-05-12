@@ -30,5 +30,5 @@
     ".next/dev/types/**/*.ts",
     "**/*.mts"
 , "app/function/buildDateRange.js"  ],
-  "exclude": ["node_modules"]
+  "exclude": ["node_modules", "scratch", "check_schema.ts", "debug_keterangan.ts", "proxy.ts", "supabase_types.ts"]
 }

@@ -1,4 +1,6 @@
 import { NextResponse } from 'next/server';
+import { toZonedTime, format } from 'date-fns-tz';
+import { subDays, isMonday } from 'date-fns';
 
 export async function GET() {
   const AD_ACCOUNT_ID = process.env.META_AD_ACCOUNT_ID;
@@ -16,23 +18,14 @@ export async function GET() {
   // 2. Format account ID
   const accountId = AD_ACCOUNT_ID.startsWith('act_') ? AD_ACCOUNT_ID : `act_${AD_ACCOUNT_ID}`;
 
-  // Dynamic Date Logic (Saturday if Monday, else Yesterday)
-  const today = new Date();
-  const targetDate = new Date();
-
-  if (today.getDay() === 1) {
-    // If Monday, subtract 2 days to get Saturday
-    targetDate.setDate(today.getDate() - 2);
-  } else {
-    // Otherwise, subtract 1 day to get yesterday
-    targetDate.setDate(today.getDate() - 1);
-  }
+  // Dynamic Date Logic using WIB timezone (Saturday if Monday, else Yesterday)
+  const timeZone = 'Asia/Jakarta';
+  const nowWIB = toZonedTime(new Date(), timeZone);
+  const checkMonday = isMonday(nowWIB);
+  const targetDate = subDays(nowWIB, checkMonday ? 2 : 1);
 
   // Format to YYYY-MM-DD
-  const yyyy = targetDate.getFullYear();
-  const mm = String(targetDate.getMonth() + 1).padStart(2, '0');
-  const dd = String(targetDate.getDate()).padStart(2, '0');
-  const formattedDate = `${yyyy}-${mm}-${dd}`;
+  const formattedDate = format(targetDate, 'yyyy-MM-dd', { timeZone });
 
   // Encode for URL
   const timeRange = {

@@ -1,5 +1,7 @@
 import supabase from "@/lib/db";
 import { NextResponse } from "next/server";
+import { toZonedTime, format } from 'date-fns-tz';
+import { subDays, isMonday } from 'date-fns';
 
 export async function POST() {
   try {
@@ -19,22 +21,13 @@ export async function POST() {
       ? AD_ACCOUNT_ID
       : `act_${AD_ACCOUNT_ID}`;
 
-    // Dynamic Date Logic (Saturday if Monday, else Yesterday)
-    const today = new Date();
-    const targetDate = new Date();
+    // Dynamic Date Logic using WIB timezone (Saturday if Monday, else Yesterday)
+    const timeZone = 'Asia/Jakarta';
+    const nowWIB = toZonedTime(new Date(), timeZone);
+    const checkMonday = isMonday(nowWIB);
+    const targetDate = subDays(nowWIB, checkMonday ? 2 : 1);
 
-    if (today.getDay() === 1) {
-      // If Monday, subtract 2 days to get Saturday
-      targetDate.setDate(today.getDate() - 2);
-    } else {
-      // Otherwise, subtract 1 day to get yesterday
-      targetDate.setDate(today.getDate() - 1);
-    }
-
-    const yyyy = targetDate.getFullYear();
-    const mm = String(targetDate.getMonth() + 1).padStart(2, '0');
-    const dd = String(targetDate.getDate()).padStart(2, '0');
-    const formattedDate = `${yyyy}-${mm}-${dd}`;
+    const formattedDate = format(targetDate, 'yyyy-MM-dd', { timeZone });
 
     const timeRange = {
       since: formattedDate,
@@ -159,8 +152,8 @@ export async function POST() {
         continue;
       }
 
-      // Use date_start as created_at
-      const createdAt = new Date(campaign.date_start).toISOString();
+      // Use the WIB-aware target date for created_at
+      const createdAt = `${formattedDate}T00:00:00+07:00`;
 
       // Extract actual leads from Meta actions
       const actualLeadsAction = campaign.actions?.find(

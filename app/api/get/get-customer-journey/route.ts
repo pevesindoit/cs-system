@@ -13,14 +13,17 @@ export async function POST(req: NextRequest) {
       start_date = "",
       end_date = "",
       status = "",
+      branch_id = "",
+      branch = "" // Accept both
     } = body;
 
+    const finalBranchId = branch_id || branch;
     const pageInt = parseInt(page as string);
     const limitInt = parseInt(limit as string);
     const startIndex = (pageInt - 1) * limitInt;
     const endIndex = startIndex + limitInt - 1;
 
-    const isFiltered = !!(start_date || end_date || status);
+    const isFiltered = !!(start_date || end_date || status || finalBranchId);
 
     // ── STEP 1: Get customer IDs (paginated) ─────────────────────────────────
     let countQuery = supabase
@@ -28,24 +31,31 @@ export async function POST(req: NextRequest) {
       .select("id", { count: "exact" })
       .order("created_at", { ascending: false });
 
-    // If filtered by lead attributes (status/date), we fetch the IDs from leads first
-    // This is MUCH faster than a join-based count on a large table
+    // If filtered by lead attributes (status/date/branch), we fetch the IDs from leads first
     if (isFiltered) {
-      let leadFilterQuery = supabase.from("leads").select("costumer_id").limit(1000);
-      
+      let leadFilterQuery = supabase
+        .from("leads")
+        .select("costumer_id")
+        .order("updated_at", { ascending: false })
+        .limit(3000); // Increase limit for better coverage
+
       if (start_date) leadFilterQuery = leadFilterQuery.gte("updated_at", `${start_date} 00:00:00+00`);
       if (end_date) leadFilterQuery = leadFilterQuery.lte("updated_at", `${end_date} 23:59:59+00`);
       if (status) leadFilterQuery = leadFilterQuery.ilike("status", status);
+      if (finalBranchId) leadFilterQuery = leadFilterQuery.eq("branch_id", finalBranchId);
 
       const { data: filteredLeads, error: filterError } = await leadFilterQuery;
-      
+
       if (filterError) {
         console.error("Lead Filter Error:", filterError);
         return NextResponse.json({ error: filterError.message }, { status: 500 });
       }
 
-      const matchingCustomerIds = Array.from(new Set((filteredLeads || []).map(l => l.costumer_id).filter(Boolean))).slice(0, 100);
-      
+      // Collect matching IDs to ensure pagination works for filtered results.
+      // NOTE: We limit this to 150 to prevent 'HeadersOverflowError' or URI length limits
+      // in Supabase/PostgREST which can happen with too many IDs in an .in() filter.
+      const matchingCustomerIds = Array.from(new Set((filteredLeads || []).map(l => l.costumer_id).filter(Boolean))).slice(0, 150);
+
       if (matchingCustomerIds.length === 0) {
         return NextResponse.json({
           data: [],

@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import H1 from "../custom-component/H1";
 import { Pagination } from "../custom-component/table/Pagination";
 import { useAuth } from "../custom-component/global/AuthProfider";
-import { getCustomerJourney } from "../function/fetch/get/fetch";
+import { getCustomerJourney, getBranch } from "../function/fetch/get/fetch";
 import DateRangePicker from "../custom-component/DateRangePicker";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -77,11 +77,13 @@ const formatRupiah = (value: number | null) => {
 function CustomerLeadTable({ 
     leads, 
     statusFilter, 
-    range 
+    range,
+    branchFilter
 }: { 
     leads: LeadItem[]; 
     statusFilter?: string; 
-    range?: { start_date: string; end_date: string } 
+    range?: { start_date: string; end_date: string };
+    branchFilter?: string;
 }) {
     const [leadsPage, setLeadsPage] = useState(1);
     const LEADS_PER_PAGE = 5;
@@ -124,8 +126,11 @@ function CustomerLeadTable({
                             
                             // Check if this specific lead matches the current filters
                             let isMatch = false;
-                            if (statusFilter || (range?.start_date || range?.end_date)) {
+                            if (statusFilter || (range?.start_date || range?.end_date) || branchFilter) {
                                 const statusMatches = !statusFilter || lead.status?.toLowerCase() === statusFilter.toLowerCase();
+                                // Use loose comparison (==) because branchFilter is a string from <select> 
+                                // while lead.branch?.id might be a number or UUID string.
+                                const branchMatches = !branchFilter || String(lead.branch?.id) === String(branchFilter);
                                 
                                 let dateMatches = true;
                                 if (range?.start_date || range?.end_date) {
@@ -134,7 +139,7 @@ function CustomerLeadTable({
                                     if (range.start_date && leadDate < range.start_date) dateMatches = false;
                                     if (range.end_date && leadDate > range.end_date) dateMatches = false;
                                 }
-                                isMatch = statusMatches && dateMatches;
+                                isMatch = statusMatches && dateMatches && branchMatches;
                             }
 
                             return (
@@ -199,11 +204,13 @@ function CustomerLeadTable({
 function CustomerJourneyCard({ 
     customer, 
     statusFilter, 
-    range 
+    range,
+    branchFilter
 }: { 
     customer: CustomerItem; 
     statusFilter: string; 
-    range: { start_date: string; end_date: string } 
+    range: { start_date: string; end_date: string };
+    branchFilter: string;
 }) {
     const [expanded, setExpanded] = useState(false);
 
@@ -317,6 +324,7 @@ function CustomerJourneyCard({
                             leads={customer.leads} 
                             statusFilter={statusFilter}
                             range={range}
+                            branchFilter={branchFilter}
                         />
                     </div>
                 </div>
@@ -358,6 +366,8 @@ export default function CustomerJourney() {
     const [searchInput, setSearchInput] = useState("");
     const [range, setRange] = useState({ start_date: "", end_date: "" });
     const [statusFilter, setStatusFilter] = useState("");
+    const [branchFilter, setBranchFilter] = useState("");
+    const [branches, setBranches] = useState<{ id: string; name: string }[]>([]);
     const LIMIT = 5;
 
     const router = useRouter();
@@ -375,6 +385,21 @@ export default function CustomerJourney() {
         }
     }, [user, userType, authLoading, router]);
 
+    // Fetch branches
+    useEffect(() => {
+        const fetchBranches = async () => {
+            try {
+                const res = await getBranch();
+                if (res?.data?.data) {
+                    setBranches(res.data.data);
+                }
+            } catch (err) {
+                console.error("Error fetching branches:", err);
+            }
+        };
+        fetchBranches();
+    }, []);
+
     // Fetch data
     const fetchData = useCallback(async () => {
         setLoading(true);
@@ -386,6 +411,7 @@ export default function CustomerJourney() {
                 start_date: range.start_date,
                 end_date: range.end_date,
                 status: statusFilter,
+                branch_id: branchFilter,
             });
             if (res?.data) {
                 setCustomers(res.data.data || []);
@@ -406,7 +432,7 @@ export default function CustomerJourney() {
     // Reset to page 1 when search, date, or status changes
     useEffect(() => {
         setCurrentPage(1);
-    }, [search, range, statusFilter]);
+    }, [search, range, statusFilter, branchFilter]);
 
     // Show spinner while auth is resolving
     if (authLoading || (loading && customers.length === 0 && !search)) {
@@ -427,6 +453,14 @@ export default function CustomerJourney() {
         setSearch(searchInput);
     };
 
+    const handleResetFilters = () => {
+        setSearch("");
+        setSearchInput("");
+        setRange({ start_date: "", end_date: "" });
+        setStatusFilter("");
+        setBranchFilter("");
+    };
+
     return (
         <div className="space-y-6 pb-10">
             {/* Page Header */}
@@ -441,7 +475,8 @@ export default function CustomerJourney() {
             <div className="flex flex-col gap-3">
                 {/* Status Filter Pills */}
                 {/* Status Filter Dropdown */}
-                <div className="flex items-center gap-3">
+                <div className="flex flex-wrap items-center gap-3">
+                    {/* Status Filter */}
                     <div className="flex items-center gap-2">
                         <span className="text-xs text-gray-400 font-medium whitespace-nowrap">Filter Status:</span>
                         <div className="relative">
@@ -458,6 +493,30 @@ export default function CustomerJourney() {
                                 <option value="los">Lost (Los)</option>
                                 <option value="hold">Hold</option>
                                 <option value="hot">Hot</option>
+                            </select>
+                            <div className="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400">
+                                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                                </svg>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Branch Filter */}
+                    <div className="flex items-center gap-2">
+                        <span className="text-xs text-gray-400 font-medium whitespace-nowrap">Filter Cabang:</span>
+                        <div className="relative">
+                            <select
+                                value={branchFilter}
+                                onChange={(e) => setBranchFilter(e.target.value)}
+                                className="appearance-none pl-3 pr-8 py-2 text-xs font-semibold rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 bg-white transition-all duration-150 cursor-pointer min-w-[140px]"
+                            >
+                                <option value="">Semua Cabang</option>
+                                {branches.map((b) => (
+                                    <option key={b.id} value={b.id}>
+                                        {b.name}
+                                    </option>
+                                ))}
                             </select>
                             <div className="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400">
                                 <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
@@ -517,6 +576,18 @@ export default function CustomerJourney() {
                             Reset
                         </button>
                     )}
+                    {(search || statusFilter || branchFilter || range.start_date || range.end_date) && (
+                        <button
+                            type="button"
+                            onClick={handleResetFilters}
+                            className="px-3 py-2 bg-red-50 hover:bg-red-100 text-red-600 text-xs font-bold rounded-lg transition-colors flex items-center gap-1.5"
+                        >
+                            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                            Reset Semua
+                        </button>
+                    )}
                 </form>
                 </div>
             </div>
@@ -547,19 +618,27 @@ export default function CustomerJourney() {
                         </div>
                     </div>
                     {search && (
-                        <div className="flex items-center gap-1.5 text-xs text-blue-600 bg-blue-50 px-3 py-1.5 rounded-full">
+                        <div className="group flex items-center gap-1.5 text-xs text-blue-600 bg-blue-50 pl-3 pr-2 py-1.5 rounded-full border border-blue-100">
                             <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2a1 1 0 01-.293.707L13 13.414V19a1 1 0 01-.553.894l-4 2A1 1 0 017 21v-7.586L3.293 6.707A1 1 0 013 6V4z" />
                             </svg>
-                            Nama: <span className="font-semibold">"{search}"</span>
+                            <span>Nama: <span className="font-semibold">"{search}"</span></span>
+                            <button 
+                                onClick={() => { setSearch(""); setSearchInput(""); }}
+                                className="ml-1 p-0.5 hover:bg-blue-200/50 rounded-full transition-colors"
+                            >
+                                <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                            </button>
                         </div>
                     )}
                     {statusFilter && (
-                        <div className="flex items-center gap-1.5 text-xs text-emerald-700 bg-emerald-50 px-3 py-1.5 rounded-full">
+                        <div className="group flex items-center gap-1.5 text-xs text-emerald-700 bg-emerald-50 pl-3 pr-2 py-1.5 rounded-full border border-emerald-100">
                             <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                             </svg>
-                            Status: <span className="font-semibold">
+                            <span>Status: <span className="font-semibold">
                                 {{
                                     hold: "Hold",
                                     survey: "Survey",
@@ -569,17 +648,51 @@ export default function CustomerJourney() {
                                     hot: "Hot",
                                     los: "Lost"
                                 }[statusFilter] || statusFilter}
-                            </span>
+                            </span></span>
+                            <button 
+                                onClick={() => setStatusFilter("")}
+                                className="ml-1 p-0.5 hover:bg-emerald-200/50 rounded-full transition-colors"
+                            >
+                                <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                            </button>
+                        </div>
+                    )}
+                    {branchFilter && (
+                        <div className="group flex items-center gap-1.5 text-xs text-indigo-700 bg-indigo-50 pl-3 pr-2 py-1.5 rounded-full border border-indigo-100">
+                            <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
+                            </svg>
+                            <span>Cabang: <span className="font-semibold">
+                                {branches.find(b => b.id === branchFilter)?.name || "..."}
+                            </span></span>
+                            <button 
+                                onClick={() => setBranchFilter("")}
+                                className="ml-1 p-0.5 hover:bg-indigo-200/50 rounded-full transition-colors"
+                            >
+                                <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                            </button>
                         </div>
                     )}
                     {(range.start_date || range.end_date) && (
-                        <div className="flex items-center gap-1.5 text-xs text-amber-700 bg-amber-50 px-3 py-1.5 rounded-full">
+                        <div className="group flex items-center gap-1.5 text-xs text-amber-700 bg-amber-50 pl-3 pr-2 py-1.5 rounded-full border border-amber-100">
                             <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                             </svg>
-                            Periode: <span className="font-semibold">
+                            <span>Periode: <span className="font-semibold">
                                 {range.start_date ? formatDate(range.start_date) : "..."} - {range.end_date ? formatDate(range.end_date) : "..."}
-                            </span>
+                            </span></span>
+                            <button 
+                                onClick={() => setRange({ start_date: "", end_date: "" })}
+                                className="ml-1 p-0.5 hover:bg-amber-200/50 rounded-full transition-colors"
+                            >
+                                <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                            </button>
                         </div>
                     )}
                 </div>
@@ -602,6 +715,7 @@ export default function CustomerJourney() {
                             customer={customer} 
                             statusFilter={statusFilter}
                             range={range}
+                            branchFilter={branchFilter}
                         />
                     ))
                 )}

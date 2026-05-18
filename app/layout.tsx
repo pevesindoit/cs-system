@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import SideBar from "./custom-component/SideBar";
 import { AuthProvider } from "./custom-component/global/AuthProfider";
+import { RouteGuard } from "./custom-component/global/RouteGuard";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -31,9 +32,11 @@ export default function RootLayout({
           {/* Sidebar handles its own width responsiveness now */}
           <SideBar />
 
-          {/* Content Area */}
+          {/* Content Area — protected by RouteGuard */}
           <div className="w-full flex-1 overflow-auto">
-            {children}
+            <RouteGuard>
+              {children}
+            </RouteGuard>
           </div>
         </AuthProvider>
       </body>

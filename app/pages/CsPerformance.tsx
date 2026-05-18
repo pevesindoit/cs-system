@@ -50,6 +50,7 @@ export function CsPerformance() {
 
     const router = useRouter();
     const [statusSelected, setStatusSelected] = useState("");
+    const [exporting, setExporting] = useState(false);
     const { user, loading: authLoading } = useAuth();
     const userType = user?.identities?.[0]?.identity_data?.type_id;
 
@@ -123,12 +124,44 @@ export function CsPerformance() {
         setCurrentPage(1);
     }, [range, cs, branch, keterangan, statusSelected]);
 
+    const exportToMetaAds = async () => {
+        setExporting(true);
+        try {
+            const payload = {
+                ...range,
+                cs,
+                branch,
+                keterangan,
+                status: statusSelected,
+            };
+            const res = await fetch("/api/get/export-meta-ads", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ data: payload }),
+            });
+            if (!res.ok) throw new Error("Export failed");
+            const blob = await res.blob();
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = "meta-ads-customers.csv";
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        } catch (err) {
+            console.error("Export error:", err);
+            alert("Gagal export data. Silakan coba lagi.");
+        } finally {
+            setExporting(false);
+        }
+    };
+
     return (
         <div className="space-y-7 pb-10">
             <div className="h-full">
                 <H1>Leads Management</H1>
                 <div className="space-y-4">
-
                     {/* Filter Section */}
                     <div className="md:flex md:space-x-3">
                         <DateRangePicker value={range} onChange={setRange} />
@@ -180,6 +213,17 @@ export function CsPerformance() {
 
                     {/* Table & Pagination */}
                     <div>
+                        <div className="flex justify-end mb-4">
+                            {userType === 2 && (
+                                <button
+                                    onClick={exportToMetaAds}
+                                    disabled={exporting}
+                                    className="bg-black px-3 py-1 rounded-lg text-white hover:bg-gray-800 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5 text-sm"
+                                >
+                                    {exporting ? "Exporting..." : "export costumer data"}
+                                </button>
+                            )}
+                        </div>
                         <LeadsTableManager data={data} userType={userType} />
 
                         <div className="mt-4">

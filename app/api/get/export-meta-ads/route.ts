@@ -22,10 +22,10 @@ function getBranchCity(branchName: string | null | undefined): string {
   return lower;
 }
 
-/** RFC 4180 CSV field escaping — always wraps in quotes and escapes internal double-quotes */
-function csvEscape(value: string | number | null | undefined): string {
-  const str = value == null ? "" : String(value);
-  return `"${str.replace(/"/g, '""')}"`;
+/** Strip commas so they don't break the plain CSV structure */
+function clean(value: string | number | null | undefined): string {
+  if (value == null) return "";
+  return String(value).replace(/,/g, "").trim();
 }
 
 export async function POST(req: NextRequest) {
@@ -65,37 +65,31 @@ export async function POST(req: NextRequest) {
       offset += fetchLimit;
     }
 
-    // De-duplicate by phone number.
-    // When we see the same phone more than once, prefer the closing lead's nominal as value.
-    const phoneMap = new Map<string, { fn: string; ct: string; value: string }>();
+    // Build plain @ -separated file — Meta Ads format
+    const header = "phone,fn,ct,value";
+    const csvLines: string[] = [];
+
+    // De-duplicate by phone — first occurrence wins; closing nominal upgrades empty value
+    const seenPhones = new Map<string, { fn: string; ct: string; value: string }>();
 
     for (const lead of allLeads) {
       const phone = normalizePhone(lead.nomor_hp);
-      if (!phone) continue;
-
-      const branchName = lead.branch_name?.name ?? "";
-      const ct = getBranchCity(branchName);
-      const fn = (lead.name ?? "").trim();
+      const fn = clean(lead.name).split(" ")[0];
+      const ct = clean(getBranchCity(lead.branch_name?.name));
       const isClosing = (lead.status ?? "").toLowerCase() === "closing";
-      const nominal = isClosing && lead.nominal ? String(lead.nominal) : "";
+      const value = isClosing && lead.nominal ? String(lead.nominal) : "";
 
-      if (!phoneMap.has(phone)) {
-        phoneMap.set(phone, { fn, ct, value: nominal });
-      } else if (isClosing && nominal) {
-        // Upgrade existing entry with closing nominal if not already set
-        const existing = phoneMap.get(phone)!;
-        if (!existing.value) existing.value = nominal;
+      if (!seenPhones.has(phone)) {
+        seenPhones.set(phone, { fn, ct, value });
+      } else if (isClosing && value) {
+        // Upgrade existing entry's value if it doesn't have one yet
+        const existing = seenPhones.get(phone)!;
+        if (!existing.value) existing.value = value;
       }
     }
 
-    // Build CSV rows
-    const header = ["phone", "fn", "ct", "value"].map(csvEscape).join(",");
-    const csvLines: string[] = [];
-
-    for (const [phone, { fn, ct, value }] of phoneMap) {
-      csvLines.push(
-        [csvEscape(phone), csvEscape(fn), csvEscape(ct), csvEscape(value)].join(",")
-      );
+    for (const [phone, { fn, ct, value }] of seenPhones) {
+      csvLines.push(`${phone},${fn},${ct},${value}`);
     }
 
     const csvContent = [header, ...csvLines].join("\n");

@@ -20,24 +20,30 @@ export async function POST(req: NextRequest) {
     const start = `${start_date} 00:00:00+00`;
     const end = `${end_date} 23:59:59+00`;
 
+    const pageInt = parseInt(page as string);
+    const limitInt = parseInt(limit as string);
+    const startIndex = (pageInt - 1) * limitInt;
+    const endIndex = startIndex + limitInt - 1;
+
     // =========================================================================
-    // QUERY A: LEAD DATA (Global Date/Branch/CS Filters - ALL Statuses)
+    // QUERY A: PAGINATED LEAD DATA (WITH RELATIONS)
     // =========================================================================
-    // NOTE: We fetch ALL data first to ensure Charts & Stats are accurate for the whole period.
-    let query = supabase
+    let paginatedQuery = supabase
       .from("leads")
       .select(
-        "*, platform:platform_id(name), pic_name:pic_id(name), branch_name:branch_id(name)"
+        "*, platform:platform_id(name), pic_name:pic_id(name), branch_name:branch_id(name)",
+        { count: "exact" }
       )
       .gte("updated_at", start)
       .lte("updated_at", end)
       .order("updated_at", { ascending: false })
       .order("created_at", { ascending: false })
-      .limit(100000);
+      .range(startIndex, endIndex);
 
-    if (branch) query = query.eq("branch_id", branch);
-    if (cs) query = query.eq("user_id", cs);
-    if (keterangan) query = query.eq("keterangan_leads_id", keterangan);
+    if (branch) paginatedQuery = paginatedQuery.eq("branch_id", branch);
+    if (cs) paginatedQuery = paginatedQuery.eq("user_id", cs);
+    if (keterangan) paginatedQuery = paginatedQuery.eq("keterangan_leads_id", keterangan);
+    if (status) paginatedQuery = paginatedQuery.ilike("status", status);
 
     // =========================================================================
     // QUERY B: USER DATA (Sales Consultants - Type 1)
@@ -51,47 +57,88 @@ export async function POST(req: NextRequest) {
     if (cs) agentsQuery = agentsQuery.eq("id", cs);
 
     // =========================================================================
-    // QUERY C: PERFORMANCE DATA (Nominal Closing - Lightweight & Unlimited)
+    // HELPER C: FETCH ALL LEADS FOR STATS & CHARTS (Unlimited)
     // =========================================================================
-    // We need a separate query for totals because the main query returns EVERYTHING and hits limits.
-    // This query grabs ONLY what we need for the SC Performance table.
-    let performanceQuery = supabase
-      .from("leads")
-      .select("user_id, nominal") // Fetch ONLY what's needed
-      .gte("updated_at", start)
-      .lte("updated_at", end)
-      .filter("status", "ilike", "closing"); // Filter ONLY Closing
+    const fetchAllStats = async () => {
+      let allData: any[] = [];
+      let offset = 0;
+      const fetchLimit = 1000;
+      while (true) {
+        let q = supabase
+          .from("leads")
+          .select("id, status, updated_at")
+          .gte("updated_at", start)
+          .lte("updated_at", end)
+          .order("updated_at", { ascending: false })
+          .range(offset, offset + fetchLimit - 1);
+        
+        if (branch) q = q.eq("branch_id", branch);
+        if (cs) q = q.eq("user_id", cs);
+        if (keterangan) q = q.eq("keterangan_leads_id", keterangan);
 
-    if (branch) performanceQuery = performanceQuery.eq("branch_id", branch);
-    if (cs) performanceQuery = performanceQuery.eq("user_id", cs);
-    if (keterangan) performanceQuery = performanceQuery.eq("keterangan_leads_id", keterangan);
+        const { data, error } = await q;
+        if (error) throw error;
+        allData.push(...(data || []));
+        if (!data || data.length < fetchLimit) break;
+        offset += fetchLimit;
+      }
+      return allData;
+    };
+
+    // =========================================================================
+    // HELPER D: FETCH ALL PERFORMANCE (Unlimited)
+    // =========================================================================
+    const fetchAllPerformance = async () => {
+      let allData: any[] = [];
+      let offset = 0;
+      const fetchLimit = 1000;
+      while (true) {
+        let q = supabase
+          .from("leads")
+          .select("user_id, nominal")
+          .gte("updated_at", start)
+          .lte("updated_at", end)
+          .ilike("status", "closing")
+          .order("updated_at", { ascending: false })
+          .range(offset, offset + fetchLimit - 1);
+          
+        if (branch) q = q.eq("branch_id", branch);
+        if (cs) q = q.eq("user_id", cs);
+        if (keterangan) q = q.eq("keterangan_leads_id", keterangan);
+
+        const { data, error } = await q;
+        if (error) throw error;
+        allData.push(...(data || []));
+        if (!data || data.length < fetchLimit) break;
+        offset += fetchLimit;
+      }
+      return allData;
+    };
 
     // =========================================================================
     // EXECUTE QUERIES PARALLEL
     // =========================================================================
-    const [leadsResult, agentsResult, performanceResult] = await Promise.all([
-      query,
+    const [paginatedResult, agentsResult, allStatsLeads, performanceLeads] = await Promise.all([
+      paginatedQuery,
       agentsQuery,
-      performanceQuery,
+      fetchAllStats(),
+      fetchAllPerformance(),
     ]);
 
-    const allLeads = leadsResult.data || [];
-    const agents = agentsResult.data || [];
-    const performanceLeads = performanceResult.data || [];
-
-    if (leadsResult.error) {
+    if (paginatedResult.error) {
       return NextResponse.json(
-        { error: leadsResult.error.message },
+        { error: paginatedResult.error.message },
         { status: 500 }
       );
     }
 
+    const paginatedLeads = paginatedResult.data || [];
+    const totalCount = paginatedResult.count || 0;
+    const agents = agentsResult.data || [];
+
     // =========================================================================
-    // 1. LEADS STATUS COUNT (Based on ALL leads - Unfiltered by status of the MAIN query)
+    // 1. LEADS STATUS COUNT (Based on ALL leads - Unfiltered by status)
     // =========================================================================
-    // Note: If the main query is limited to 100k, this might still be truncated for VERY large datasets,
-    // but for status counts usually it's fine. If absolute accuracy is needed for status counts > 100k,
-    // we'd need another aggregate query.
     const initialCounts: Record<string, number> = {
       closing: 0,
       followup: 0,
@@ -102,7 +149,7 @@ export async function POST(req: NextRequest) {
       hot: 0,
     };
 
-    const statusCounts = allLeads.reduce((acc, lead) => {
+    const statusCounts = allStatsLeads.reduce((acc, lead) => {
       const statusName = lead.status ? lead.status.toLowerCase() : "unknown";
       if (acc[statusName] !== undefined) acc[statusName]++;
       return acc;
@@ -111,11 +158,9 @@ export async function POST(req: NextRequest) {
     // =========================================================================
     // 2. SC PERFORMANCE (Nominal Closing per CS)
     // =========================================================================
-    // Use 'performanceLeads' (the unlimited lightweight query) instead of 'allLeads'
     const scPerformance = agents.map((agent) => {
       const agentClosingLeads = performanceLeads.filter(
         (lead) => lead.user_id === agent.id
-        // No need to check status here, the query already filtered for 'closing'
       );
 
       const totalNominal = agentClosingLeads.reduce((sum, lead) => {
@@ -134,12 +179,13 @@ export async function POST(req: NextRequest) {
     scPerformance.sort((a, b) => b.total_nominal - a.total_nominal);
 
     // =========================================================================
-    // 3. FILTER DATA (Apply specific Status filter if requested)
+    // 3. FILTER DATA FOR CHARTS (Apply specific Status filter if requested)
     // =========================================================================
-    let filteredLeads = allLeads;
-
+    let filteredLeads = allStatsLeads;
     if (status) {
-      filteredLeads = allLeads.filter((lead) => lead.status?.toLowerCase() === status.toLowerCase());
+      filteredLeads = allStatsLeads.filter(
+        (lead) => lead.status?.toLowerCase() === status.toLowerCase()
+      );
     }
 
     // =========================================================================
@@ -176,24 +222,11 @@ export async function POST(req: NextRequest) {
     }));
 
     // =========================================================================
-    // 5. PAGINATION LOGIC (New Section)
+    // 5. PAGINATION LOGIC
     // =========================================================================
-    // We slice the `filteredLeads` array based on page and limit
-
-    console.log(keterangan, "ini hasilnya")
-    const pageInt = parseInt(page as string);
-    const limitInt = parseInt(limit as string);
-
-    const startIndex = (pageInt - 1) * limitInt;
-    const endIndex = startIndex + limitInt;
-
-    // The leads to show on the current page
-    const paginatedLeads = filteredLeads.slice(startIndex, endIndex);
-
-    // Pagination Metadata
     const pagination = {
-      totalItems: filteredLeads.length,
-      totalPages: Math.ceil(filteredLeads.length / limitInt),
+      totalItems: totalCount,
+      totalPages: Math.ceil(totalCount / limitInt),
       currentPage: pageInt,
       limit: limitInt,
     };
@@ -203,8 +236,8 @@ export async function POST(req: NextRequest) {
     // =========================================================================
     return NextResponse.json(
       {
-        leads: paginatedLeads, // RETURN ONLY PAGINATED LIST
-        pagination, // RETURN META DATA FOR FRONTEND
+        leads: paginatedLeads,
+        pagination,
         statusCounts,
         chartData,
         scPerformance,

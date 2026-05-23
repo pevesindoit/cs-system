@@ -188,3 +188,12 @@ export const getCustomerJourney = async (data: { page?: number; limit?: number; 
     console.log("Failed to fetch customer journey", error);
   }
 };
+
+export const getDailySales = async (data: { start_date: string; end_date: string; branch?: string }) => {
+  try {
+    const res = await axios.post("/api/get/get-daily-sales", data);
+    return res;
+  } catch (error) {
+    console.log("Failed to fetch daily sales", error);
+  }
+};

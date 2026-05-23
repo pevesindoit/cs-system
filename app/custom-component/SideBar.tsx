@@ -13,7 +13,8 @@ import {
     List,
     ClipboardPlus,
     Target,
-    Workflow
+    Workflow,
+    PackageSearch
 } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -55,6 +56,7 @@ export default function SideBar() {
                 { link: "/cs-performance", icon: <List size={16} />, text: "Leads" },
                 { link: "/target", icon: <Target size={16} />, text: "Target" },
                 { link: "/customers-jurney", icon: <Workflow size={16} />, text: "Costumer Jurney" },
+                { link: "/products-sells", icon: <PackageSearch size={16} />, text: "Product Sells" },
             ],
         },
     ];

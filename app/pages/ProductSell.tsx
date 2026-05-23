@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState, useMemo } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import H1 from "../custom-component/H1";
 import DateRangePicker from "../custom-component/DateRangePicker";
 import { DropDownLeads } from "../custom-component/DropDownLeads";
@@ -31,6 +31,13 @@ interface TopProduct {
     transaction_count: number;
 }
 
+interface SkuDetail {
+    sku: string;
+    motif_name: string;
+    quantity: number;
+    total_price: number;
+}
+
 interface TableRow {
     date: string;
     product_name: string;
@@ -38,6 +45,7 @@ interface TableRow {
     total_price: number;
     quantity: number;
     transaction_count: number;
+    skus: SkuDetail[];
 }
 
 interface ChartPoint {
@@ -171,27 +179,36 @@ function TopProductsCard({ data }: { data: TopProduct[] }) {
     );
 }
 
-/** Products Sales Table */
+/** Products Sales Table with expandable SKU rows */
 function ProductSalesTable({ data }: { data: TableRow[] }) {
     const LIMIT = 15;
     const [search, setSearch] = useState("");
     const [currentPage, setCurrentPage] = useState(1);
+    const [expandedKeys, setExpandedKeys] = useState<Set<string>>(new Set());
 
     const filtered = useMemo(() => {
-        const result = data.filter((row) =>
+        return data.filter((row) =>
             row.product_name.toLowerCase().includes(search.toLowerCase()) ||
             row.branch_name.toLowerCase().includes(search.toLowerCase())
         );
-        return result;
     }, [data, search]);
 
     // Reset to page 1 when search or data changes
     useEffect(() => {
         setCurrentPage(1);
+        setExpandedKeys(new Set());
     }, [search, data]);
 
     const totalPages = Math.ceil(filtered.length / LIMIT);
     const paginated = filtered.slice((currentPage - 1) * LIMIT, currentPage * LIMIT);
+
+    const toggleRow = (key: string) => {
+        setExpandedKeys((prev) => {
+            const next = new Set(prev);
+            next.has(key) ? next.delete(key) : next.add(key);
+            return next;
+        });
+    };
 
     return (
         <div className="bg-white rounded-[10px] border overflow-hidden">
@@ -218,27 +235,88 @@ function ProductSalesTable({ data }: { data: TableRow[] }) {
                         </tr>
                     </thead>
                     <tbody>
-                        {paginated.map((row, i) => (
-                            <tr
-                                key={i}
-                                className="border-t hover:bg-gray-50 transition-colors"
-                            >
-                                <td className="px-6 py-3 text-gray-600">
-                                    {new Date(row.date).toLocaleDateString("id-ID", {
-                                        day: "numeric",
-                                        month: "short",
-                                        year: "numeric",
-                                    })}
-                                </td>
-                                <td className="px-6 py-3 font-medium text-gray-800">{row.product_name}</td>
-                                <td className="px-6 py-3 text-gray-600">{row.branch_name}</td>
-                                <td className="px-6 py-3 text-right text-gray-600">{row.quantity ?? 0}</td>
-                                <td className="px-6 py-3 text-right text-gray-600">{row.transaction_count}</td>
-                                <td className="px-6 py-3 text-right font-semibold text-gray-800">
-                                    {formatRupiah(row.total_price)}
-                                </td>
-                            </tr>
-                        ))}
+                        {paginated.map((row, i) => {
+                            const rowKey = `${row.date}_${row.product_name}_${row.branch_name}`;
+                            const isExpanded = expandedKeys.has(rowKey);
+                            const hasSkus = row.skus?.length > 0;
+
+                            return (
+                                <React.Fragment key={rowKey}>
+                                    {/* ── Main row ── */}
+                                    <tr
+                                        className="border-t hover:bg-gray-50 transition-colors"
+                                    >
+                                        <td className="px-6 py-3 text-gray-600">
+                                            {new Date(row.date).toLocaleDateString("id-ID", {
+                                                day: "numeric",
+                                                month: "short",
+                                                year: "numeric",
+                                            })}
+                                        </td>
+
+                                        {/* Clickable product name */}
+                                        <td className="px-6 py-3">
+                                            <button
+                                                onClick={() => hasSkus && toggleRow(rowKey)}
+                                                className={`flex items-center gap-1.5 font-medium text-left transition-colors ${hasSkus ? "text-blue-600 hover:text-blue-800 cursor-pointer" : "text-gray-800 cursor-default"}`}
+                                            >
+                                                {hasSkus && (
+                                                    <svg
+                                                        xmlns="http://www.w3.org/2000/svg"
+                                                        className={`h-3 w-3 shrink-0 transition-transform duration-200 ${isExpanded ? "rotate-90" : "rotate-0"}`}
+                                                        viewBox="0 0 20 20"
+                                                        fill="currentColor"
+                                                    >
+                                                        <path fillRule="evenodd" d="M7.293 4.293a1 1 0 011.414 0L14 9.586l-5.293 5.293a1 1 0 01-1.414-1.414L11.586 10 6.586 5a1 1 0 010-1.414z" clipRule="evenodd" />
+                                                    </svg>
+                                                )}
+                                                {row.product_name}
+                                            </button>
+                                        </td>
+
+                                        <td className="px-6 py-3 text-gray-600">{row.branch_name}</td>
+                                        <td className="px-6 py-3 text-right text-gray-600">{row.quantity ?? 0}</td>
+                                        <td className="px-6 py-3 text-right text-gray-600">{row.transaction_count}</td>
+                                        <td className="px-6 py-3 text-right font-semibold text-gray-800">
+                                            {formatRupiah(row.total_price)}
+                                        </td>
+                                    </tr>
+
+                                    {/* ── Expandable SKU sub-table ── */}
+                                    {isExpanded && hasSkus && (
+                                        <tr key={`${rowKey}_skus`} className="bg-blue-50/60">
+                                            <td colSpan={6} className="px-6 py-0">
+                                                <div className="py-3 pl-4 border-l-2 border-blue-300">
+                                                    <table className="w-full text-[10px]">
+                                                        <thead>
+                                                            <tr className="text-blue-500 uppercase tracking-wide">
+                                                                <th className="text-left py-1.5 pr-4">#</th>
+                                                                <th className="text-left py-1.5 pr-4">SKU</th>
+                                                                <th className="text-left py-1.5 pr-4">Motif</th>
+                                                                <th className="text-right py-1.5 pr-4">Qty</th>
+                                                                <th className="text-right py-1.5">Total Omset</th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody>
+                                                            {row.skus.map((sku, si) => (
+                                                                <tr key={sku.sku} className="border-t border-blue-100">
+                                                                    <td className="py-1.5 pr-4 text-blue-400 font-bold">{si + 1}</td>
+                                                                    <td className="py-1.5 pr-4 font-mono text-gray-500">{sku.sku}</td>
+                                                                    <td className="py-1.5 pr-4 text-gray-700 font-medium">{sku.motif_name}</td>
+                                                                    <td className="py-1.5 pr-4 text-right text-gray-600 font-semibold">{sku.quantity}</td>
+                                                                    <td className="py-1.5 text-right text-gray-800 font-semibold">{formatRupiah(sku.total_price)}</td>
+                                                                </tr>
+                                                            ))}
+                                                        </tbody>
+                                                    </table>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    )}
+                                </React.Fragment>
+                            );
+                        })}
+
                         {paginated.length === 0 && (
                             <tr>
                                 <td colSpan={6} className="px-6 py-8 text-center text-gray-400">
@@ -255,6 +333,7 @@ function ProductSalesTable({ data }: { data: TableRow[] }) {
                 <Pagination
                     currentPage={currentPage}
                     totalPages={totalPages}
+
                     totalItems={filtered.length}
                     onPageChange={setCurrentPage}
                 />
@@ -358,11 +437,10 @@ export default function ProductSell() {
                 </div>
 
                 {syncMsg && (
-                    <div className={`text-xs px-4 py-2 rounded-lg mb-1 ${
-                        syncMsg.type === "success"
+                    <div className={`text-xs px-4 py-2 rounded-lg mb-1 ${syncMsg.type === "success"
                             ? "bg-green-50 text-green-700 border border-green-200"
                             : "bg-red-50 text-red-700 border border-red-200"
-                    }`}>
+                        }`}>
                         {syncMsg.text}
                     </div>
                 )}

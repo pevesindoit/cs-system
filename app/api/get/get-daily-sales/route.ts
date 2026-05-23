@@ -94,13 +94,25 @@ export async function POST(req: NextRequest) {
 
         // ===================================================================
         // 3. Build TABLE DATA — daily breakdown per product + branch
+        //    Each row also carries a `skus` array for the expandable detail
         // ===================================================================
-        type TableRow = { date: string; product_name: string; branch_name: string; total_price: number; quantity: number; transaction_count: number };
+        type SkuDetail = { sku: string; motif_name: string; quantity: number; total_price: number };
+        type TableRow = {
+            date: string;
+            product_name: string;
+            branch_name: string;
+            total_price: number;
+            quantity: number;
+            transaction_count: number;
+            skus: SkuDetail[];
+        };
         const tableMap: Record<string, TableRow> = {};
 
         sales.forEach((row: any) => {
             const productName = (row.motif as any)?.product?.name || "Unknown Product";
-            const branchName = (row.branch as any)?.name || "Unknown Branch";
+            const branchName  = (row.branch as any)?.name           || "Unknown Branch";
+            const skuCode     = (row.motif as any)?.sku             || "UNKNOWN";
+            const motifName   = (row.motif as any)?.motif_name      || skuCode;
             const key = `${row.date}_${productName}_${branchName}`;
 
             if (!tableMap[key]) {
@@ -111,16 +123,38 @@ export async function POST(req: NextRequest) {
                     total_price: 0,
                     quantity: 0,
                     transaction_count: 0,
+                    skus: [],
                 };
             }
-            tableMap[key].total_price += row.total_price || 0;
-            tableMap[key].quantity += row.quantity || 0;
-            tableMap[key].transaction_count += 1;
+
+            const entry = tableMap[key];
+            entry.total_price      += row.total_price || 0;
+            entry.quantity         += row.quantity    || 0;
+            entry.transaction_count += 1;
+
+            // Accumulate SKU-level data inside this row
+            const existing = entry.skus.find((s) => s.sku === skuCode);
+            if (existing) {
+                existing.quantity    += row.quantity    || 0;
+                existing.total_price += row.total_price || 0;
+            } else {
+                entry.skus.push({
+                    sku: skuCode,
+                    motif_name: motifName,
+                    quantity: row.quantity    || 0,
+                    total_price: row.total_price || 0,
+                });
+            }
         });
 
-        const tableData = Object.values(tableMap).sort((a, b) =>
+        // Sort SKUs inside each row: best seller (qty) first
+        const tableData = Object.values(tableMap).map((row) => ({
+            ...row,
+            skus: row.skus.sort((a, b) => b.quantity - a.quantity),
+        })).sort((a, b) =>
             a.date > b.date ? -1 : a.date < b.date ? 1 : 0
         );
+
 
         // ===================================================================
         // RETURN

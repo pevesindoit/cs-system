@@ -61,33 +61,77 @@ export async function GET(req: Request) {
         const secretKey = process.env.ACCURATE_SIGNATURE || '';
         const token = process.env.ACCURATE_TOKEN || '';
 
-        // ── STEP 1: Search by Kode / UPC / Barcode ────────────────────────────
-        // Note: only `keywords` param — no `fields`, not supported by this endpoint
-        const searchUrl = 'https://iris.accurate.id/accurate/api/item/search-by-no-upc.do';
-        const searchResponse = await axios.get(searchUrl, {
-            params: { keywords: q },
-            ...makeHeaders(secretKey, token),
-        });
+        // ── STEP 1: Run BOTH searches in parallel ─────────────────────────────
+        //   a) Exact SKU / barcode match  → search-by-no-upc.do
+        //   b) Partial / fuzzy name match → search-by-item-or-sn.do
+        const exactUrl  = 'https://iris.accurate.id/accurate/api/item/search-by-no-upc.do';
+        const fuzzyUrl  = 'https://iris.accurate.id/accurate/api/item/search-by-item-or-sn.do';
 
-        // search-by-no-upc.do returns ONE of:
-        //   Array:  d = [ { id, no, name, ... }, ... ]
-        //   Single: d = { item: { id, no, name }, found: true, keywords: "..." }
-        const raw = searchResponse.data.d;
-        let foundItems: any[] = [];
-        if (Array.isArray(raw)) {
-            foundItems = raw;
-        } else if (raw && typeof raw === 'object') {
-            if ('item' in raw && 'found' in raw) {
-                // Single-result wrapper — extract the nested item
-                if (raw.found && raw.item) foundItems = [raw.item];
-            } else {
-                foundItems = [raw];
+        const [exactRes, fuzzyRes] = await Promise.allSettled([
+            axios.get(exactUrl, {
+                params: { keywords: q },
+                ...makeHeaders(secretKey, token),
+            }),
+            axios.get(fuzzyUrl, {
+                params: { keywords: q, sp_pageSize: 50 },
+                ...makeHeaders(secretKey, token),
+            }),
+        ]);
+
+        // ── Parse exact results ───────────────────────────────────────────────
+        let exactItems: any[] = [];
+        if (exactRes.status === 'fulfilled') {
+            const raw = exactRes.value.data.d;
+            if (Array.isArray(raw)) {
+                exactItems = raw;
+            } else if (raw && typeof raw === 'object') {
+                if ('item' in raw && 'found' in raw) {
+                    if (raw.found && raw.item) exactItems = [raw.item];
+                } else {
+                    exactItems = [raw];
+                }
+            }
+        } else {
+            console.warn('[search-stock] exact search failed:', exactRes.reason?.message);
+        }
+
+        // ── Parse fuzzy results ───────────────────────────────────────────────
+        // search-by-item-or-sn.do returns: { d: [ { id, no, name, ... }, ... ] }
+        let fuzzyItems: any[] = [];
+        if (fuzzyRes.status === 'fulfilled') {
+            const raw = fuzzyRes.value.data.d;
+            if (Array.isArray(raw)) {
+                fuzzyItems = raw;
+            } else if (raw && typeof raw === 'object') {
+                // Some versions wrap in { data: [...] }
+                fuzzyItems = raw.data || [];
+            }
+        } else {
+            console.warn('[search-stock] fuzzy search failed:', fuzzyRes.reason?.message);
+        }
+
+        // ── Merge & deduplicate by item id ────────────────────────────────────
+        const seenIds = new Set<string | number>();
+        const foundItems: any[] = [];
+        for (const item of [...exactItems, ...fuzzyItems]) {
+            const key = item.id ?? item.no ?? item.itemNo;
+            if (key !== undefined && !seenIds.has(key)) {
+                seenIds.add(key);
+                foundItems.push(item);
             }
         }
 
-        console.log(`[search-stock] query="${q}" → ${foundItems.length} item(s) found`);
+        // ── Filter: only keep items whose name OR sku STARTS WITH the query ──
+        const ql = q.toLowerCase();
+        const startsWithItems = foundItems.filter((item) => {
+            const name = (item.name || '').toLowerCase();
+            const sku  = (item.no || item.itemNo || item.sku || '').toLowerCase();
+            return name.startsWith(ql) || sku.startsWith(ql);
+        });
 
-        if (foundItems.length === 0) {
+        console.log(`[search-stock] query="${q}" → exact:${exactItems.length} fuzzy:${fuzzyItems.length} merged:${foundItems.length} startsWith:${startsWithItems.length}`);
+
+        if (startsWithItems.length === 0) {
             return NextResponse.json({
                 success: true,
                 query: q,
@@ -98,7 +142,7 @@ export async function GET(req: Request) {
         }
 
         const MAX_DETAIL = 30;
-        const itemsToProcess = foundItems.slice(0, MAX_DETAIL);
+        const itemsToProcess = startsWithItems.slice(0, MAX_DETAIL);
         const branchStockMap: Record<string, { sku: string; name: string; quantityInBranch: number }[]> = {};
 
         // ── STEP 2: Extract warehouse data ─────────────────────────────────────

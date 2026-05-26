@@ -96,7 +96,13 @@ export async function POST(req: NextRequest) {
         // 3. Build TABLE DATA — daily breakdown per product + branch
         //    Each row also carries a `skus` array for the expandable detail
         // ===================================================================
-        type SkuDetail = { sku: string; motif_name: string; quantity: number; total_price: number };
+        type SkuDetail = { 
+            sku: string; 
+            motif_name: string; 
+            quantity: number; 
+            total_price: number;
+            history?: { date: string; branch_name: string; quantity: number; total_price: number }[];
+        };
         type TableRow = {
             date: string;
             product_name: string;
@@ -157,6 +163,72 @@ export async function POST(req: NextRequest) {
 
 
         // ===================================================================
+        // 4. Build PRODUCT RANKING — one row per product across full date range
+        //    sorted by transaction_count descending
+        // ===================================================================
+        type ProductRankRow = {
+            product_name: string;
+            total_price: number;
+            quantity: number;
+            transaction_count: number;
+            skus: SkuDetail[];
+        };
+        const rankMap: Record<string, ProductRankRow> = {};
+
+        sales.forEach((row: any) => {
+            const productName = (row.motif as any)?.product?.name || "Unknown Product";
+            const skuCode     = (row.motif as any)?.sku             || "UNKNOWN";
+            const motifName   = (row.motif as any)?.motif_name      || skuCode;
+            const branchName  = (row.branch as any)?.name           || "Unknown Branch";
+
+            if (!rankMap[productName]) {
+                rankMap[productName] = {
+                    product_name: productName,
+                    total_price: 0,
+                    quantity: 0,
+                    transaction_count: 0,
+                    skus: [],
+                };
+            }
+
+            const entry = rankMap[productName];
+            entry.total_price       += row.total_price || 0;
+            entry.quantity          += row.quantity    || 0;
+            entry.transaction_count += 1;
+
+            let existingSku = entry.skus.find((s) => s.sku === skuCode);
+            if (!existingSku) {
+                existingSku = {
+                    sku: skuCode,
+                    motif_name: motifName,
+                    quantity: 0,
+                    total_price: 0,
+                    history: [],
+                };
+                entry.skus.push(existingSku);
+            }
+
+            existingSku.quantity    += row.quantity    || 0;
+            existingSku.total_price += row.total_price || 0;
+            existingSku.history?.push({
+                date: row.date,
+                branch_name: branchName,
+                quantity: row.quantity || 0,
+                total_price: row.total_price || 0,
+            });
+        });
+
+        const productRanking = Object.values(rankMap)
+            .map((p) => {
+                const skus = p.skus.map(s => ({
+                    ...s,
+                    history: s.history?.sort((a, b) => (a.date > b.date ? -1 : 1))
+                })).sort((a, b) => b.quantity - a.quantity);
+                return { ...p, skus };
+            })
+            .sort((a, b) => b.transaction_count - a.transaction_count);
+
+        // ===================================================================
         // RETURN
         // ===================================================================
         return NextResponse.json(
@@ -164,6 +236,7 @@ export async function POST(req: NextRequest) {
                 chartData,
                 topProducts,
                 tableData,
+                productRanking,
                 branches: branches || [],
             },
             { status: 200 }

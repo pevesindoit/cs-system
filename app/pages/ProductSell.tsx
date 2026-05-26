@@ -31,17 +31,33 @@ interface TopProduct {
     transaction_count: number;
 }
 
+interface SkuHistory {
+    date: string;
+    branch_name: string;
+    quantity: number;
+    total_price: number;
+}
+
 interface SkuDetail {
     sku: string;
     motif_name: string;
     quantity: number;
     total_price: number;
+    history?: SkuHistory[];
 }
 
 interface TableRow {
     date: string;
     product_name: string;
     branch_name: string;
+    total_price: number;
+    quantity: number;
+    transaction_count: number;
+    skus: SkuDetail[];
+}
+
+interface ProductRankRow {
+    product_name: string;
     total_price: number;
     quantity: number;
     transaction_count: number;
@@ -73,6 +89,16 @@ const getDefaultRange = () => {
     const start = new Date();
     start.setDate(start.getDate() - 30);
     return { start_date: start.toISOString().split("T")[0], end_date: end };
+};
+
+/** Returns the default sync date: yesterday, or Saturday if today is Monday */
+const getDefaultSyncDate = () => {
+    const now = new Date();
+    const dayOfWeek = now.getDay(); // 0=Sun, 1=Mon, …, 6=Sat
+    const daysBack = dayOfWeek === 1 ? 2 : 1; // Monday → subtract 2 days (Saturday)
+    const target = new Date(now);
+    target.setDate(target.getDate() - daysBack);
+    return target.toISOString().split("T")[0]; // YYYY-MM-DD
 };
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
@@ -179,56 +205,68 @@ function TopProductsCard({ data }: { data: TopProduct[] }) {
     );
 }
 
-/** Products Sales Table with expandable SKU rows */
-function ProductSalesTable({ data }: { data: TableRow[] }) {
-    const LIMIT = 15;
+/** Product Ranking Table — one row per product, sorted by most transactions */
+function ProductRankingTable({ data }: { data: ProductRankRow[] }) {
+    const LIMIT = 20;
     const [search, setSearch] = useState("");
     const [currentPage, setCurrentPage] = useState(1);
     const [expandedKeys, setExpandedKeys] = useState<Set<string>>(new Set());
+    const [expandedSkus, setExpandedSkus] = useState<Set<string>>(new Set());
 
-    const filtered = useMemo(() => {
-        return data.filter((row) =>
-            row.product_name.toLowerCase().includes(search.toLowerCase()) ||
-            row.branch_name.toLowerCase().includes(search.toLowerCase())
-        );
-    }, [data, search]);
+    const filtered = useMemo(() =>
+        data.filter((row) =>
+            row.product_name.toLowerCase().includes(search.toLowerCase())
+        ),
+    [data, search]);
 
-    // Reset to page 1 when search or data changes
     useEffect(() => {
         setCurrentPage(1);
         setExpandedKeys(new Set());
+        setExpandedSkus(new Set());
     }, [search, data]);
 
     const totalPages = Math.ceil(filtered.length / LIMIT);
     const paginated = filtered.slice((currentPage - 1) * LIMIT, currentPage * LIMIT);
 
-    const toggleRow = (key: string) => {
+    const toggle = (key: string) =>
         setExpandedKeys((prev) => {
             const next = new Set(prev);
             next.has(key) ? next.delete(key) : next.add(key);
             return next;
         });
-    };
+
+    const toggleSku = (key: string) =>
+        setExpandedSkus((prev) => {
+            const next = new Set(prev);
+            next.has(key) ? next.delete(key) : next.add(key);
+            return next;
+        });
 
     return (
         <div className="bg-white rounded-[10px] border overflow-hidden">
             <div className="flex items-center justify-between px-6 py-4 border-b">
-                <h2 className="text-sm font-bold text-gray-800">Detail Penjualan Produk</h2>
+                <div>
+                    <h2 className="text-sm font-bold text-gray-800">Ranking Produk</h2>
+                    <p className="text-xs text-gray-400 mt-0.5">
+                        {filtered.length} produk — diurutkan berdasarkan transaksi terbanyak
+                    </p>
+                </div>
                 <input
                     type="text"
-                    placeholder="Cari produk / cabang..."
+                    placeholder="Cari produk..."
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
-                    className="border rounded-md px-3 py-1.5 text-xs w-56 focus:outline-none focus:ring-2 focus:ring-blue-200"
+                    className="border rounded-md px-3 py-1.5 text-xs w-48 focus:outline-none focus:ring-2 focus:ring-blue-200"
                 />
             </div>
+
             <div className="overflow-x-auto">
                 <table className="w-full text-xs">
                     <thead>
                         <tr className="bg-gray-50 text-gray-500 uppercase tracking-wide text-[10px]">
-                            <th className="text-left px-6 py-3">Tanggal</th>
+                            <th className="text-left px-6 py-3">#</th>
                             <th className="text-left px-6 py-3">Produk</th>
-                            <th className="text-left px-6 py-3">Cabang</th>
+                            <th className="text-left px-6 py-3">SKU</th>
                             <th className="text-right px-6 py-3">Qty</th>
                             <th className="text-right px-6 py-3">Transaksi</th>
                             <th className="text-right px-6 py-3">Total Omset</th>
@@ -236,55 +274,60 @@ function ProductSalesTable({ data }: { data: TableRow[] }) {
                     </thead>
                     <tbody>
                         {paginated.map((row, i) => {
-                            const rowKey = `${row.date}_${row.product_name}_${row.branch_name}`;
-                            const isExpanded = expandedKeys.has(rowKey);
+                            const rank = (currentPage - 1) * LIMIT + i + 1;
+                            const isExpanded = expandedKeys.has(row.product_name);
                             const hasSkus = row.skus?.length > 0;
 
                             return (
-                                <React.Fragment key={rowKey}>
-                                    {/* ── Main row ── */}
+                                <React.Fragment key={row.product_name}>
                                     <tr
-                                        className="border-t hover:bg-gray-50 transition-colors"
+                                        onClick={() => hasSkus && toggle(row.product_name)}
+                                        className={`border-t transition-colors ${
+                                            hasSkus ? "cursor-pointer hover:bg-gray-50" : ""
+                                        }`}
                                     >
-                                        <td className="px-6 py-3 text-gray-600">
-                                            {new Date(row.date).toLocaleDateString("id-ID", {
-                                                day: "numeric",
-                                                month: "short",
-                                                year: "numeric",
-                                            })}
+                                        {/* Rank */}
+                                        <td className="px-6 py-3 text-gray-400 tabular-nums font-semibold w-10">
+                                            {rank === 1 ? "🥇" : rank === 2 ? "🥈" : rank === 3 ? "🥉" : rank}
                                         </td>
 
-                                        {/* Clickable product name */}
+                                        {/* Product name + expand chevron */}
                                         <td className="px-6 py-3">
-                                            <button
-                                                onClick={() => hasSkus && toggleRow(rowKey)}
-                                                className={`flex items-center gap-1.5 font-medium text-left transition-colors ${hasSkus ? "text-blue-600 hover:text-blue-800 cursor-pointer" : "text-gray-800 cursor-default"}`}
-                                            >
+                                            <div className="flex items-center gap-1.5">
                                                 {hasSkus && (
                                                     <svg
                                                         xmlns="http://www.w3.org/2000/svg"
-                                                        className={`h-3 w-3 shrink-0 transition-transform duration-200 ${isExpanded ? "rotate-90" : "rotate-0"}`}
-                                                        viewBox="0 0 20 20"
-                                                        fill="currentColor"
+                                                        className={`h-3 w-3 shrink-0 text-blue-400 transition-transform duration-200 ${
+                                                            isExpanded ? "rotate-90" : "rotate-0"
+                                                        }`}
+                                                        viewBox="0 0 20 20" fill="currentColor"
                                                     >
                                                         <path fillRule="evenodd" d="M7.293 4.293a1 1 0 011.414 0L14 9.586l-5.293 5.293a1 1 0 01-1.414-1.414L11.586 10 6.586 5a1 1 0 010-1.414z" clipRule="evenodd" />
                                                     </svg>
                                                 )}
-                                                {row.product_name}
-                                            </button>
+                                                <span className="font-medium text-gray-800">{row.product_name}</span>
+                                            </div>
                                         </td>
 
-                                        <td className="px-6 py-3 text-gray-600">{row.branch_name}</td>
-                                        <td className="px-6 py-3 text-right text-gray-600">{row.quantity ?? 0}</td>
-                                        <td className="px-6 py-3 text-right text-gray-600">{row.transaction_count}</td>
+                                        {/* SKU count badge */}
+                                        <td className="px-6 py-3">
+                                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-blue-50 text-blue-600 font-semibold text-[10px]">
+                                                {row.skus.length} SKU
+                                            </span>
+                                        </td>
+
+                                        <td className="px-6 py-3 text-right text-gray-600 tabular-nums">{row.quantity}</td>
+                                        <td className="px-6 py-3 text-right tabular-nums">
+                                            <span className="font-semibold text-gray-800">{row.transaction_count}</span>
+                                        </td>
                                         <td className="px-6 py-3 text-right font-semibold text-gray-800">
                                             {formatRupiah(row.total_price)}
                                         </td>
                                     </tr>
 
-                                    {/* ── Expandable SKU sub-table ── */}
+                                    {/* Expandable SKU breakdown */}
                                     {isExpanded && hasSkus && (
-                                        <tr key={`${rowKey}_skus`} className="bg-blue-50/60">
+                                        <tr className="bg-blue-50/50">
                                             <td colSpan={6} className="px-6 py-0">
                                                 <div className="py-3 pl-4 border-l-2 border-blue-300">
                                                     <table className="w-full text-[10px]">
@@ -298,15 +341,67 @@ function ProductSalesTable({ data }: { data: TableRow[] }) {
                                                             </tr>
                                                         </thead>
                                                         <tbody>
-                                                            {row.skus.map((sku, si) => (
-                                                                <tr key={sku.sku} className="border-t border-blue-100">
-                                                                    <td className="py-1.5 pr-4 text-blue-400 font-bold">{si + 1}</td>
-                                                                    <td className="py-1.5 pr-4 font-mono text-gray-500">{sku.sku}</td>
-                                                                    <td className="py-1.5 pr-4 text-gray-700 font-medium">{sku.motif_name}</td>
-                                                                    <td className="py-1.5 pr-4 text-right text-gray-600 font-semibold">{sku.quantity}</td>
-                                                                    <td className="py-1.5 text-right text-gray-800 font-semibold">{formatRupiah(sku.total_price)}</td>
-                                                                </tr>
-                                                            ))}
+                                                            {row.skus.map((sku, si) => {
+                                                                const isSkuExpanded = expandedSkus.has(sku.sku);
+                                                                const hasHistory = sku.history && sku.history.length > 0;
+                                                                return (
+                                                                    <React.Fragment key={sku.sku}>
+                                                                        <tr 
+                                                                            onClick={() => hasHistory && toggleSku(sku.sku)}
+                                                                            className={`border-t border-blue-100 transition-colors ${hasHistory ? "cursor-pointer hover:bg-blue-100" : ""}`}
+                                                                        >
+                                                                            <td className="py-1.5 pr-4 text-blue-400 font-bold">
+                                                                                <div className="flex items-center gap-1">
+                                                                                    {hasHistory && (
+                                                                                        <svg
+                                                                                            xmlns="http://www.w3.org/2000/svg"
+                                                                                            className={`h-2.5 w-2.5 shrink-0 text-blue-400 transition-transform duration-200 ${isSkuExpanded ? "rotate-90" : "rotate-0"}`}
+                                                                                            viewBox="0 0 20 20" fill="currentColor"
+                                                                                        >
+                                                                                            <path fillRule="evenodd" d="M7.293 4.293a1 1 0 011.414 0L14 9.586l-5.293 5.293a1 1 0 01-1.414-1.414L11.586 10 6.586 5a1 1 0 010-1.414z" clipRule="evenodd" />
+                                                                                        </svg>
+                                                                                    )}
+                                                                                    {si + 1}
+                                                                                </div>
+                                                                            </td>
+                                                                            <td className="py-1.5 pr-4 font-mono text-gray-500">{sku.sku}</td>
+                                                                            <td className="py-1.5 pr-4 text-gray-700 font-medium">{sku.motif_name}</td>
+                                                                            <td className="py-1.5 pr-4 text-right text-gray-600 font-semibold">{sku.quantity}</td>
+                                                                            <td className="py-1.5 text-right text-gray-800 font-semibold">{formatRupiah(sku.total_price)}</td>
+                                                                        </tr>
+                                                                        {isSkuExpanded && hasHistory && (
+                                                                            <tr className="bg-white/60">
+                                                                                <td colSpan={5} className="py-2 pl-6 pr-4">
+                                                                                    <div className="rounded-md border border-gray-100 overflow-hidden">
+                                                                                        <table className="w-full text-[9px] bg-white">
+                                                                                            <thead>
+                                                                                                <tr className="bg-gray-50 text-gray-400 uppercase">
+                                                                                                    <th className="text-left py-1 px-3">Tanggal</th>
+                                                                                                    <th className="text-left py-1 px-3">Cabang</th>
+                                                                                                    <th className="text-right py-1 px-3">Qty</th>
+                                                                                                    <th className="text-right py-1 px-3">Omset</th>
+                                                                                                </tr>
+                                                                                            </thead>
+                                                                                            <tbody>
+                                                                                                {sku.history!.map((hist, hi) => (
+                                                                                                    <tr key={hi} className="border-t border-gray-50 text-gray-600">
+                                                                                                        <td className="py-1 px-3">
+                                                                                                            {new Date(hist.date).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" })}
+                                                                                                        </td>
+                                                                                                        <td className="py-1 px-3">{hist.branch_name}</td>
+                                                                                                        <td className="py-1 px-3 text-right font-medium">{hist.quantity}</td>
+                                                                                                        <td className="py-1 px-3 text-right text-gray-700">{formatRupiah(hist.total_price)}</td>
+                                                                                                    </tr>
+                                                                                                ))}
+                                                                                            </tbody>
+                                                                                        </table>
+                                                                                    </div>
+                                                                                </td>
+                                                                            </tr>
+                                                                        )}
+                                                                    </React.Fragment>
+                                                                );
+                                                            })}
                                                         </tbody>
                                                     </table>
                                                 </div>
@@ -328,12 +423,10 @@ function ProductSalesTable({ data }: { data: TableRow[] }) {
                 </table>
             </div>
 
-            {/* Pagination */}
             <div className="px-6 border-t">
                 <Pagination
                     currentPage={currentPage}
                     totalPages={totalPages}
-
                     totalItems={filtered.length}
                     onPageChange={setCurrentPage}
                 />
@@ -342,16 +435,21 @@ function ProductSalesTable({ data }: { data: TableRow[] }) {
     );
 }
 
+
+
 // ─── Main Page ────────────────────────────────────────────────────────────────
 export default function ProductSell() {
     const [range, setRange] = useState(getDefaultRange());
     const [branch, setBranch] = useState<string>("");
     const [branchOptions, setBranchOptions] = useState<{ value: string | number; label: string; className: string }[]>([]);
 
+    // Sync date: defaults to auto-calculated date (yesterday / Saturday on Monday)
+    const [syncDate, setSyncDate] = useState<string>(getDefaultSyncDate());
+
     // Data states
     const [chartData, setChartData] = useState<ChartPoint[]>([]);
     const [topProducts, setTopProducts] = useState<TopProduct[]>([]);
-    const [tableData, setTableData] = useState<TableRow[]>([]);
+    const [productRanking, setProductRanking] = useState<ProductRankRow[]>([]);
     const [loading, setLoading] = useState(false);
     const [syncing, setSyncing] = useState(false);
     const [syncMsg, setSyncMsg] = useState<{ type: "success" | "error"; text: string } | null>(null);
@@ -360,7 +458,10 @@ export default function ProductSell() {
         setSyncing(true);
         setSyncMsg(null);
         try {
-            const res = await fetch("/api/get/get-product-data");
+            const url = syncDate
+                ? `/api/get/get-product-data?date=${syncDate}`
+                : "/api/get/get-product-data";
+            const res = await fetch(url);
             const json = await res.json();
             if (!res.ok) throw new Error(json.error || "Gagal sync data");
             setSyncMsg({ type: "success", text: `Sync berhasil! ${json.salesRecordsInserted ?? 0} record ditambahkan untuk tanggal ${json.dateProcessed}.` });
@@ -389,7 +490,7 @@ export default function ProductSell() {
             if (res?.data) {
                 setChartData(res.data.chartData || []);
                 setTopProducts(res.data.topProducts || []);
-                setTableData(res.data.tableData || []);
+                setProductRanking(res.data.productRanking || []);
 
                 // Populate branch dropdown from first fetch
                 if (branchOptions.length === 0 && res.data.branches?.length > 0) {
@@ -410,30 +511,49 @@ export default function ProductSell() {
     return (
         <div className="space-y-7 pb-10">
             <div className="h-full">
-                <div className="flex items-center justify-between mb-1">
+                <div className="flex items-center justify-between mb-1 gap-3 flex-wrap">
                     <H1>Penjualan Produk</H1>
-                    <button
-                        onClick={syncFromAccurate}
-                        disabled={syncing}
-                        className="flex items-center gap-1.5 bg-black text-white text-xs px-3 py-2 rounded-lg hover:bg-gray-800 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                        {syncing ? (
-                            <>
-                                <svg className="animate-spin h-3.5 w-3.5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
-                                </svg>
-                                Syncing...
-                            </>
-                        ) : (
-                            <>
-                                <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                                    <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                                </svg>
-                                Sync dari Accurate
-                            </>
-                        )}
-                    </button>
+
+                    {/* ── Sync date picker + button ───────────── */}
+                    <div className="flex items-center gap-2">
+                        <div className="flex flex-col gap-0.5">
+                            <label className="text-[10px] text-gray-500 font-medium leading-none pl-0.5">
+                                Tanggal Sync
+                            </label>
+                            <input
+                                type="date"
+                                value={syncDate}
+                                max={new Date(new Date().setDate(new Date().getDate() - 1))
+                                    .toISOString()
+                                    .split("T")[0]}
+                                onChange={(e) => setSyncDate(e.target.value)}
+                                disabled={syncing}
+                                className="border rounded-md px-2 py-1.5 text-xs text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                            />
+                        </div>
+                        <button
+                            onClick={syncFromAccurate}
+                            disabled={syncing}
+                            className="flex items-center gap-1.5 bg-black text-white text-xs px-3 py-2 rounded-lg hover:bg-gray-800 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed self-end"
+                        >
+                            {syncing ? (
+                                <>
+                                    <svg className="animate-spin h-3.5 w-3.5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+                                    </svg>
+                                    Syncing...
+                                </>
+                            ) : (
+                                <>
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                                    </svg>
+                                    Sync dari Accurate
+                                </>
+                            )}
+                        </button>
+                    </div>
                 </div>
 
                 {syncMsg && (
@@ -494,13 +614,13 @@ export default function ProductSell() {
                         </div>
                     </div>
 
-                    {/* ── Products Table ────────────────────────────────────── */}
+                    {/* ── Products Ranking Table ─────────────────────────────────── */}
                     {loading ? (
                         <div className="bg-white rounded-[10px] border h-40 flex items-center justify-center text-gray-400 text-sm">
                             Memuat data...
                         </div>
                     ) : (
-                        <ProductSalesTable data={tableData} />
+                        <ProductRankingTable data={productRanking} />
                     )}
 
                 </div>

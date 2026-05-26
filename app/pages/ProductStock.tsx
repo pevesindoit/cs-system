@@ -67,11 +67,24 @@ function StockTable({
 }) {
     const LIMIT = 20;
     const [currentPage, setCurrentPage] = useState(1);
+    const [localFilter, setLocalFilter] = useState("");
 
-    useEffect(() => { setCurrentPage(1); }, [items]);
+    // Reset page when items or local filter changes
+    useEffect(() => { setCurrentPage(1); }, [items, localFilter]);
 
-    const totalPages = Math.max(1, Math.ceil(items.length / LIMIT));
-    const paginated = items.slice((currentPage - 1) * LIMIT, currentPage * LIMIT);
+    // Client-side filter: only show items whose name OR sku STARTS WITH the keyword
+    const filteredItems = useMemo(() => {
+        const kw = localFilter.trim().toLowerCase();
+        if (!kw) return items;
+        return items.filter(
+            (item) =>
+                item.name.toLowerCase().startsWith(kw) ||
+                item.sku.toLowerCase().startsWith(kw)
+        );
+    }, [items, localFilter]);
+
+    const totalPages = Math.max(1, Math.ceil(filteredItems.length / LIMIT));
+    const paginated = filteredItems.slice((currentPage - 1) * LIMIT, currentPage * LIMIT);
 
     return (
         <div className="bg-white rounded-[10px] border overflow-hidden">
@@ -80,7 +93,36 @@ function StockTable({
                     <h2 className="text-sm font-bold text-gray-800">
                         {branchLabel || "Semua Cabang"}
                     </h2>
-                    <p className="text-xs text-gray-400 mt-0.5">{items.length} item ditemukan</p>
+                    <p className="text-xs text-gray-400 mt-0.5">
+                        {localFilter
+                            ? `${filteredItems.length} dari ${items.length} item`
+                            : `${items.length} item ditemukan`}
+                    </p>
+                </div>
+                {/* Local filter inside the table */}
+                <div className="relative">
+                    <div className="absolute inset-y-0 left-2.5 flex items-center pointer-events-none">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z" />
+                        </svg>
+                    </div>
+                    <input
+                        type="text"
+                        placeholder="Filter nama / SKU..."
+                        value={localFilter}
+                        onChange={(e) => setLocalFilter(e.target.value)}
+                        className="border rounded-md pl-7 pr-7 py-1.5 text-xs w-48 focus:outline-none focus:ring-2 focus:ring-blue-200"
+                    />
+                    {localFilter && (
+                        <button
+                            onClick={() => setLocalFilter("")}
+                            className="absolute inset-y-0 right-2 flex items-center text-gray-400 hover:text-gray-700"
+                        >
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        </button>
+                    )}
                 </div>
             </div>
 
@@ -127,7 +169,7 @@ function StockTable({
                 <Pagination
                     currentPage={currentPage}
                     totalPages={totalPages}
-                    totalItems={items.length}
+                    totalItems={filteredItems.length}
                     onPageChange={setCurrentPage}
                 />
             </div>
@@ -258,7 +300,7 @@ export default function ProductStock() {
                 </div>
                 <input
                     type="text"
-                    placeholder="Cari nama produk, kode SKU, atau barcode… (min. 2 karakter)"
+                    placeholder="Cari nama produk atau kode SKU… (min. 2 karakter, pencarian parsial didukung)"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     className="w-full border rounded-[10px] pl-10 pr-10 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-gray-300 bg-white shadow-sm"

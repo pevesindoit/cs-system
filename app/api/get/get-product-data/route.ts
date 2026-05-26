@@ -7,7 +7,7 @@ import { subDays, isMonday } from 'date-fns';
 
 export const maxDuration = 60;
 
-export async function GET() {
+export async function GET(request: Request) {
     try {
         const timeZone = 'Asia/Jakarta';
         const nowWIB = toZonedTime(new Date(), timeZone);
@@ -27,8 +27,18 @@ export async function GET() {
         };
 
         // Date definitions
-        const checkMonday = isMonday(nowWIB);
-        const targetDateWIB = subDays(nowWIB, checkMonday ? 2 : 1);
+        const { searchParams } = new URL(request.url);
+        const manualDate = searchParams.get('date'); // Optional override: YYYY-MM-DD
+
+        let targetDateWIB: Date;
+        if (manualDate && /^\d{4}-\d{2}-\d{2}$/.test(manualDate)) {
+            // Parse the manually selected date in WIB timezone
+            targetDateWIB = toZonedTime(new Date(`${manualDate}T00:00:00`), timeZone);
+        } else {
+            // Default: yesterday, or Saturday when today is Monday
+            const checkMonday = isMonday(nowWIB);
+            targetDateWIB = subDays(nowWIB, checkMonday ? 2 : 1);
+        }
 
         const filterDateAccurate = format(targetDateWIB, 'dd/MM/yyyy', { timeZone });
         const supabaseDate = format(targetDateWIB, 'yyyy-MM-dd', { timeZone }); // Format for Supabase 'date' column

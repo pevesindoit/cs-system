@@ -108,6 +108,15 @@ export const getCs = async () => {
     console.log("Failed to fetch organisations", error);
   }
 };
+
+export const getFilterer = async () => {
+  try {
+    const res = await axios.get("/api/get/get-stock-filterer");
+    return res;
+  } catch (error) {
+    console.log("Failed to fetch stock filterer", error);
+  }
+};
 export const getReport = async (data: ReportItem) => {
   try {
     const res = await axios.post("/api/get/get-report", data);

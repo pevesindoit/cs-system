@@ -1,7 +1,10 @@
 "use client";
 import React, { useEffect, useState, useMemo, useRef } from "react";
+import { supabaseBrowser } from "@/lib/supabaseBrowser";
 import H1 from "../custom-component/H1";
 import { Pagination } from "../custom-component/table/Pagination";
+import { DropDownLeads } from "../custom-component/DropDownLeads";
+import { getFilterer } from "../function/fetch/get/fetch";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface StockItem {
@@ -68,6 +71,7 @@ function StockTable({
     const LIMIT = 20;
     const [currentPage, setCurrentPage] = useState(1);
     const [localFilter, setLocalFilter] = useState("");
+
 
     // Reset page when items or local filter changes
     useEffect(() => { setCurrentPage(1); }, [items, localFilter]);
@@ -201,8 +205,28 @@ export default function ProductStock() {
     const [selectedBranch, setSelectedBranch] = useState<string>("");
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [filteringOptions, setFilteringOptions] = useState<{ id: string; name: string; code: string }[]>([]);
+    const [filterer, setFilterer] = useState<{ value: string; label: string; className: string }[]>([]);
+    const [selectedFilter, setSelectedFilter] = useState<string>("");
 
     const hasSearched = debouncedQuery.trim().length >= 2;
+
+    // Fetch filtering stock on mount
+    useEffect(() => {
+        const fetchFiltering = async () => {
+            try {
+                const { data, error } = await supabaseBrowser
+                    .from("filtering-stock")
+                    .select("id, name, code");
+                if (data && !error) {
+                    setFilteringOptions(data);
+                }
+            } catch (e) {
+                console.error(e);
+            }
+        };
+        fetchFiltering();
+    }, []);
 
     // ── Debounce (600ms) ─────────────────────────────────────────────────────
     const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -277,45 +301,68 @@ export default function ProductStock() {
 
     const totalStock = useMemo(() => displayItems.reduce((s, i) => s + i.quantityInBranch, 0), [displayItems]);
     const branchLabel = selectedBranch ? `Stok Cabang: ${selectedBranch}` : "";
+    useEffect(() => {
+        const fetchFilterer = async () => {
+            const res = await getFilterer();
+            if (res?.data?.data) {
+                const mappedOptions = res.data.data.map((item: any) => ({
+                    value: item.code, // Use code instead of id
+                    label: item.name,
+                    className: ""
+                }));
+                setFilterer(mappedOptions);
+            }
+        };
+        fetchFilterer();
+    }, []);
 
     return (
         <div className="space-y-5 pb-10">
 
             {/* ── Header ── */}
             <H1>Stok Produk</H1>
-
-            {/* ── Search Bar ── */}
-            <div className="relative">
-                <div className="absolute inset-y-0 left-3.5 flex items-center pointer-events-none">
-                    {loading ? (
-                        <svg className="animate-spin h-4 w-4 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
-                        </svg>
-                    ) : (
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z" />
-                        </svg>
+            {/* ── Search Bar & Filter ── */}
+            <div className="flex flex-col sm:flex-row gap-3">
+                <div className="relative flex-1">
+                    <div className="absolute inset-y-0 left-3.5 flex items-center pointer-events-none">
+                        {loading ? (
+                            <svg className="animate-spin h-4 w-4 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+                            </svg>
+                        ) : (
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z" />
+                            </svg>
+                        )}
+                    </div>
+                    <input
+                        type="text"
+                        placeholder="Cari nama produk atau kode SKU… (min. 2 karakter, pencarian parsial didukung)"
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="w-full border rounded-[10px] pl-10 pr-10 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-gray-300 bg-white shadow-sm"
+                    />
+                    {searchQuery && (
+                        <button
+                            onClick={() => { setSearchQuery(""); setDebouncedQuery(""); setSelectedFilter(""); }}
+                            className="absolute inset-y-0 right-3.5 flex items-center text-gray-400 hover:text-gray-700 transition-colors"
+                        >
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        </button>
                     )}
                 </div>
-                <input
-                    type="text"
-                    placeholder="Cari nama produk atau kode SKU… (min. 2 karakter, pencarian parsial didukung)"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full border rounded-[10px] pl-10 pr-10 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-gray-300 bg-white shadow-sm"
-                />
-                {searchQuery && (
-                    <button
-                        onClick={() => { setSearchQuery(""); setDebouncedQuery(""); }}
-                        className="absolute inset-y-0 right-3.5 flex items-center text-gray-400 hover:text-gray-700 transition-colors"
-                    >
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                        </svg>
-                    </button>
-                )}
             </div>
+            <DropDownLeads
+                items={filterer}
+                value={selectedFilter as any}
+                onValueChange={(val) => {
+                    setSelectedFilter(val);
+                    setSearchQuery(val);
+                }}
+                placeholder="Select Filter..." />
 
             {/* ── Error ── */}
             {error && (

@@ -69,10 +69,10 @@ export default function SideBar() {
             // IF Manager (type_id 2): Show everything
             if (userType === 2) return true;
 
-            // IF CS (type_id 1): Show "/cs" AND "/cs-performance"
+            // IF CS (type_id 1): Show "/cs", "/cs-performance", and "/products-stock"
             if (userType === 1) {
                 // ✅ UPDATE THIS LINE
-                return item.link === "/cs" || item.link === "/cs-performance";
+                return item.link === "/cs" || item.link === "/cs-performance" || item.link === "/products-stock";
             }
 
             // Fallback (e.g., pending or unknown role): Show nothing or safe pages

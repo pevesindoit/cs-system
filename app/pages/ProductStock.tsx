@@ -362,7 +362,7 @@ export default function ProductStock() {
                     setSelectedFilter(val);
                     setSearchQuery(val);
                 }}
-                placeholder="Select Filter..." />
+                placeholder="Pilih Produk..." />
 
             {/* ── Error ── */}
             {error && (

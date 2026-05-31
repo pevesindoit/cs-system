@@ -23,6 +23,16 @@ export default function Page() {
     const [accurateSyncStatus, setAccurateSyncStatus] = useState<SyncStatus>("idle");
     const [accurateSyncMessage, setAccurateSyncMessage] = useState<string>("");
 
+    const getDefaultSyncDate = () => {
+        const now = new Date();
+        const dayOfWeek = now.getDay();
+        const daysBack = dayOfWeek === 1 ? 2 : 1;
+        const target = new Date(now);
+        target.setDate(target.getDate() - daysBack);
+        return target.toISOString().split("T")[0];
+    };
+    const [syncDate, setSyncDate] = useState<string>(getDefaultSyncDate());
+
     useEffect(() => {
         const fetchGlobalData = async () => {
             const res = await getCs();
@@ -91,7 +101,8 @@ export default function Page() {
         setAccurateSyncStatus("loading");
         setAccurateSyncMessage("");
         try {
-            const res = await fetch("/api/get/get-invoice-data", { method: "GET" });
+            const url = syncDate ? `/api/get/get-invoice-data?date=${syncDate}` : "/api/get/get-invoice-data";
+            const res = await fetch(url, { method: "GET" });
             const data = await res.json();
 
             if (!res.ok || data.error) {
@@ -146,19 +157,31 @@ export default function Page() {
                         {accurateSyncMessage}
                     </span>
                 )}
-                <button
-                    onClick={handleAccurateSync}
-                    disabled={accurateSyncStatus === "loading"}
-                    className="bg-[#007bff] px-3 py-1 rounded-lg text-white hover:bg-[#0056b3] transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5"
-                >
-                    {accurateSyncStatus === "loading" && (
-                        <svg className="animate-spin h-3 w-3" viewBox="0 0 24 24" fill="none">
-                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
-                        </svg>
-                    )}
-                    {accurateSyncStatus === "loading" ? "Syncing..." : "Sync Accurate"}
-                </button>
+                <div className="flex items-center gap-2">
+                    <input
+                        type="date"
+                        value={syncDate}
+                        max={new Date(new Date().setDate(new Date().getDate() - 1))
+                            .toISOString()
+                            .split("T")[0]}
+                        onChange={(e) => setSyncDate(e.target.value)}
+                        disabled={accurateSyncStatus === "loading"}
+                        className="border border-gray-300 rounded-md px-2 py-1 text-xs text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                    />
+                    <button
+                        onClick={handleAccurateSync}
+                        disabled={accurateSyncStatus === "loading"}
+                        className="bg-[#007bff] px-3 py-1 rounded-lg text-white hover:bg-[#0056b3] transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5"
+                    >
+                        {accurateSyncStatus === "loading" && (
+                            <svg className="animate-spin h-3 w-3" viewBox="0 0 24 24" fill="none">
+                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+                            </svg>
+                        )}
+                        {accurateSyncStatus === "loading" ? "Syncing..." : "Sync Accurate"}
+                    </button>
+                </div>
             </div>
 
             {/* 1. Advertiser Section */}

@@ -8,38 +8,57 @@ export async function POST(req: NextRequest) {
 
         // ===================================================================
         // QUERY A: Fetch all daily_sales records within the date range
-        // Joining with motifs → products and branch
+        // Joining with motifs → products and branch (Handling > 1000 rows limit)
         // ===================================================================
-        let salesQuery = supabase
-            .from("daily_sales")
-            .select(
-                `date, total_price, quantity, branch_id,
-                motif:sku_id (
-                    id,
-                    sku,
-                    motif_name,
-                    product:product_id (
+        let allRawSales: any[] = [];
+        let hasMore = true;
+        let page = 0;
+        const pageSize = 1000;
+
+        while (hasMore) {
+            let salesQuery = supabase
+                .from("daily_sales")
+                .select(
+                    `date, total_price, quantity, branch_id,
+                    motif:sku_id (
+                        id,
+                        sku,
+                        motif_name,
+                        product:product_id (
+                            id,
+                            name
+                        )
+                    ),
+                    branch:branch_id (
                         id,
                         name
-                    )
-                ),
-                branch:branch_id (
-                    id,
-                    name
-                )`
-            )
-            .gte("date", start_date)
-            .lte("date", end_date)
-            .order("date", { ascending: true });
+                    )`
+                )
+                .gte("date", start_date)
+                .lte("date", end_date)
+                .order("date", { ascending: true })
+                .range(page * pageSize, (page + 1) * pageSize - 1);
 
-        if (branch) {
-            salesQuery = salesQuery.eq("branch_id", branch);
+            if (branch) {
+                salesQuery = salesQuery.eq("branch_id", branch);
+            }
+
+            const { data: chunk, error: salesError } = await salesQuery;
+            if (salesError) throw salesError;
+
+            if (chunk && chunk.length > 0) {
+                allRawSales = allRawSales.concat(chunk);
+                if (chunk.length < pageSize) {
+                    hasMore = false;
+                } else {
+                    page++;
+                }
+            } else {
+                hasMore = false;
+            }
         }
 
-        const { data: rawSales, error: salesError } = await salesQuery;
-        if (salesError) throw salesError;
-
-        const sales = rawSales || [];
+        const sales = allRawSales;
 
         // ===================================================================
         // QUERY B: Fetch all branches for filter dropdown

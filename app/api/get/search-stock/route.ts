@@ -28,7 +28,8 @@ function extractBranchStock(
     const warehouses: any[] = itemDetails?.detailWarehouseData || [];
     warehouses.forEach((wh) => {
         const rawName: string = wh.warehouseName || wh.name || '';
-        if (rawName.toUpperCase().includes('GOOD STOCK -')) {
+        const upperName = rawName.toUpperCase();
+        if (upperName.includes('GOOD STOCK -') || upperName === 'GUDANG UTAMA') {
             const cleanBranch = rawName
                 .replace(/GOOD STOCK\s*-\s*/i, '')
                 .trim()

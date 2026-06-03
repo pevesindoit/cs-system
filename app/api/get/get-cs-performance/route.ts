@@ -98,7 +98,7 @@ export async function POST(req: NextRequest) {
           .select("user_id, nominal")
           .gte("updated_at", start)
           .lte("updated_at", end)
-          .ilike("status", "closing")
+          .or("status.ilike.closing,status.ilike.closing proyek,status.ilike.repeat order")
           .order("updated_at", { ascending: false })
           .range(offset, offset + fetchLimit - 1);
           

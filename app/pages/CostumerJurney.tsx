@@ -41,6 +41,8 @@ interface CustomerItem {
 
 const statusColors: Record<string, { bg: string; text: string; dot: string }> = {
     closing: { bg: "bg-emerald-50", text: "text-emerald-700", dot: "bg-emerald-500" },
+    "closing proyek": { bg: "bg-emerald-50", text: "text-emerald-700", dot: "bg-emerald-500" },
+    "repeat order": { bg: "bg-emerald-50", text: "text-emerald-700", dot: "bg-emerald-500" },
     followup: { bg: "bg-amber-50", text: "text-amber-700", dot: "bg-amber-400" },
     survey: { bg: "bg-pink-50", text: "text-pink-700", dot: "bg-pink-400" },
     hot: { bg: "bg-red-50", text: "text-red-700", dot: "bg-red-400" },
@@ -487,6 +489,8 @@ export default function CustomerJourney() {
                             >
                                 <option value="">Semua Status</option>
                                 <option value="closing">Closing</option>
+                                <option value="closing proyek">Closing Proyek</option>
+                                <option value="repeat order">Repeat Order</option>
                                 <option value="followup">Follow Up</option>
                                 <option value="warm">Warm</option>
                                 <option value="survey">Survey</option>
@@ -643,6 +647,8 @@ export default function CustomerJourney() {
                                     hold: "Hold",
                                     survey: "Survey",
                                     closing: "Closing",
+                                    "closing proyek": "Closing Proyek",
+                                    "repeat order": "Repeat Order",
                                     warm: "Warm",
                                     followup: "Follow Up",
                                     hot: "Hot",

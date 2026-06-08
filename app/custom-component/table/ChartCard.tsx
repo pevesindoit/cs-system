@@ -51,7 +51,9 @@ export function ChartCard({ data }: ChartCardProps) {
         const now = new Date();
         let daysToSubtract = 90;
 
-        if (timeRange === "30d") {
+        if (timeRange === "365d") {
+            daysToSubtract = 365;
+        } else if (timeRange === "30d") {
             daysToSubtract = 30;
         } else if (timeRange === "7d") {
             daysToSubtract = 7;
@@ -85,6 +87,9 @@ export function ChartCard({ data }: ChartCardProps) {
                         <SelectValue placeholder="Last 3 months" />
                     </SelectTrigger>
                     <SelectContent className="rounded-xl">
+                        <SelectItem value="365d" className="rounded-lg">
+                            1 Tahun Terakhir
+                        </SelectItem>
                         <SelectItem value="90d" className="rounded-lg">
                             3 Bulan Terakhir
                         </SelectItem>

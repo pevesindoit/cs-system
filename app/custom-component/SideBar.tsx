@@ -15,7 +15,8 @@ import {
     Target,
     Workflow,
     PackageSearch,
-    DatabaseIcon
+    DatabaseIcon,
+    Key
 } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -59,6 +60,7 @@ export default function SideBar() {
                 { link: "/customers-jurney", icon: <Workflow size={16} />, text: "Costumer Jurney" },
                 { link: "/products-sells", icon: <PackageSearch size={16} />, text: "Product Sells" },
                 { link: "/products-stock", icon: <DatabaseIcon size={16} />, text: "Product Stock" },
+                { link: "/change-password", icon: <Key size={16} />, text: "Change Password" },
             ],
         },
     ];

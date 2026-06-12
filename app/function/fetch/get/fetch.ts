@@ -136,10 +136,12 @@ export const getReportDay = async (data: ReportItem) => {
   }
 };
 
-export const getDataAdvertiserList = async (id: string) => {
+export const getDataAdvertiserList = async (id: string, page: number = 1, limit: number = 50) => {
   try {
     const res = await axios.post("/api/get/get-advertiser-data", {
       user_id: id,
+      page,
+      limit
     });
     return res;
   } catch (error) {
@@ -160,10 +162,12 @@ export const getSocialMediaGrowth = async (id: string) => {
   }
 };
 
-export const getRealOmset = async (id: string) => {
+export const getRealOmset = async (id: string, page: number = 1, limit: number = 50) => {
   try {
     const res = await axios.post("/api/get/get-real-omset", {
       user_id: id,
+      page,
+      limit
     });
     return res;
   } catch (error) {

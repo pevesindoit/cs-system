@@ -17,6 +17,9 @@ import { deleteRealOmset } from "@/app/function/fetch/delete/fetch";
 export default function AddRealOmset({ branches }: ReusableCsData) {
     const [tableData, setTableData] = useState<RealOmsetLogData[]>([]);
     const [userId, setUserId] = useState("");
+    const [page, setPage] = useState(1);
+    const [totalData, setTotalData] = useState(0);
+    const limit = 7;
 
     // 1. Get User ID
     useEffect(() => {
@@ -32,13 +35,16 @@ export default function AddRealOmset({ branches }: ReusableCsData) {
         if (!userId) return;
         const fetchData = async () => {
             // Assumes you have a getRealOmset function
-            const res = await getRealOmset(userId)
+            const res = await getRealOmset(userId, page, limit)
             if (res?.status === 200) {
                 setTableData(res?.data.data);
+                if (res.data.total !== undefined) {
+                    setTotalData(res.data.total);
+                }
             }
         }
         fetchData()
-    }, [userId])
+    }, [userId, page])
 
     // 3. Handle Add New Data
     const handleNewData = async (newItem: RealOmsetLogData) => {
@@ -89,6 +95,29 @@ export default function AddRealOmset({ branches }: ReusableCsData) {
                 </tbody>
 
             </table>
+            
+            {/* PAGINATION CONTROLS */}
+            <div className="flex justify-between items-center mt-4 text-sm">
+                <div>
+                    Menampilkan {tableData.length > 0 ? (page - 1) * limit + 1 : 0} - {Math.min(page * limit, totalData)} dari {totalData} data
+                </div>
+                <div className="flex gap-2">
+                    <button
+                        onClick={() => setPage(p => Math.max(1, p - 1))}
+                        disabled={page === 1}
+                        className="px-3 py-1 bg-white border border-gray-300 rounded-md disabled:opacity-50"
+                    >
+                        Sebelumnya
+                    </button>
+                    <button
+                        onClick={() => setPage(p => p + 1)}
+                        disabled={page * limit >= totalData}
+                        className="px-3 py-1 bg-white border border-gray-300 rounded-md disabled:opacity-50"
+                    >
+                        Selanjutnya
+                    </button>
+                </div>
+            </div>
         </div>
     );
 }

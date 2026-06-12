@@ -14,6 +14,9 @@ export default function Advertiser({ platforms, branches }: ReusableCsData) {
     const [tableData, setTableData] = useState<AdvertiserData[]>([]);
     const [userId, setUserId] = useState("");
     const [targets, setTargets] = useState<any[]>([]);
+    const [page, setPage] = useState(1);
+    const [totalData, setTotalData] = useState(0);
+    const limit = 7;
 
     useEffect(() => {
         const getUser = async () => {
@@ -27,19 +30,22 @@ export default function Advertiser({ platforms, branches }: ReusableCsData) {
         if (!userId) return;
         const fetchData = async () => {
             const [res, targetRes] = await Promise.all([
-                getDataAdvertiserList(userId),
+                getDataAdvertiserList(userId, page, limit),
                 getTarget()
             ]);
             
             if (res?.status === 200) {
                 setTableData(res?.data.data);
+                if (res.data.total !== undefined) {
+                    setTotalData(res.data.total);
+                }
             }
             if (targetRes?.data?.data) {
                 setTargets(targetRes.data.data);
             }
         }
         fetchData()
-    }, [userId])
+    }, [userId, page])
 
     const handleNewData = async (newItem: AdvertiserData) => {
         const payload = { ...newItem, ads_manager_id: userId };
@@ -105,6 +111,29 @@ export default function Advertiser({ platforms, branches }: ReusableCsData) {
                 </tbody>
 
             </table>
+            </div>
+            
+            {/* PAGINATION CONTROLS */}
+            <div className="flex justify-between items-center mt-4 text-sm">
+                <div>
+                    Menampilkan {tableData.length > 0 ? (page - 1) * limit + 1 : 0} - {Math.min(page * limit, totalData)} dari {totalData} data
+                </div>
+                <div className="flex gap-2">
+                    <button
+                        onClick={() => setPage(p => Math.max(1, p - 1))}
+                        disabled={page === 1}
+                        className="px-3 py-1 bg-white border border-gray-300 rounded-md disabled:opacity-50"
+                    >
+                        Sebelumnya
+                    </button>
+                    <button
+                        onClick={() => setPage(p => p + 1)}
+                        disabled={page * limit >= totalData}
+                        className="px-3 py-1 bg-white border border-gray-300 rounded-md disabled:opacity-50"
+                    >
+                        Selanjutnya
+                    </button>
+                </div>
             </div>
         </div>
     );

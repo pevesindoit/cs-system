@@ -1,7 +1,7 @@
 import supabase from "@/lib/db";
 import { NextResponse } from "next/server";
 
-export async function POST() {
+export async function POST(request: Request) {
   try {
     // 1. Fetch Meta campaign data
     const AD_ACCOUNT_ID = process.env.META_AD_ACCOUNT_ID;
@@ -19,22 +19,30 @@ export async function POST() {
       ? AD_ACCOUNT_ID
       : `act_${AD_ACCOUNT_ID}`;
 
-    // Dynamic Date Logic (Saturday if Monday, else Yesterday)
-    const today = new Date();
-    const targetDate = new Date();
+    // Dynamic Date Logic (Saturday if Monday, else Yesterday, or manual date if provided)
+    const { searchParams } = new URL(request.url);
+    const manualDate = searchParams.get("date");
 
-    if (today.getDay() === 1) {
-      // If Monday, subtract 2 days to get Saturday
-      targetDate.setDate(today.getDate() - 2);
+    let formattedDate = "";
+    if (manualDate && /^\d{4}-\d{2}-\d{2}$/.test(manualDate)) {
+      formattedDate = manualDate;
     } else {
-      // Otherwise, subtract 1 day to get yesterday
-      targetDate.setDate(today.getDate() - 1);
-    }
+      const today = new Date();
+      const targetDate = new Date();
 
-    const yyyy = targetDate.getFullYear();
-    const mm = String(targetDate.getMonth() + 1).padStart(2, '0');
-    const dd = String(targetDate.getDate()).padStart(2, '0');
-    const formattedDate = `${yyyy}-${mm}-${dd}`;
+      if (today.getDay() === 1) {
+        // If Monday, subtract 2 days to get Saturday
+        targetDate.setDate(today.getDate() - 2);
+      } else {
+        // Otherwise, subtract 1 day to get yesterday
+        targetDate.setDate(today.getDate() - 1);
+      }
+
+      const yyyy = targetDate.getFullYear();
+      const mm = String(targetDate.getMonth() + 1).padStart(2, '0');
+      const dd = String(targetDate.getDate()).padStart(2, '0');
+      formattedDate = `${yyyy}-${mm}-${dd}`;
+    }
 
     const timeRange = {
       since: formattedDate,

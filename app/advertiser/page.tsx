@@ -69,7 +69,8 @@ export default function Page() {
         setSyncStatus("loading");
         setSyncMessage("");
         try {
-            const res = await fetch("/api/post/sync-meta-data", { method: "POST" });
+            const url = syncDate ? `/api/post/sync-meta-data?date=${syncDate}` : "/api/post/sync-meta-data";
+            const res = await fetch(url, { method: "POST" });
             const data = await res.json();
 
             if (!res.ok || data.error) {
@@ -128,36 +129,9 @@ export default function Page() {
 
     return (
         <div className="p-4 max-w-7xl mx-auto space-y-4">
-            <div className="w-full flex justify-end items-center gap-3 text-[.8rem]">
-                {syncMessage && (
-                    <span className={`text-xs font-medium ${
-                        syncStatus === "error" ? "text-red-500" : "text-green-600"
-                    }`}>
-                        {syncMessage}
-                    </span>
-                )}
-                <button
-                    onClick={handleMetaSync}
-                    disabled={syncStatus === "loading"}
-                    className="bg-black px-3 py-1 rounded-lg text-white hover:bg-gray-800 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5"
-                >
-                    {syncStatus === "loading" && (
-                        <svg className="animate-spin h-3 w-3" viewBox="0 0 24 24" fill="none">
-                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
-                        </svg>
-                    )}
-                    {syncStatus === "loading" ? "Syncing..." : "Sync Meta"}
-                </button>
-
-                {accurateSyncMessage && (
-                    <span className={`text-xs font-medium ${
-                        accurateSyncStatus === "error" ? "text-red-500" : "text-green-600"
-                    }`}>
-                        {accurateSyncMessage}
-                    </span>
-                )}
+            <div className="w-full flex justify-end items-center gap-4 text-[.8rem]">
                 <div className="flex items-center gap-2">
+                    <span className="text-xs text-gray-500 font-medium">Sync Date:</span>
                     <input
                         type="date"
                         value={syncDate}
@@ -165,12 +139,45 @@ export default function Page() {
                             .toISOString()
                             .split("T")[0]}
                         onChange={(e) => setSyncDate(e.target.value)}
-                        disabled={accurateSyncStatus === "loading"}
+                        disabled={syncStatus === "loading" || accurateSyncStatus === "loading"}
                         className="border border-gray-300 rounded-md px-2 py-1 text-xs text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-200 disabled:opacity-50 disabled:cursor-not-allowed"
                     />
+                </div>
+
+                <div className="flex items-center gap-2">
+                    {syncMessage && (
+                        <span className={`text-xs font-medium ${
+                            syncStatus === "error" ? "text-red-500" : "text-green-600"
+                        }`}>
+                            {syncMessage}
+                        </span>
+                    )}
+                    <button
+                        onClick={handleMetaSync}
+                        disabled={syncStatus === "loading" || accurateSyncStatus === "loading"}
+                        className="bg-black px-3 py-1 rounded-lg text-white hover:bg-gray-800 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5"
+                    >
+                        {syncStatus === "loading" && (
+                            <svg className="animate-spin h-3 w-3" viewBox="0 0 24 24" fill="none">
+                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+                            </svg>
+                        )}
+                        {syncStatus === "loading" ? "Syncing..." : "Sync Meta"}
+                    </button>
+                </div>
+
+                <div className="flex items-center gap-2">
+                    {accurateSyncMessage && (
+                        <span className={`text-xs font-medium ${
+                            accurateSyncStatus === "error" ? "text-red-500" : "text-green-600"
+                        }`}>
+                            {accurateSyncMessage}
+                        </span>
+                    )}
                     <button
                         onClick={handleAccurateSync}
-                        disabled={accurateSyncStatus === "loading"}
+                        disabled={accurateSyncStatus === "loading" || syncStatus === "loading"}
                         className="bg-[#007bff] px-3 py-1 rounded-lg text-white hover:bg-[#0056b3] transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5"
                     >
                         {accurateSyncStatus === "loading" && (

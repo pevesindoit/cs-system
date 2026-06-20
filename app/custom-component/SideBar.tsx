@@ -15,7 +15,8 @@ import {
     Target,
     Workflow,
     PackageSearch,
-    DatabaseIcon
+    DatabaseIcon,
+    Megaphone
 } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -51,7 +52,9 @@ export default function SideBar() {
             group: "Admin",
             items: [
                 { link: "/advertiser", icon: <CircleDollarSign size={16} />, text: "Advertiser" },
+                { link: "/add-ads-name", icon: <Megaphone size={16} />, text: "Ads Name" },
                 { link: "/report", icon: <ClipboardPlus size={16} />, text: "Report" },
+                { link: "/ads-report", icon: <ClipboardPlus size={16} />, text: "Ads Report" },
                 { link: "/cs", icon: <Users size={16} />, text: "CS" },
                 { link: "/dashboard", icon: <LayoutDashboard size={16} />, text: "Dashboard" },
                 { link: "/cs-performance", icon: <List size={16} />, text: "Leads" },

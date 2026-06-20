@@ -13,6 +13,7 @@ export async function POST(req: NextRequest) {
       cs,
       status,
       keterangan,
+      ads_id,
       page = 1, // Default to page 1
       limit = 10, // Default to 10 items per page
     } = body.data || body;
@@ -44,6 +45,7 @@ export async function POST(req: NextRequest) {
     if (cs) paginatedQuery = paginatedQuery.eq("user_id", cs);
     if (keterangan) paginatedQuery = paginatedQuery.eq("keterangan_leads_id", keterangan);
     if (status) paginatedQuery = paginatedQuery.ilike("status", status);
+    if (ads_id) paginatedQuery = paginatedQuery.eq("ads_id", ads_id);
 
     // =========================================================================
     // QUERY B: USER DATA (Sales Consultants - Type 1)
@@ -75,6 +77,7 @@ export async function POST(req: NextRequest) {
         if (branch) q = q.eq("branch_id", branch);
         if (cs) q = q.eq("user_id", cs);
         if (keterangan) q = q.eq("keterangan_leads_id", keterangan);
+        if (ads_id) q = q.eq("ads_id", ads_id);
 
         const { data, error } = await q;
         if (error) throw error;
@@ -105,6 +108,7 @@ export async function POST(req: NextRequest) {
         if (branch) q = q.eq("branch_id", branch);
         if (cs) q = q.eq("user_id", cs);
         if (keterangan) q = q.eq("keterangan_leads_id", keterangan);
+        if (ads_id) q = q.eq("ads_id", ads_id);
 
         const { data, error } = await q;
         if (error) throw error;

@@ -8,6 +8,7 @@ import { supabaseBrowser } from "@/lib/supabaseBrowser";
 import { useRouter } from "next/navigation";
 import { DropDownLeads } from "../custom-component/DropDownLeads";
 import { useAuth } from "../custom-component/global/AuthProfider";
+import axios from "axios";
 
 // ✅ FIX 1: Removed curly braces { } because ChartCard is likely a default export
 import { ChartCard } from "../custom-component/table/ChartCard";
@@ -33,8 +34,10 @@ export function CsPerformance() {
     const [cs, setCs] = useState<string>("");
     const [branchs, setBranchs] = useState([]);
     const [branch, setBranch] = useState<string>("");
-    const [keterangans, setKeterangans] = useState([]);
+    const [keterangans, setKeterangans] = useState<any[]>([]);
     const [keterangan, setKeterangan] = useState<string | undefined>(undefined);
+    const [adsNames, setAdsNames] = useState<{value: string, label: string, className: string}[]>([]);
+    const [adsId, setAdsId] = useState<string>("");
 
     // Data States
     const [totalLeads, setTotalLeads] = useState<Record<string, number>>({});
@@ -79,10 +82,23 @@ export function CsPerformance() {
             const formattedListKeterangan = rawData.keterangan_leads.map((item: itemType) => ({
                 value: item.id,
                 label: item.name,
+                className: ""
             }));
+            
+            const adsRes = await axios.get("/api/get/get-ads-names");
+            let formattedAds: {value: string, label: string, className: string}[] = [];
+            if (adsRes.data?.data) {
+                formattedAds = adsRes.data.data.map((ad: any) => ({
+                    value: String(ad.id),
+                    label: ad.ads_name,
+                    className: ""
+                }));
+            }
+
             setCss(formattedListPlatform)
             setBranchs(formattedListBranch)
             setKeterangans(formattedListKeterangan)
+            setAdsNames(formattedAds)
         }
         fetch()
     }, [])
@@ -94,6 +110,7 @@ export function CsPerformance() {
             cs,
             branch,
             keterangan,
+            ads_id: adsId,
             status: statusSelected,
             page: currentPage,
             limit: LIMIT
@@ -117,12 +134,12 @@ export function CsPerformance() {
             setScPerformance(res?.data.scPerformance || []);
         };
         fetchFilter();
-    }, [range, cs, branch, keterangan, statusSelected, currentPage]);
+    }, [range, cs, branch, keterangan, adsId, statusSelected, currentPage]);
 
     // Reset to page 1 if filters change
     useEffect(() => {
         setCurrentPage(1);
-    }, [range, cs, branch, keterangan, statusSelected]);
+    }, [range, cs, branch, keterangan, adsId, statusSelected]);
 
     const exportToMetaAds = async () => {
         setExporting(true);
@@ -132,6 +149,7 @@ export function CsPerformance() {
                 cs,
                 branch,
                 keterangan,
+                ads_id: adsId,
                 status: statusSelected,
             };
             const res = await fetch("/api/get/export-meta-ads", {
@@ -165,7 +183,7 @@ export function CsPerformance() {
                     {/* Filter Section */}
                     <div className="md:flex md:space-x-3">
                         <DateRangePicker value={range} onChange={setRange} />
-                        <div className="grid md:grid-cols-3 w-full gap-3">
+                        <div className="grid md:grid-cols-4 w-full gap-3">
                             <DropDownLeads
                                 items={css}
                                 value={cs as any}
@@ -181,6 +199,11 @@ export function CsPerformance() {
                                 value={keterangan as any}
                                 onValueChange={(val) => setKeterangan(val ? val : undefined)}
                                 placeholder="Select Keterangan..." />
+                            <DropDownLeads
+                                items={adsNames}
+                                value={adsId as any}
+                                onValueChange={setAdsId}
+                                placeholder="Select Ads..." />
                         </div>
                     </div>
 

@@ -46,12 +46,14 @@ export default function Cs() {
         user_id: user,
         updated_at: GetToday(),
         nomor_hp: "",
+        ads_id: null,
     });
     const [platforms, setPlatforms] = useState<SelectItemData[]>([]);
     const [channel, setChannel] = useState<SelectItemDataInt[]>([]);
     const [keteranganLeads, setKeteranganLeads] = useState<SelectItemDataInt[]>([]);
     const [pic, setPic] = useState<SelectItemDataInt[]>([]);
     const [branch, setBranch] = useState<SelectItemData[]>([]);
+    const [adsNameList, setAdsNameList] = useState<SelectItemData[]>([]);
     const [searchQuery, setSearchQuery] = useState<string>()
 
     useEffect(() => {
@@ -97,6 +99,7 @@ export default function Cs() {
         nominal: null,
         reason: "",
         status: lastData.status, // Reset to default status (usually 'hold' for new entry)
+        ads_id: null,
 
         // 2. Fields to KEEP (Copy from previous input)
         channel_id: lastData.channel_id,
@@ -204,11 +207,19 @@ export default function Cs() {
                     label: item.name,
                     classname: item.classname
                 }));
+
+                const formattedListAdsName = (rawData.adsName || []).map((item: any) => ({
+                    value: String(item.id),
+                    label: item.ads_name,
+                    classname: item.classname
+                }));
+
                 setPlatforms(formattedListPlatform);
                 setChannel(formattedListChannel);
                 setKeteranganLeads(formattedListketeranganLeads);
                 setPic(formattedListPic);
                 setBranch(formattedListBranch);
+                setAdsNameList(formattedListAdsName);
             } catch (error) {
                 console.log(error)
             }
@@ -328,6 +339,7 @@ export default function Cs() {
                             "Alamat",
                             "Channel",
                             "Platform",
+                            "Nama Iklan",
                             "Keterangan Leads",
                             "Status",
                             "Nominal",
@@ -442,6 +454,19 @@ export default function Cs() {
                                     onValueChange={(value) => {
                                         setFormData((prev) => ({ ...prev, platform_id: value }));
                                         localStorage.setItem("last_platform_id", value);
+                                    }}
+                                />
+                            </div>
+                        </td>
+
+                        {/* Nama Iklan */}
+                        <td className="p-0 border-r align-middle">
+                            <div className="px-1">
+                                <DropDownGrid
+                                    items={adsNameList}
+                                    value={formData.ads_id ?? undefined}
+                                    onValueChange={(value) => {
+                                        setFormData((prev) => ({ ...prev, ads_id: value }));
                                     }}
                                 />
                             </div>
@@ -564,6 +589,7 @@ export default function Cs() {
                     branches={branch}
                     keteranganLeads={keteranganLeads}
                     status={status}
+                    adsNames={adsNameList}
                 />
             </table >
 

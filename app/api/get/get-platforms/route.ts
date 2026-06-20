@@ -3,13 +3,14 @@ import { NextResponse } from "next/server";
 
 export async function GET() {
   try {
-    const [platformRes, channelRes, keteranganLeadsRes, picRes, branchRes] =
+    const [platformRes, channelRes, keteranganLeadsRes, picRes, branchRes, adsNameRes] =
       await Promise.all([
         supabase.from("platform").select("*"),
         supabase.from("channel").select("*"),
         supabase.from("keterangan_leads").select("*"),
         supabase.from("pic").select("*"),
         supabase.from("branch").select("*"),
+        supabase.from("ads_name").select("*"),
       ]);
 
     const errors =
@@ -17,7 +18,8 @@ export async function GET() {
       channelRes.error ||
       keteranganLeadsRes.error ||
       picRes.error ||
-      branchRes.error;
+      branchRes.error ||
+      adsNameRes.error;
 
     if (errors) {
       return NextResponse.json({ error: errors.message }, { status: 500 });
@@ -30,6 +32,7 @@ export async function GET() {
         keteranganLeads: keteranganLeadsRes.data,
         pic: picRes.data,
         branch: branchRes.data,
+        adsName: adsNameRes.data,
       },
       { status: 200 }
     );

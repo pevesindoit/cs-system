@@ -68,6 +68,7 @@ export interface leadsType {
   updated_at: string;
   nomor_hp: string;
   created_at?: string;
+  ads_id?: string | null;
 }
 
 export interface leadsDataType {
@@ -104,6 +105,10 @@ export interface leadsTypeError {
     name: string;
     id?: number;
   } | null; // <-- Supabase bisa return null
+  ads_name: {
+    ads_name: string;
+    id?: string;
+  } | null;
   status: string;
   nominal: number | null;
   reason: string;
@@ -117,6 +122,7 @@ export interface leadsTypeError {
   nomor_hp: string;
   created_at: string;
   updated_at: string;
+  ads_id: string | null;
 }
 
 export interface adsTypeError {
@@ -290,4 +296,10 @@ export interface MetaCampaignInsight {
   actions?: MetaAction[];
   date_start: string;
   date_stop: string;
+}
+
+export interface AdsNameData {
+  id: string;
+  ads_name: string;
+  created_at: string;
 }

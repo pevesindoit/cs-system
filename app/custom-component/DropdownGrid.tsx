@@ -89,9 +89,9 @@ export function DropDownGrid({
                         <CommandList>
                             <CommandEmpty className="py-6 text-center text-xs">No results found.</CommandEmpty>
                             <CommandGroup>
-                                {items.map((item) => (
+                                {items.map((item, index) => (
                                     <CommandItem
-                                        key={item.value}
+                                        key={`${item.value}-${index}`}
                                         value={item.label} // Keeps search working by label
                                         onSelect={() => {
                                             // FIX: Use item.value directly from the map closure.

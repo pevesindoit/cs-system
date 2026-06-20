@@ -27,6 +27,7 @@ type LeadTableGridProps = {
     branches: SelectItemData[];
     keteranganLeads: SelectItemDataInt[];
     status: SelectItemData[];
+    adsNames: SelectItemData[];
 };
 
 export default function LeadTableGrid({
@@ -36,7 +37,8 @@ export default function LeadTableGrid({
     pics,
     branches,
     keteranganLeads,
-    status
+    status,
+    adsNames
 }: LeadTableGridProps) {
     // FIX 1: Initialize state directly from props. 
     // Use (data || []) to prevent crashes if data is initially undefined.
@@ -248,6 +250,23 @@ export default function LeadTableGrid({
                                 </div>
                             </td>
 
+                            {/* Nama Iklan */}
+                            <td className="p-0 border-r align-middle">
+                                <div className="px-1">
+                                    <EditableSelect<string>
+                                        value={item.ads_id}
+                                        rowId={item.id}
+                                        field="ads_id"
+                                        options={adsNames.map((c) => ({
+                                            label: c.label,
+                                            value: c.value,
+                                            className: c.classname,
+                                        }))}
+                                        onSave={handleSave}
+                                    />
+                                </div>
+                            </td>
+
                             {/* Keterangan Leads */}
                             <td className="p-0 border-r align-middle">
                                 <div className="px-1">
@@ -374,7 +393,7 @@ export default function LeadTableGrid({
                         {/* Expanded Detail Row */}
                         {expandedRowId === item.id && (
                             <tr className="bg-gray-50 border-b">
-                                <td colSpan={13} className="p-0">
+                                <td colSpan={14} className="p-0">
                                     <div className="w-full border-t border-dashed border-gray-300">
 
                                         {/* Expand Header / Toolbar */}

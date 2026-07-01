@@ -333,7 +333,7 @@ export async function POST(req: NextRequest) {
             const globalBucket = globalWeeksMap.get(key);
             if (globalBucket) {
                 const status = lead.status?.toLowerCase();
-                if (["closing"].includes(status)) {
+                if (["closing", "closing proyek", "closing_proyek", "repeat order"].includes(status)) {
                     globalBucket.omset += lead.nominal || 0;
                 }
             }
@@ -346,7 +346,7 @@ export async function POST(req: NextRequest) {
                 if (bucket) {
                     const status = lead.status?.toLowerCase();
 
-                    if (["closing"].includes(status)) {
+                    if (["closing", "closing proyek", "closing_proyek", "repeat order"].includes(status)) {
                         bucket.closing += 1;
                         bucket.omset += lead.nominal || 0;
                     }
@@ -457,7 +457,8 @@ export async function POST(req: NextRequest) {
             return (
                 pName.includes("facebook") ||
                 pName.includes("instagram") ||
-                pName.includes("meta")
+                pName.includes("meta") ||
+                pName.includes("whatsapp")
             );
         });
 
@@ -485,7 +486,7 @@ export async function POST(req: NextRequest) {
         // actual_lead in summary uses actual_leads field from advertiser_data
         const totalActualLead = adsData.reduce((acc, curr) => acc + (curr.actual_leads || 0), 0);
         const totalClosingLeads = leadsData.filter((l) =>
-            ["closing"].includes(l.status?.toLowerCase())
+            ["closing", "closing proyek", "closing_proyek", "repeat order"].includes(l.status?.toLowerCase())
         );
         const totalOmset = totalClosingLeads.reduce(
             (acc, curr) => acc + (curr.nominal || 0),

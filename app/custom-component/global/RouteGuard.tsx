@@ -18,6 +18,8 @@ const MANAGER_ONLY_ROUTES = [
     "/add-user",
     "/manager",
     "/get-leads",
+    "/ads-report",
+    "/ads-performance",
 ];
 
 interface RouteGuardProps {

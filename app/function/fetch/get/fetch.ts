@@ -184,6 +184,16 @@ export const getCsPerformance = async (data: csPerformanceType) => {
     console.log("Failed to fetch organisations", error);
   }
 };
+
+export const getAdsPerformance = async (data: { start_date: string, end_date: string, branch?: string }) => {
+  try {
+    const res = await axios.post("/api/get/get-ads-performance", { data });
+    return res;
+  } catch (error) {
+    console.log("Failed to fetch ads performance", error);
+  }
+};
+
 export const getTarget = async () => {
   try {
     const res = await axios.get("/api/get/get-target");

@@ -21,6 +21,7 @@ export function LeadsTableManager({ data, userType }: leadDataType) {
         "Nama",
         ...(userType === 2 ? ["No HP"] : []),
         "Status",
+        "Nominal",
         "PIC",
         "Cabang",
         "Keterangan",
@@ -85,6 +86,10 @@ export function LeadsTableManager({ data, userType }: leadDataType) {
                                             >
                                                 {item.status}
                                             </span>
+                                        </td>
+
+                                        <td className="px-2 py-2 whitespace-nowrap">
+                                            {item.nominal !== null && item.nominal !== undefined ? new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(item.nominal) : "-"}
                                         </td>
 
                                         <td className="px-2 py-2 whitespace-nowrap">

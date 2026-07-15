@@ -1,5 +1,18 @@
 import supabase from "@/lib/db";
 import { NextRequest, NextResponse } from "next/server";
+import crypto from "crypto";
+
+function normalizePhone(phone: string) {
+  if (!phone) return "";
+  const digits = phone.replace(/\D/g, "");
+
+  if (digits.startsWith("62")) return digits;
+
+  if (digits.startsWith("0"))
+    return "62" + digits.substring(1);
+
+  return digits;
+}
 
 export async function POST(req: NextRequest) {
   try {
@@ -80,6 +93,80 @@ export async function POST(req: NextRequest) {
     if (insertError) {
       console.error("Supabase Insert Error:", insertError);
       return NextResponse.json({ error: insertError.message }, { status: 500 });
+    }
+
+    // 5. Meta CAPI Integration
+    try {
+      const status = newLead.status?.toLowerCase();
+      const nominal = newLead.nominal || 0;
+
+      if ((status === "closing" || status === "closing proyek" || status === "repeat order") && nominal > 0) {
+        const PIXEL_ID = process.env.PIXEL_ID;
+        const META_ACCESS_TOKEN = process.env.META_ACCESS_TOKEN;
+        const APP_URL = process.env.APP_URL;
+
+        if (PIXEL_ID && META_ACCESS_TOKEN) {
+          const phoneToHash = nomor_hp ? normalizePhone(String(nomor_hp)) : "";
+          const hashedPhone = phoneToHash ? crypto.createHash('sha256').update(phoneToHash.trim()).digest('hex') : null;
+
+          const firstName = name ? String(name).split(" ")[0] : "";
+          const hashedName = firstName ? crypto.createHash('sha256').update(firstName.toLowerCase().trim()).digest('hex') : null;
+
+          const externalId = costumer_id
+            ? crypto
+              .createHash("sha256")
+              .update(String(costumer_id))
+              .digest("hex")
+            : null;
+
+          const payload = {
+            data: [
+              {
+                event_name: "Purchase",
+                event_time: Math.floor(Date.now() / 1000),
+                action_source: "system_generated",
+                event_id: crypto.randomUUID(),
+
+                ...(APP_URL && {
+                  event_source_url: APP_URL,
+                }),
+
+                user_data: {
+                  ...(hashedPhone && {
+                    ph: [hashedPhone],
+                  }),
+
+                  ...(hashedName && {
+                    fn: [hashedName],
+                  }),
+                  ...(externalId && {
+                    external_id: [externalId],
+                  }),
+                },
+
+                custom_data: {
+                  currency: "IDR",
+                  value: nominal,
+                },
+              },
+            ],
+          };
+          console.log(JSON.stringify(payload, null, 2));
+
+          const metaResponse = await fetch(`https://graph.facebook.com/v23.0/${PIXEL_ID}/events?access_token=${META_ACCESS_TOKEN}`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(payload)
+          });
+
+          const result = await metaResponse.json();
+          console.log("Meta CAPI Response:", result);
+        }
+      }
+    } catch (metaErr) {
+      console.error("Meta CAPI Error:", metaErr);
     }
 
     return NextResponse.json(

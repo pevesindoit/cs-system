@@ -98,19 +98,73 @@ export async function POST(req: NextRequest) {
     // 5. Meta CAPI Integration
     try {
       const status = newLead.status?.toLowerCase();
-      const nominal = newLead.nominal || 0;
+      const nominal = Number(newLead.nominal || 0);
 
-      if ((status === "closing" || status === "closing proyek" || status === "repeat order") && nominal > 0) {
+      let eventName: string | null = null;
+
+      switch (status) {
+        case "hold":
+          eventName = "Lead";
+          break;
+
+        case "warm":
+          eventName = "Contact";
+          break;
+
+        case "survey":
+          eventName = "Contact";
+          break;
+
+        case "closing":
+        case "closing proyek":
+        case "repeat order":
+          if (nominal > 0) {
+            eventName = "Purchase";
+          }
+          break;
+      }
+
+      // Prevent duplicate 'Lead' events if the customer already has a 'hold' status lead
+      if (eventName === "Lead" && costumer_id) {
+        const { count } = await supabase
+          .from("leads")
+          .select("*", { count: "exact", head: true })
+          .eq("costumer_id", costumer_id)
+          .eq("status", "hold");
+
+        // Since the current lead is already inserted, if count > 1, there was a previous hold
+        if (count && count > 1) {
+          eventName = null; // Skip sending
+        }
+      }
+
+      if (eventName) {
         const PIXEL_ID = process.env.PIXEL_ID;
         const META_ACCESS_TOKEN = process.env.META_ACCESS_TOKEN;
         const APP_URL = process.env.APP_URL;
 
         if (PIXEL_ID && META_ACCESS_TOKEN) {
-          const phoneToHash = nomor_hp ? normalizePhone(String(nomor_hp)) : "";
-          const hashedPhone = phoneToHash ? crypto.createHash('sha256').update(phoneToHash.trim()).digest('hex') : null;
+          const phoneToHash = nomor_hp
+            ? normalizePhone(String(nomor_hp))
+            : "";
 
-          const firstName = name ? String(name).split(" ")[0] : "";
-          const hashedName = firstName ? crypto.createHash('sha256').update(firstName.toLowerCase().trim()).digest('hex') : null;
+          const hashedPhone = phoneToHash
+            ? crypto
+              .createHash("sha256")
+              .update(phoneToHash.trim())
+              .digest("hex")
+            : null;
+
+          const firstName = name
+            ? String(name).split(" ")[0]
+            : "";
+
+          const hashedName = firstName
+            ? crypto
+              .createHash("sha256")
+              .update(firstName.toLowerCase().trim())
+              .digest("hex")
+            : null;
 
           const externalId = costumer_id
             ? crypto
@@ -122,10 +176,10 @@ export async function POST(req: NextRequest) {
           const payload = {
             data: [
               {
-                event_name: "Purchase",
+                event_name: eventName,
                 event_time: Math.floor(Date.now() / 1000),
                 action_source: "system_generated",
-                event_id: crypto.randomUUID(),
+                event_id: `${newLead.id}`,
 
                 ...(APP_URL && {
                   event_source_url: APP_URL,
@@ -139,29 +193,38 @@ export async function POST(req: NextRequest) {
                   ...(hashedName && {
                     fn: [hashedName],
                   }),
+
                   ...(externalId && {
                     external_id: [externalId],
                   }),
                 },
 
-                custom_data: {
-                  currency: "IDR",
-                  value: nominal,
-                },
+                ...(eventName === "Purchase" && {
+                  custom_data: {
+                    currency: "IDR",
+                    value: nominal,
+                  },
+                }),
               },
             ],
           };
+
+          console.log("Meta Payload:");
           console.log(JSON.stringify(payload, null, 2));
 
-          const metaResponse = await fetch(`https://graph.facebook.com/v23.0/${PIXEL_ID}/events?access_token=${META_ACCESS_TOKEN}`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(payload)
-          });
+          const metaResponse = await fetch(
+            `https://graph.facebook.com/v23.0/${PIXEL_ID}/events?access_token=${META_ACCESS_TOKEN}`,
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify(payload),
+            }
+          );
 
           const result = await metaResponse.json();
+
           console.log("Meta CAPI Response:", result);
         }
       }

@@ -166,6 +166,13 @@ export async function POST(req: NextRequest) {
               .digest("hex")
             : null;
 
+          const hashedCity = newLead.city
+            ? crypto
+              .createHash("sha256")
+              .update(String(newLead.city).toLowerCase().replace(/[^a-z]/g, '').trim())
+              .digest("hex")
+            : null;
+
           const externalId = costumer_id
             ? crypto
               .createHash("sha256")
@@ -192,6 +199,10 @@ export async function POST(req: NextRequest) {
 
                   ...(hashedName && {
                     fn: [hashedName],
+                  }),
+
+                  ...(hashedCity && {
+                    ct: [hashedCity],
                   }),
 
                   ...(externalId && {

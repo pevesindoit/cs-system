@@ -69,6 +69,7 @@ export interface leadsType {
   nomor_hp: string;
   created_at?: string;
   ads_id?: string | null;
+  city?: string | null;
 }
 
 export interface leadsDataType {
@@ -123,6 +124,7 @@ export interface leadsTypeError {
   created_at: string;
   updated_at: string;
   ads_id: string | null;
+  city: string | null;
 }
 
 export interface adsTypeError {

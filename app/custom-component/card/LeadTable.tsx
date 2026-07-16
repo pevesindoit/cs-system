@@ -204,6 +204,18 @@ export default function LeadTableGrid({
                                 </div>
                             </td>
 
+                            {/* Kota */}
+                            <td className="p-0 border-r align-middle">
+                                <div className="px-1">
+                                    <EditableInput
+                                        value={item.city ?? ""}
+                                        rowId={item.id}
+                                        field="city"
+                                        onSave={handleSave}
+                                    />
+                                </div>
+                            </td>
+
                             {/* Address */}
                             <td className="p-0 border-r align-middle">
                                 <div className="px-1">

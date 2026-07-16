@@ -47,6 +47,7 @@ export default function Cs() {
         updated_at: GetToday(),
         nomor_hp: "",
         ads_id: null,
+        city: "",
     });
     const [platforms, setPlatforms] = useState<SelectItemData[]>([]);
     const [channel, setChannel] = useState<SelectItemDataInt[]>([]);
@@ -100,6 +101,7 @@ export default function Cs() {
         reason: "",
         status: lastData.status, // Reset to default status (usually 'hold' for new entry)
         ads_id: null,
+        city: "",
 
         // 2. Fields to KEEP (Copy from previous input)
         channel_id: lastData.channel_id,
@@ -336,6 +338,7 @@ export default function Cs() {
                             "Tanggal",
                             "Nama",
                             "No HP",
+                            "Kota",
                             "Alamat",
                             "Channel",
                             "Platform",
@@ -414,6 +417,18 @@ export default function Cs() {
                                 <input
                                     name="nomor_hp"
                                     value={formData.nomor_hp ?? ""}
+                                    onChange={handleChange}
+                                    className="w-full h-8 px-1 bg-transparent outline-none focus:bg-gray-50"
+                                />
+                            </div>
+                        </td>
+
+                        {/* Kota (Standard Scrolling) */}
+                        <td className="p-0 border-r align-middle">
+                            <div className="px-1">
+                                <input
+                                    name="city"
+                                    value={formData.city ?? ""}
                                     onChange={handleChange}
                                     className="w-full h-8 px-1 bg-transparent outline-none focus:bg-gray-50"
                                 />

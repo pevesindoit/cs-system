@@ -81,7 +81,7 @@ export async function GET(req: Request) {
 
                     const upperWhName = rawWarehouseName.toUpperCase();
                     // Filter for GOOD STOCK branches or GUDANG UTAMA
-                    if (upperWhName.includes("GOOD STOCK -") || upperWhName === "GUDANG UTAMA") {
+                    if (upperWhName.includes("GOOD STOCK -") || upperWhName === "GUDANG UTAMA" || upperWhName.includes("SENGKANG")) {
 
                         // Clean the branch name
                         const cleanBranchName = rawWarehouseName

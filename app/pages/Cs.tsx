@@ -62,6 +62,7 @@ export default function Cs() {
         const lastPicId = localStorage.getItem("last_pic_id");
         const lastBranchId = localStorage.getItem("last_branch_id");
         const lastDate = localStorage.getItem("last_lead_date");
+        const lastCity = localStorage.getItem("last_city");
 
         setFormData((prev) => ({
             ...prev,
@@ -69,6 +70,7 @@ export default function Cs() {
             ...(lastPicId && { pic_id: parseInt(lastPicId, 10) }),
             ...(lastBranchId && { branch_id: lastBranchId }),
             ...(lastDate && { updated_at: lastDate }),
+            ...(lastCity && { city: lastCity }),
         }));
     }, []);
 
@@ -101,9 +103,9 @@ export default function Cs() {
         reason: "",
         status: lastData.status, // Reset to default status (usually 'hold' for new entry)
         ads_id: null,
-        city: "",
 
         // 2. Fields to KEEP (Copy from previous input)
+        city: lastData.city,
         channel_id: lastData.channel_id,
         platform_id: lastData.platform_id,
         keterangan_leads_id: lastData.keterangan_leads_id,
@@ -310,6 +312,7 @@ export default function Cs() {
 
             // Keep the user's selected date in local storage
             localStorage.setItem("last_lead_date", formData.updated_at);
+            localStorage.setItem("last_city", formData.city || "");
             setFormData(resetFormKeepSettings(formData));
 
         } catch (error) {

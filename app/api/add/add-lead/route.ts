@@ -87,7 +87,7 @@ export async function POST(req: NextRequest) {
     const { data: newLead, error: insertError } = await supabase
       .from("leads")
       .insert(insertPayload)
-      .select("*, platform:platform_id(name)")
+      .select("*, platform:platform_id(name), branch:branch_id(name)")
       .single();
 
     if (insertError) {
@@ -166,10 +166,11 @@ export async function POST(req: NextRequest) {
               .digest("hex")
             : null;
 
-          const hashedCity = newLead.city
+          const metaCity = newLead.city || (newLead.branch && newLead.branch.name) || "";
+          const hashedCity = metaCity
             ? crypto
               .createHash("sha256")
-              .update(String(newLead.city).toLowerCase().replace(/[^a-z]/g, '').trim())
+              .update(String(metaCity).toLowerCase().replace(/[^a-z]/g, '').trim())
               .digest("hex")
             : null;
 

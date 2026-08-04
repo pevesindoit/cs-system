@@ -42,6 +42,7 @@ interface WeeklyMetric {
     closing: number;
     warm_leads: number;
     omset: number;
+    omset_all: number;
     // New fields for platform breakdown
     google_ads: number;
     meta_ads: number;
@@ -230,6 +231,7 @@ export async function POST(req: NextRequest) {
                     closing: 0,
                     warm_leads: 0,
                     omset: 0,
+                    omset_all: 0,
                     google_ads: 0,
                     meta_ads: 0,
                     tiktok_ads: 0,
@@ -263,6 +265,7 @@ export async function POST(req: NextRequest) {
                 closing: 0,
                 warm_leads: 0,
                 omset: 0,
+                omset_all: 0,
                 google_ads: 0,
                 meta_ads: 0,
                 tiktok_ads: 0,
@@ -332,6 +335,7 @@ export async function POST(req: NextRequest) {
             // Update Global Map (Omset only)
             const globalBucket = globalWeeksMap.get(key);
             if (globalBucket) {
+                globalBucket.omset_all += lead.nominal || 0;
                 const status = lead.status?.toLowerCase();
                 if (["closing", "closing proyek", "closing_proyek", "repeat order"].includes(status)) {
                     globalBucket.omset += lead.nominal || 0;
@@ -345,6 +349,7 @@ export async function POST(req: NextRequest) {
                 const bucket = bData.weeks.get(key);
                 if (bucket) {
                     const status = lead.status?.toLowerCase();
+                    bucket.omset_all += lead.nominal || 0;
 
                     if (["closing", "closing proyek", "closing_proyek", "repeat order"].includes(status)) {
                         bucket.closing += 1;
@@ -436,6 +441,7 @@ export async function POST(req: NextRequest) {
                         closing: w.closing,
                         warm_leads: w.warm_leads,
                         omset: w.omset,
+                        omset_all: w.omset_all,
                         closing_rate: `${closing_rate.toFixed(2)}%`,
                         ads_vs_omset: `${ads_vs_omset.toFixed(2)}%`,
 

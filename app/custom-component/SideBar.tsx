@@ -18,7 +18,8 @@ import {
     DatabaseIcon,
     Megaphone,
     SquarePercent,
-    Table2
+    Table2,
+    Grid
 } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -61,6 +62,7 @@ export default function SideBar() {
                 { link: "/dashboard", icon: <LayoutDashboard size={16} />, text: "Dashboard" },
                 { link: "/cs-performance", icon: <List size={16} />, text: "Leads" },
                 { link: "/ads-performance", icon: <SquarePercent size={16} />, text: "Ads Performance" },
+                { link: "/matrix", icon: <Grid size={16} />, text: "Matrix" },
                 { link: "/target", icon: <Target size={16} />, text: "Target" },
                 { link: "/customers-jurney", icon: <Workflow size={16} />, text: "Costumer Jurney" },
                 { link: "/products-sells", icon: <PackageSearch size={16} />, text: "Product Sells" },

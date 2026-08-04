@@ -436,7 +436,7 @@ export default function LeadTableGrid({
                                                     key={index}
                                                 >
                                                     <div className="px-2 py-2 col-span-3 border-r text-gray-500">
-                                                        <FormatDate value={fItem.created_at} />
+                                                        <FormatDate value={fItem.created_at} showWeekday={true} />
                                                     </div>
                                                     <div className="px-2 py-2 col-span-10 text-gray-700">
                                                         {fItem.note}

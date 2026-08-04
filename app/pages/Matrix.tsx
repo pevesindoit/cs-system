@@ -215,7 +215,7 @@ export default function Matrix() {
                                         </div>
 
                                         {/* Summary Data */}
-                                        <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mt-6">
+                                        <div className="grid grid-cols-2 md:grid-cols-6 gap-4 mt-6">
                                             {(() => {
                                                 const totalSpend = (branchData.weeks || []).reduce((acc: number, w: any) => acc + (w.total_spend || 0), 0);
                                                 const totalClosing = (branchData.weeks || []).reduce((acc: number, w: any) => acc + (w.closing || 0), 0);
@@ -231,6 +231,10 @@ export default function Matrix() {
                                                         <div className="p-4 bg-gray-50 rounded-md text-center border border-gray-100 shadow-sm">
                                                             <p className="text-xs text-gray-500 mb-1">Total Spend + PPN</p>
                                                             <p className="font-bold text-gray-800">{formatIDR(totalSpend)}</p>
+                                                        </div>
+                                                        <div className="p-4 bg-gray-50 rounded-md text-center border border-gray-100 shadow-sm">
+                                                            <p className="text-xs text-gray-500 mb-1">Total Omset</p>
+                                                            <p className="font-bold text-gray-800">{formatIDR(totalOmsetAll)}</p>
                                                         </div>
                                                         <div className="p-4 bg-gray-50 rounded-md text-center border border-gray-100 shadow-sm">
                                                             <p className="text-xs text-gray-500 mb-1">Total Closing</p>

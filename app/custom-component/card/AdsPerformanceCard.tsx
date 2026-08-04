@@ -4,6 +4,7 @@ interface AdsPerformanceItem {
     ads_id: string;
     ads_name: string;
     total: number;
+    total_omset?: number;
     closing: number;
     warm: number;
     survey: number;
@@ -12,6 +13,15 @@ interface AdsPerformanceItem {
     hot: number;
     "closing proyek": number;
 }
+
+const formatIDR = (value: number) => {
+    return new Intl.NumberFormat("id-ID", {
+        style: "currency",
+        currency: "IDR",
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0,
+    }).format(value);
+};
 
 interface AdsPerformanceCardProps {
     data: AdsPerformanceItem[];
@@ -46,9 +56,16 @@ export const AdsPerformanceCard = ({ data = [] }: AdsPerformanceCardProps) => {
                                 <span className="font-semibold text-gray-700">
                                     {index + 1}. {item.ads_name || "Unknown Ad"}
                                 </span>
-                                <span className="text-gray-500 font-medium">
-                                    {item.total} Total Leads
-                                </span>
+                                <div className="flex flex-col items-end">
+                                    <span className="text-gray-500 font-medium">
+                                        {item.total} Total Leads
+                                    </span>
+                                    {item.total_omset !== undefined && (
+                                        <span className="text-emerald-600 font-bold text-xs mt-1">
+                                            {formatIDR(item.total_omset)}
+                                        </span>
+                                    )}
+                                </div>
                             </div>
 
                             {/* Progress Bar Container */}

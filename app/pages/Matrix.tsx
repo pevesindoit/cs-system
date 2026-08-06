@@ -184,6 +184,7 @@ export default function Matrix() {
                                         spend: w.total_spend || 0,
                                         omset: w.omset_all || 0, 
                                         leads: w.actual_lead || 0,
+                                        all_leads: w.all_leads_count || 0,
                                     }));
 
                                     return (
@@ -261,16 +262,26 @@ export default function Matrix() {
                                                             strokeWidth={2} 
                                                             activeDot={{ r: 6 }}
                                                         />
+                                                        <Line 
+                                                            yAxisId="right"
+                                                            type="monotone" 
+                                                            name="All Leads (CS)"
+                                                            dataKey="all_leads" 
+                                                            stroke="#f59e0b" 
+                                                            strokeWidth={2} 
+                                                            activeDot={{ r: 6 }}
+                                                        />
                                                     </LineChart>
                                                 </ResponsiveContainer>
                                             </div>
 
                                             {/* Summary Data */}
-                                            <div className="grid grid-cols-2 md:grid-cols-6 gap-4 mt-6">
+                                            <div className="grid grid-cols-2 md:grid-cols-7 gap-4 mt-6">
                                                 {(() => {
                                                     const totalSpend = (branchData.weeks || []).reduce((acc: number, w: any) => acc + (w.total_spend || 0), 0);
                                                     const totalClosing = (branchData.weeks || []).reduce((acc: number, w: any) => acc + (w.closing || 0), 0);
                                                     const totalLeads = (branchData.weeks || []).reduce((acc: number, w: any) => acc + (w.actual_lead || 0), 0);
+                                                    const totalAllLeads = (branchData.weeks || []).reduce((acc: number, w: any) => acc + (w.all_leads_count || 0), 0);
                                                     const totalOmsetAll = (branchData.weeks || []).reduce((acc: number, w: any) => acc + (w.omset_all || 0), 0);
 
                                                     const costPerLead = totalLeads > 0 ? totalSpend / totalLeads : 0;
@@ -290,6 +301,10 @@ export default function Matrix() {
                                                             <div className="p-4 bg-gray-50 rounded-md text-center border border-gray-100 shadow-sm">
                                                                 <p className="text-xs text-gray-500 mb-1">Total Closing</p>
                                                                 <p className="font-bold text-gray-800">{totalClosing}</p>
+                                                            </div>
+                                                            <div className="p-4 bg-gray-50 rounded-md text-center border border-gray-100 shadow-sm">
+                                                                <p className="text-xs text-gray-500 mb-1">Total Leads (CS)</p>
+                                                                <p className="font-bold text-gray-800">{totalAllLeads}</p>
                                                             </div>
                                                             <div className="p-4 bg-gray-50 rounded-md text-center border border-gray-100 shadow-sm">
                                                                 <p className="text-xs text-gray-500 mb-1">Cost Per Lead (CPL)</p>
@@ -316,6 +331,7 @@ export default function Matrix() {
                                     const grandTotalSpend = filteredData.reduce((acc, branch) => acc + (branch.weeks || []).reduce((bAcc: number, w: any) => bAcc + (w.total_spend || 0), 0), 0);
                                     const grandTotalClosing = filteredData.reduce((acc, branch) => acc + (branch.weeks || []).reduce((bAcc: number, w: any) => bAcc + (w.closing || 0), 0), 0);
                                     const grandTotalLeads = filteredData.reduce((acc, branch) => acc + (branch.weeks || []).reduce((bAcc: number, w: any) => bAcc + (w.actual_lead || 0), 0), 0);
+                                    const grandTotalAllLeads = filteredData.reduce((acc, branch) => acc + (branch.weeks || []).reduce((bAcc: number, w: any) => bAcc + (w.all_leads_count || 0), 0), 0);
                                     const grandTotalOmsetAll = filteredData.reduce((acc, branch) => acc + (branch.weeks || []).reduce((bAcc: number, w: any) => bAcc + (w.omset_all || 0), 0), 0);
 
                                     const grandCostPerLead = grandTotalLeads > 0 ? grandTotalSpend / grandTotalLeads : 0;
@@ -327,7 +343,7 @@ export default function Matrix() {
                                             <h3 className="text-xl font-bold text-gray-800 mb-6 border-b pb-2">
                                                 Grand Total
                                             </h3>
-                                            <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
+                                            <div className="grid grid-cols-2 md:grid-cols-7 gap-4">
                                                 <div className="p-4 bg-blue-50 rounded-md text-center border border-blue-100 shadow-sm">
                                                     <p className="text-xs text-blue-500 mb-1 font-semibold">Total Spend + PPN</p>
                                                     <p className="font-bold text-gray-800 text-lg">{formatIDR(grandTotalSpend)}</p>
@@ -339,6 +355,10 @@ export default function Matrix() {
                                                 <div className="p-4 bg-blue-50 rounded-md text-center border border-blue-100 shadow-sm">
                                                     <p className="text-xs text-blue-500 mb-1 font-semibold">Total Closing</p>
                                                     <p className="font-bold text-gray-800 text-lg">{grandTotalClosing}</p>
+                                                </div>
+                                                <div className="p-4 bg-blue-50 rounded-md text-center border border-blue-100 shadow-sm">
+                                                    <p className="text-xs text-blue-500 mb-1 font-semibold">Total Leads (CS)</p>
+                                                    <p className="font-bold text-gray-800 text-lg">{grandTotalAllLeads}</p>
                                                 </div>
                                                 <div className="p-4 bg-blue-50 rounded-md text-center border border-blue-100 shadow-sm">
                                                     <p className="text-xs text-blue-500 mb-1 font-semibold">Cost Per Lead (CPL)</p>

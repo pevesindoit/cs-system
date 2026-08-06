@@ -43,6 +43,7 @@ interface WeeklyMetric {
     warm_leads: number;
     omset: number;
     omset_all: number;
+    all_leads_count: number;
     // New fields for platform breakdown
     google_ads: number;
     meta_ads: number;
@@ -232,6 +233,7 @@ export async function POST(req: NextRequest) {
                     warm_leads: 0,
                     omset: 0,
                     omset_all: 0,
+                    all_leads_count: 0,
                     google_ads: 0,
                     meta_ads: 0,
                     tiktok_ads: 0,
@@ -266,6 +268,7 @@ export async function POST(req: NextRequest) {
                 warm_leads: 0,
                 omset: 0,
                 omset_all: 0,
+                all_leads_count: 0,
                 google_ads: 0,
                 meta_ads: 0,
                 tiktok_ads: 0,
@@ -335,6 +338,7 @@ export async function POST(req: NextRequest) {
             // Update Global Map (Omset only)
             const globalBucket = globalWeeksMap.get(key);
             if (globalBucket) {
+                globalBucket.all_leads_count += 1;
                 globalBucket.omset_all += lead.nominal || 0;
                 const status = lead.status?.toLowerCase();
                 if (["closing", "closing proyek", "closing_proyek", "repeat order"].includes(status)) {
@@ -348,6 +352,7 @@ export async function POST(req: NextRequest) {
             if (bData) {
                 const bucket = bData.weeks.get(key);
                 if (bucket) {
+                    bucket.all_leads_count += 1;
                     const status = lead.status?.toLowerCase();
                     bucket.omset_all += lead.nominal || 0;
 
@@ -389,6 +394,7 @@ export async function POST(req: NextRequest) {
                     tiktok_ads: w.tiktok_ads,
                     total_ads: total_ads,
                     omset: w.omset,
+                    all_leads_count: w.all_leads_count,
                     ads_ratio: `${ads_ratio.toFixed(2)}%`,
                 };
             }
@@ -444,6 +450,7 @@ export async function POST(req: NextRequest) {
                         omset_all: w.omset_all,
                         closing_rate: `${closing_rate.toFixed(2)}%`,
                         ads_vs_omset: `${ads_vs_omset.toFixed(2)}%`,
+                        all_leads_count: w.all_leads_count,
 
                         // New Requested Fields for Branch
                         google_ads: w.google_ads,

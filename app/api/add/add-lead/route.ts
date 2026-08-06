@@ -224,7 +224,7 @@ export async function POST(req: NextRequest) {
           console.log("Meta Payload:");
           console.log(JSON.stringify(payload, null, 2));
 
-          const metaResponse = await fetch(
+          fetch(
             `https://graph.facebook.com/v19.0/${PIXEL_ID}/events?access_token=${META_ACCESS_TOKEN}`,
             {
               method: "POST",
@@ -233,11 +233,10 @@ export async function POST(req: NextRequest) {
               },
               body: JSON.stringify(payload),
             }
-          );
-
-          const result = await metaResponse.json();
-
-          console.log("Meta CAPI Response:", result);
+          )
+            .then((res) => res.json())
+            .then((result) => console.log("Meta CAPI Response:", result))
+            .catch((err) => console.error("Meta CAPI Fetch Error:", err));
         }
       }
     } catch (metaErr) {

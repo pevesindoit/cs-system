@@ -122,13 +122,16 @@ export async function POST(req: NextRequest) {
                 "spend, total_budget, leads, actual_leads, platform_id, created_at, cabang_id, omset_target"
             )
             .gte("created_at", start)
-            .lte("created_at", end);
+            .lte("created_at", end)
+            .limit(10000); // Added limit
 
         let leadsQuery = supabase
             .from("leads")
             .select("nominal, status, platform_id, updated_at, branch_id")
             .gte("updated_at", start)
-            .lte("updated_at", end);
+            .lte("updated_at", end)
+            .gt("nominal", 0)
+            .limit(50000); // Added higher limit for leads
         // ==========================================
         // FILTER LOGIC
         // ==========================================
@@ -340,7 +343,7 @@ export async function POST(req: NextRequest) {
             if (globalBucket) {
                 globalBucket.all_leads_count += 1;
                 globalBucket.omset_all += lead.nominal || 0;
-                const status = lead.status?.toLowerCase();
+                const status = lead.status?.toLowerCase().trim();
                 if (["closing", "closing proyek", "closing_proyek", "repeat order"].includes(status)) {
                     globalBucket.omset += lead.nominal || 0;
                 }
@@ -353,7 +356,7 @@ export async function POST(req: NextRequest) {
                 const bucket = bData.weeks.get(key);
                 if (bucket) {
                     bucket.all_leads_count += 1;
-                    const status = lead.status?.toLowerCase();
+                    const status = lead.status?.toLowerCase().trim();
                     bucket.omset_all += lead.nominal || 0;
 
                     if (["closing", "closing proyek", "closing_proyek", "repeat order"].includes(status)) {
@@ -498,9 +501,10 @@ export async function POST(req: NextRequest) {
 
         // actual_lead in summary uses actual_leads field from advertiser_data
         const totalActualLead = adsData.reduce((acc, curr) => acc + (curr.actual_leads || 0), 0);
-        const totalClosingLeads = leadsData.filter((l) =>
-            ["closing", "closing proyek", "closing_proyek", "repeat order"].includes(l.status?.toLowerCase())
-        );
+        const totalClosingLeads = leadsData.filter((l) => {
+            const status = l.status?.toLowerCase().trim();
+            return ["closing", "closing proyek", "closing_proyek", "repeat order"].includes(status);
+        });
         const totalOmset = totalClosingLeads.reduce(
             (acc, curr) => acc + (curr.nominal || 0),
             0

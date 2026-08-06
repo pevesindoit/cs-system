@@ -183,6 +183,7 @@ export default function Matrix() {
                                         date: w.week_name,
                                         spend: w.total_spend || 0,
                                         omset: w.omset_all || 0, 
+                                        omset_closing: w.omset || 0,
                                         leads: w.actual_lead || 0,
                                         all_leads: w.all_leads_count || 0,
                                     }));
@@ -254,6 +255,15 @@ export default function Matrix() {
                                                             activeDot={{ r: 6 }}
                                                         />
                                                         <Line 
+                                                            yAxisId="left"
+                                                            type="monotone" 
+                                                            name="Total Omset (Closing)"
+                                                            dataKey="omset_closing" 
+                                                            stroke="#047857" 
+                                                            strokeWidth={2} 
+                                                            activeDot={{ r: 6 }}
+                                                        />
+                                                        <Line 
                                                             yAxisId="right"
                                                             type="monotone" 
                                                             name="Actual Leads"
@@ -276,17 +286,18 @@ export default function Matrix() {
                                             </div>
 
                                             {/* Summary Data */}
-                                            <div className="grid grid-cols-2 md:grid-cols-7 gap-4 mt-6">
+                                            <div className="grid grid-cols-2 md:grid-cols-8 gap-4 mt-6">
                                                 {(() => {
                                                     const totalSpend = (branchData.weeks || []).reduce((acc: number, w: any) => acc + (w.total_spend || 0), 0);
                                                     const totalClosing = (branchData.weeks || []).reduce((acc: number, w: any) => acc + (w.closing || 0), 0);
                                                     const totalLeads = (branchData.weeks || []).reduce((acc: number, w: any) => acc + (w.actual_lead || 0), 0);
                                                     const totalAllLeads = (branchData.weeks || []).reduce((acc: number, w: any) => acc + (w.all_leads_count || 0), 0);
                                                     const totalOmsetAll = (branchData.weeks || []).reduce((acc: number, w: any) => acc + (w.omset_all || 0), 0);
+                                                    const totalOmsetClosing = (branchData.weeks || []).reduce((acc: number, w: any) => acc + (w.omset || 0), 0);
 
                                                     const costPerLead = totalLeads > 0 ? totalSpend / totalLeads : 0;
                                                     const costPerAcquisition = totalClosing > 0 ? totalSpend / totalClosing : 0;
-                                                    const roas = totalSpend > 0 ? totalOmsetAll / totalSpend : 0;
+                                                    const roas = totalSpend > 0 ? totalOmsetClosing / totalSpend : 0;
 
                                                     return (
                                                         <>
@@ -295,8 +306,12 @@ export default function Matrix() {
                                                                 <p className="font-bold text-gray-800">{formatIDR(totalSpend)}</p>
                                                             </div>
                                                             <div className="p-4 bg-gray-50 rounded-md text-center border border-gray-100 shadow-sm">
-                                                                <p className="text-xs text-gray-500 mb-1">Total Omset</p>
+                                                                <p className="text-xs text-gray-500 mb-1">Total Omset (All)</p>
                                                                 <p className="font-bold text-gray-800">{formatIDR(totalOmsetAll)}</p>
+                                                            </div>
+                                                            <div className="p-4 bg-gray-50 rounded-md text-center border border-gray-100 shadow-sm">
+                                                                <p className="text-xs text-gray-500 mb-1">Total Omset (Closing)</p>
+                                                                <p className="font-bold text-gray-800">{formatIDR(totalOmsetClosing)}</p>
                                                             </div>
                                                             <div className="p-4 bg-gray-50 rounded-md text-center border border-gray-100 shadow-sm">
                                                                 <p className="text-xs text-gray-500 mb-1">Total Closing</p>
@@ -333,24 +348,29 @@ export default function Matrix() {
                                     const grandTotalLeads = filteredData.reduce((acc, branch) => acc + (branch.weeks || []).reduce((bAcc: number, w: any) => bAcc + (w.actual_lead || 0), 0), 0);
                                     const grandTotalAllLeads = filteredData.reduce((acc, branch) => acc + (branch.weeks || []).reduce((bAcc: number, w: any) => bAcc + (w.all_leads_count || 0), 0), 0);
                                     const grandTotalOmsetAll = filteredData.reduce((acc, branch) => acc + (branch.weeks || []).reduce((bAcc: number, w: any) => bAcc + (w.omset_all || 0), 0), 0);
+                                    const grandTotalOmsetClosing = filteredData.reduce((acc, branch) => acc + (branch.weeks || []).reduce((bAcc: number, w: any) => bAcc + (w.omset || 0), 0), 0);
 
                                     const grandCostPerLead = grandTotalLeads > 0 ? grandTotalSpend / grandTotalLeads : 0;
                                     const grandCostPerAcquisition = grandTotalClosing > 0 ? grandTotalSpend / grandTotalClosing : 0;
-                                    const grandRoas = grandTotalSpend > 0 ? grandTotalOmsetAll / grandTotalSpend : 0;
+                                    const grandRoas = grandTotalSpend > 0 ? grandTotalOmsetClosing / grandTotalSpend : 0;
 
                                     return (
                                         <div className="w-full bg-white p-6 rounded-lg shadow-sm border-t-4 border-blue-500 mt-4">
                                             <h3 className="text-xl font-bold text-gray-800 mb-6 border-b pb-2">
                                                 Grand Total
                                             </h3>
-                                            <div className="grid grid-cols-2 md:grid-cols-7 gap-4">
+                                            <div className="grid grid-cols-2 md:grid-cols-8 gap-4">
                                                 <div className="p-4 bg-blue-50 rounded-md text-center border border-blue-100 shadow-sm">
                                                     <p className="text-xs text-blue-500 mb-1 font-semibold">Total Spend + PPN</p>
                                                     <p className="font-bold text-gray-800 text-lg">{formatIDR(grandTotalSpend)}</p>
                                                 </div>
                                                 <div className="p-4 bg-blue-50 rounded-md text-center border border-blue-100 shadow-sm">
-                                                    <p className="text-xs text-blue-500 mb-1 font-semibold">Total Omset</p>
+                                                    <p className="text-xs text-blue-500 mb-1 font-semibold">Total Omset (All)</p>
                                                     <p className="font-bold text-gray-800 text-lg">{formatIDR(grandTotalOmsetAll)}</p>
+                                                </div>
+                                                <div className="p-4 bg-blue-50 rounded-md text-center border border-blue-100 shadow-sm">
+                                                    <p className="text-xs text-blue-500 mb-1 font-semibold">Total Omset (Closing)</p>
+                                                    <p className="font-bold text-gray-800 text-lg">{formatIDR(grandTotalOmsetClosing)}</p>
                                                 </div>
                                                 <div className="p-4 bg-blue-50 rounded-md text-center border border-blue-100 shadow-sm">
                                                     <p className="text-xs text-blue-500 mb-1 font-semibold">Total Closing</p>

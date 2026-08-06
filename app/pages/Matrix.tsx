@@ -5,7 +5,6 @@ import H1 from "../custom-component/H1";
 import { getBranch, getReportDay } from "../function/fetch/get/fetch";
 import { useAuth } from "../custom-component/global/AuthProfider";
 import { useRouter } from "next/navigation";
-import { DropDownLeads } from "../custom-component/DropDownLeads";
 import { itemType } from "@/app/types/types";
 import {
     LineChart,
@@ -18,18 +17,9 @@ import {
     ResponsiveContainer,
 } from "recharts";
 
-const GetDefaultDate = () => {
+const GetDefaultMonth = () => {
     const today = new Date();
-    const toLocalISO = (date: Date) => {
-        const offset = date.getTimezoneOffset() * 60000;
-        const localDate = new Date(date.getTime() - offset);
-        return localDate.toISOString().split("T")[0];
-    };
-    const end = toLocalISO(today);
-    const startDate = new Date();
-    startDate.setDate(startDate.getDate() - 30);
-    const start = toLocalISO(startDate);
-    return { start_date: start, end_date: end };
+    return `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
 };
 
 const formatIDR = (value: number) => {
@@ -42,9 +32,10 @@ const formatIDR = (value: number) => {
 };
 
 export default function Matrix() {
-    const [range, setRange] = useState(GetDefaultDate());
+    const [month, setMonth] = useState(GetDefaultMonth());
+    const [range, setRange] = useState({ start_date: '', end_date: '' });
     const [branchs, setBranchs] = useState<{value: string, label: string, className: string}[]>([]);
-    const [branch, setBranch] = useState<string>("");
+    const [selectedBranches, setSelectedBranches] = useState<string[]>([]);
     const [reportData, setReportData] = useState<any[] | null>(null);
     const [loading, setLoading] = useState(false);
 
@@ -57,6 +48,25 @@ export default function Matrix() {
             router.push("/login");
         }
     }, [user, authLoading, router]);
+
+    // Update Date Range based on Month selection
+    useEffect(() => {
+        if (!month) return;
+        const [yearStr, monthStr] = month.split('-');
+        const year = parseInt(yearStr);
+        const m = parseInt(monthStr) - 1;
+
+        const start = new Date(year, m, 1);
+        const end = new Date(year, m + 1, 0); // last day of month
+
+        const toLocalISO = (date: Date) => {
+            const offset = date.getTimezoneOffset() * 60000;
+            const localDate = new Date(date.getTime() - offset);
+            return localDate.toISOString().split("T")[0];
+        };
+
+        setRange({ start_date: toLocalISO(start), end_date: toLocalISO(end) });
+    }, [month]);
 
     // Initial Fetch Options (Branches)
     useEffect(() => {
@@ -85,7 +95,6 @@ export default function Matrix() {
                     start_date: range.start_date,
                     end_date: range.end_date,
                     interval: 'day',
-                    ...(branch && branch !== 'all' ? { branch_id: branch } : {})
                 };
 
                 const res = await getReportDay(payload as any);
@@ -101,7 +110,7 @@ export default function Matrix() {
         };
 
         fetchData();
-    }, [range, branch]);
+    }, [range]);
 
     return (
         <div className="space-y-7 pb-10">
@@ -109,14 +118,41 @@ export default function Matrix() {
                 <H1>Ads Performance Matrix</H1>
                 <div className="space-y-4">
                     {/* Filter Section */}
-                    <div className="md:flex md:space-x-3 items-center">
-                        <DateRangePicker value={range} onChange={setRange} />
-                        <div className="grid md:grid-cols-2 w-full max-w-md gap-3 mt-4 md:mt-0">
-                            <DropDownLeads
-                                items={[{ value: 'all', label: 'Semua Cabang', className: '' }, ...branchs]}
-                                value={branch as any}
-                                onValueChange={setBranch}
-                                placeholder="Select Branch..." />
+                    <div className="flex flex-col space-y-4">
+                        <div className="w-full md:w-auto flex flex-col md:flex-row md:items-center gap-2">
+                            <label className="text-sm font-medium text-gray-700">Select Month:</label>
+                            <input 
+                                type="month" 
+                                value={month}
+                                onChange={(e) => setMonth(e.target.value)}
+                                className="border p-2 rounded text-sm w-fit"
+                            />
+                        </div>
+                        
+                        {/* Branch Selection Pills */}
+                        <div className="flex flex-wrap gap-2 mt-2">
+                            {branchs.map((b) => {
+                                const isSelected = selectedBranches.includes(b.value);
+                                return (
+                                    <button
+                                        key={b.value}
+                                        onClick={() => {
+                                            if (isSelected) {
+                                                setSelectedBranches(selectedBranches.filter(id => id !== b.value));
+                                            } else {
+                                                setSelectedBranches([...selectedBranches, b.value]);
+                                            }
+                                        }}
+                                        className={`px-4 py-1.5 rounded-full text-xs font-medium transition-colors border shadow-sm ${
+                                            isSelected 
+                                                ? 'bg-blue-600 text-white border-blue-600' 
+                                                : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'
+                                        }`}
+                                    >
+                                        {b.label}
+                                    </button>
+                                );
+                            })}
                         </div>
                     </div>
 
@@ -127,8 +163,22 @@ export default function Matrix() {
                                 <p className="text-gray-500 font-medium">Loading data...</p>
                             </div>
                         ) : reportData && reportData.length > 0 ? (
-                            <>
-                                {reportData.map((branchData, index) => {
+                            (() => {
+                                const filteredData = selectedBranches.length > 0 
+                                    ? reportData.filter(b => selectedBranches.includes(String(b.branch_id)))
+                                    : reportData;
+                                
+                                if (filteredData.length === 0) {
+                                    return (
+                                        <div className="w-full bg-white p-6 rounded-lg shadow-sm border border-gray-100 flex justify-center items-center h-64">
+                                            <p className="text-gray-500 font-medium">No data available for the selected branches.</p>
+                                        </div>
+                                    );
+                                }
+
+                                return (
+                                    <>
+                                        {filteredData.map((branchData, index) => {
                                     const chartData = (branchData.weeks || []).map((w: any) => ({
                                         date: w.week_name,
                                         spend: w.total_spend || 0,
@@ -263,10 +313,10 @@ export default function Matrix() {
 
                                 {/* Overall Summary Data */}
                                 {(() => {
-                                    const grandTotalSpend = reportData.reduce((acc, branch) => acc + (branch.weeks || []).reduce((bAcc: number, w: any) => bAcc + (w.total_spend || 0), 0), 0);
-                                    const grandTotalClosing = reportData.reduce((acc, branch) => acc + (branch.weeks || []).reduce((bAcc: number, w: any) => bAcc + (w.closing || 0), 0), 0);
-                                    const grandTotalLeads = reportData.reduce((acc, branch) => acc + (branch.weeks || []).reduce((bAcc: number, w: any) => bAcc + (w.actual_lead || 0), 0), 0);
-                                    const grandTotalOmsetAll = reportData.reduce((acc, branch) => acc + (branch.weeks || []).reduce((bAcc: number, w: any) => bAcc + (w.omset_all || 0), 0), 0);
+                                    const grandTotalSpend = filteredData.reduce((acc, branch) => acc + (branch.weeks || []).reduce((bAcc: number, w: any) => bAcc + (w.total_spend || 0), 0), 0);
+                                    const grandTotalClosing = filteredData.reduce((acc, branch) => acc + (branch.weeks || []).reduce((bAcc: number, w: any) => bAcc + (w.closing || 0), 0), 0);
+                                    const grandTotalLeads = filteredData.reduce((acc, branch) => acc + (branch.weeks || []).reduce((bAcc: number, w: any) => bAcc + (w.actual_lead || 0), 0), 0);
+                                    const grandTotalOmsetAll = filteredData.reduce((acc, branch) => acc + (branch.weeks || []).reduce((bAcc: number, w: any) => bAcc + (w.omset_all || 0), 0), 0);
 
                                     const grandCostPerLead = grandTotalLeads > 0 ? grandTotalSpend / grandTotalLeads : 0;
                                     const grandCostPerAcquisition = grandTotalClosing > 0 ? grandTotalSpend / grandTotalClosing : 0;
@@ -307,6 +357,8 @@ export default function Matrix() {
                                     );
                                 })()}
                             </>
+                        );
+                    })()
                         ) : (
                             <div className="w-full bg-white p-6 rounded-lg shadow-sm border border-gray-100 flex justify-center items-center h-64">
                                 <p className="text-gray-500 font-medium">No data available for the selected period.</p>

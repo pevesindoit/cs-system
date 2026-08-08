@@ -5,7 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "./AuthProfider";
 
 // Routes that do NOT require authentication
-const PUBLIC_ROUTES = ["/", "/login"];
+const PUBLIC_ROUTES = ["/", "/login", "/privacy-policy"];
 
 // Routes that require manager (type_id = 2) only
 // CS users (type_id = 1) will be redirected away from these

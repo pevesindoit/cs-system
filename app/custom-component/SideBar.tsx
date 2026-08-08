@@ -100,7 +100,7 @@ export default function SideBar() {
         router.push("/");
     };
 
-    if (pathname === "/") return null;
+    if (pathname === "/" || pathname === "/privacy-policy") return null;
     if (loading || !user) return null;
 
     // Helper to render links (Using filteredMenu instead of menuList)

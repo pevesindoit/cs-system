@@ -28,7 +28,7 @@ export async function POST(req: NextRequest) {
     while (true) {
       let q = supabase
         .from("leads")
-        .select("id, status, ads_id, nominal")
+        .select("id, status, ads_id, nominal, nomor_hp")
         .gte("updated_at", start)
         .lte("updated_at", end);
         
@@ -57,6 +57,7 @@ export async function POST(req: NextRequest) {
 
         let total = 0;
         let total_omset = 0;
+        let uniqueClosingCustomers = new Set<string>();
 
         adLeads.forEach(lead => {
             total++;
@@ -64,6 +65,10 @@ export async function POST(req: NextRequest) {
             const st = lead.status?.toLowerCase();
             if (st === "closing" || st === "closing proyek" || st === "warm" || st === "survey" || st === "los" || st === "hold" || st === "hot") {
                 counts[st as keyof typeof counts]++;
+                
+                if (st === "closing" || st === "closing proyek") {
+                    if (lead.nomor_hp) uniqueClosingCustomers.add(lead.nomor_hp);
+                }
             }
         });
 
@@ -72,6 +77,7 @@ export async function POST(req: NextRequest) {
             ads_name: ad.ads_name,
             total,
             total_omset,
+            closing_customer: uniqueClosingCustomers.size,
             ...counts
         };
     });

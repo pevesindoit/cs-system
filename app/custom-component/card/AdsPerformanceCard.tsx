@@ -12,6 +12,7 @@ interface AdsPerformanceItem {
     hold: number;
     hot: number;
     "closing proyek": number;
+    closing_customer?: number;
 }
 
 const formatIDR = (value: number) => {
@@ -82,6 +83,10 @@ export const AdsPerformanceCard = ({ data = [] }: AdsPerformanceCardProps) => {
                                 <div className="text-center bg-gray-50 p-1 rounded">
                                     <span className="block font-bold text-green-600">{totalClosing}</span>
                                     <span>Closing(s)</span>
+                                </div>
+                                <div className="text-center bg-gray-50 p-1 rounded">
+                                    <span className="block font-bold text-emerald-600">{item.closing_customer || 0}</span>
+                                    <span className="text-[0.65rem]">Costumers</span>
                                 </div>
                                 <div className="text-center bg-gray-50 p-1 rounded">
                                     <span className="block font-bold text-orange-500">{item.hot}</span>

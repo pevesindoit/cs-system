@@ -93,18 +93,10 @@ export async function POST(req: NextRequest) {
         let queryEndStr = safeEndDate;
 
         if (interval === 'week') {
-            // Extend start to Monday
-            const s = new Date(safeStartDate);
-            const startMonday = getMonday(s);
-            queryStartStr = formatDate(startMonday);
-
-            // Extend end to Sunday
-            const e = new Date(safeEndDate);
-            const endMonday = getMonday(e);
-            const endSunday = new Date(endMonday);
-            endSunday.setUTCDate(endMonday.getUTCDate() + 6);
-            queryEndStr = formatDate(endSunday);
+            // We no longer expand queryStartStr and queryEndStr to Monday/Sunday.
+            // Data is strictly bounded by safeStartDate and safeEndDate.
         }
+
 
         // Use +07 timezone offset for WIB
         const start = `${queryStartStr} 00:00:00+07`;
@@ -222,6 +214,9 @@ export async function POST(req: NextRequest) {
                     const sunday = new Date(monday);
                     sunday.setUTCDate(monday.getUTCDate() + 6);
                     endStr = formatDate(sunday);
+                    
+                    if (startStr < safeStartDate) startStr = safeStartDate;
+                    if (endStr > safeEndDate) endStr = safeEndDate;
                 }
 
                 weeksMap.set(key, {
@@ -257,6 +252,9 @@ export async function POST(req: NextRequest) {
                 const sunday = new Date(monday);
                 sunday.setUTCDate(monday.getUTCDate() + 6);
                 endStr = formatDate(sunday);
+
+                if (startStr < safeStartDate) startStr = safeStartDate;
+                if (endStr > safeEndDate) endStr = safeEndDate;
             }
 
             globalWeeksMap.set(key, {

@@ -93,14 +93,10 @@ export async function POST(req: NextRequest) {
     let queryEndStr = safeEndDate;
 
     if (interval === 'week') {
-      const s = new Date(safeStartDate);
-      queryStartStr = formatDate(getMonday(s));
-      const e = new Date(safeEndDate);
-      const endMonday = getMonday(e);
-      const endSunday = new Date(endMonday);
-      endSunday.setUTCDate(endMonday.getUTCDate() + 6);
-      queryEndStr = formatDate(endSunday);
+      // We no longer expand queryStartStr and queryEndStr to Monday/Sunday.
+      // Data is strictly bounded by safeStartDate and safeEndDate.
     }
+
 
     const start = `${queryStartStr} 00:00:00+07`;
     const end = `${queryEndStr} 23:59:59+07`;
@@ -181,22 +177,28 @@ export async function POST(req: NextRequest) {
       if (branch_id && String(b.id) !== String(branch_id)) return;
       const weeksMap = new Map<string, WeeklyMetric>();
       sortedKeys.forEach((key) => {
+        let startStr = key;
         let endStr = key;
         if (interval === 'week') {
           const m = new Date(key); const s = new Date(m); s.setUTCDate(m.getUTCDate() + 6); endStr = formatDate(s);
+          if (startStr < safeStartDate) startStr = safeStartDate;
+          if (endStr > safeEndDate) endStr = safeEndDate;
         }
-        weeksMap.set(key, { start_date: key, end_date: endStr, budget: 0, total_budget: 0, target_lead: 0, omset_target: 0, actual_lead: 0, closing: 0, warm_leads: 0, omset: 0, leads_omset: 0, google_ads: 0, meta_ads: 0, tiktok_ads: 0 });
+        weeksMap.set(key, { start_date: startStr, end_date: endStr, budget: 0, total_budget: 0, target_lead: 0, omset_target: 0, actual_lead: 0, closing: 0, warm_leads: 0, omset: 0, leads_omset: 0, google_ads: 0, meta_ads: 0, tiktok_ads: 0 });
       });
       branchMap.set(String(b.id), { name: b.name, weeks: weeksMap });
     });
 
     const globalWeeksMap = new Map<string, WeeklyMetric>();
     sortedKeys.forEach((key) => {
+      let startStr = key;
       let endStr = key;
       if (interval === 'week') {
         const m = new Date(key); const s = new Date(m); s.setUTCDate(m.getUTCDate() + 6); endStr = formatDate(s);
+        if (startStr < safeStartDate) startStr = safeStartDate;
+        if (endStr > safeEndDate) endStr = safeEndDate;
       }
-      globalWeeksMap.set(key, { start_date: key, end_date: endStr, budget: 0, total_budget: 0, target_lead: 0, omset_target: 0, actual_lead: 0, closing: 0, warm_leads: 0, omset: 0, leads_omset: 0, google_ads: 0, meta_ads: 0, tiktok_ads: 0 });
+      globalWeeksMap.set(key, { start_date: startStr, end_date: endStr, budget: 0, total_budget: 0, target_lead: 0, omset_target: 0, actual_lead: 0, closing: 0, warm_leads: 0, omset: 0, leads_omset: 0, google_ads: 0, meta_ads: 0, tiktok_ads: 0 });
     });
 
     // 1. Ads Data

@@ -78,6 +78,7 @@ export async function POST(req: NextRequest) {
             total,
             total_omset,
             closing_customer: uniqueClosingCustomers.size,
+            closing_phones: Array.from(uniqueClosingCustomers),
             ...counts
         };
     });

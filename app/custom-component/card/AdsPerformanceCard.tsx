@@ -13,6 +13,7 @@ interface AdsPerformanceItem {
     hot: number;
     "closing proyek": number;
     closing_customer?: number;
+    closing_phones?: string[];
 }
 
 const formatIDR = (value: number) => {
@@ -109,6 +110,19 @@ export const AdsPerformanceCard = ({ data = [] }: AdsPerformanceCardProps) => {
                                     <span>Los</span>
                                 </div>
                             </div>
+
+                            {item.closing_phones && item.closing_phones.length > 0 && (
+                                <div className="mt-3">
+                                    <span className="text-[0.65rem] font-bold text-gray-700 block mb-1">Closing Customer Phones:</span>
+                                    <div className="flex flex-wrap gap-1">
+                                        {item.closing_phones.map((phone, i) => (
+                                            <span key={i} className="text-[0.6rem] bg-gray-100 text-gray-600 px-2 py-0.5 rounded border border-gray-200">
+                                                {phone}
+                                            </span>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     );
                 })}

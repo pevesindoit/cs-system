@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 
 interface AdsPerformanceItem {
     ads_id: string;
@@ -13,7 +13,7 @@ interface AdsPerformanceItem {
     hot: number;
     "closing proyek": number;
     closing_customer?: number;
-    closing_phones?: string[];
+    closing_customers_details?: { phone: string; name: string }[];
 }
 
 const formatIDR = (value: number) => {
@@ -30,6 +30,12 @@ interface AdsPerformanceCardProps {
 }
 
 export const AdsPerformanceCard = ({ data = [] }: AdsPerformanceCardProps) => {
+
+    const [expandedAds, setExpandedAds] = useState<Record<string, boolean>>({});
+    
+    const toggleExpand = (adsId: string) => {
+        setExpandedAds(prev => ({ ...prev, [adsId]: !prev[adsId] }));
+    };
 
     const safeData = Array.isArray(data) ? data : [];
 
@@ -54,7 +60,11 @@ export const AdsPerformanceCard = ({ data = [] }: AdsPerformanceCardProps) => {
 
                     return (
                         <div key={item.ads_id} className="group border-b pb-4 last:border-0 last:pb-0">
-                            <div className="flex justify-between text-sm mb-2">
+                            <div 
+                                className="cursor-pointer transition-colors hover:bg-gray-50 -mx-2 px-2 py-2 rounded-md"
+                                onClick={() => toggleExpand(item.ads_id)}
+                            >
+                                <div className="flex justify-between text-sm mb-2">
                                 <span className="font-semibold text-gray-700">
                                     {index + 1}. {item.ads_name || "Unknown Ad"}
                                 </span>
@@ -110,15 +120,19 @@ export const AdsPerformanceCard = ({ data = [] }: AdsPerformanceCardProps) => {
                                     <span>Los</span>
                                 </div>
                             </div>
+                            
+                            {/* Clickable wrapper closes here */}
+                            </div>
 
-                            {item.closing_phones && item.closing_phones.length > 0 && (
-                                <div className="mt-3">
-                                    <span className="text-[0.65rem] font-bold text-gray-700 block mb-1">Closing Customer Phones:</span>
-                                    <div className="flex flex-wrap gap-1">
-                                        {item.closing_phones.map((phone, i) => (
-                                            <span key={i} className="text-[0.6rem] bg-gray-100 text-gray-600 px-2 py-0.5 rounded border border-gray-200">
-                                                {phone}
-                                            </span>
+                            {expandedAds[item.ads_id] && item.closing_customers_details && item.closing_customers_details.length > 0 && (
+                                <div className="mt-3 bg-gray-50 p-3 rounded border border-gray-100 animate-in fade-in slide-in-from-top-1">
+                                    <span className="text-[0.65rem] font-bold text-gray-700 block mb-2 uppercase tracking-wider">Closing Customers Details:</span>
+                                    <div className="flex flex-col gap-2">
+                                        {item.closing_customers_details.map((customer, i) => (
+                                            <div key={i} className="flex justify-between items-center text-[0.7rem] bg-white px-3 py-1.5 rounded border border-gray-200 shadow-sm">
+                                                <span className="font-semibold text-gray-800">{customer.name}</span>
+                                                <span className="text-gray-500 font-mono tracking-tight">{customer.phone}</span>
+                                            </div>
                                         ))}
                                     </div>
                                 </div>

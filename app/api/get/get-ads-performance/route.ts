@@ -28,7 +28,7 @@ export async function POST(req: NextRequest) {
     while (true) {
       let q = supabase
         .from("leads")
-        .select("id, status, ads_id, nominal, nomor_hp")
+        .select("id, status, ads_id, nominal, nomor_hp, name")
         .gte("updated_at", start)
         .lte("updated_at", end);
         
@@ -57,7 +57,7 @@ export async function POST(req: NextRequest) {
 
         let total = 0;
         let total_omset = 0;
-        let uniqueClosingCustomers = new Set<string>();
+        let uniqueClosingCustomers = new Map<string, string>();
 
         adLeads.forEach(lead => {
             total++;
@@ -67,7 +67,9 @@ export async function POST(req: NextRequest) {
                 counts[st as keyof typeof counts]++;
                 
                 if (st === "closing" || st === "closing proyek") {
-                    if (lead.nomor_hp) uniqueClosingCustomers.add(lead.nomor_hp);
+                    if (lead.nomor_hp) {
+                        uniqueClosingCustomers.set(lead.nomor_hp, lead.name || "Unknown");
+                    }
                 }
             }
         });
@@ -78,7 +80,7 @@ export async function POST(req: NextRequest) {
             total,
             total_omset,
             closing_customer: uniqueClosingCustomers.size,
-            closing_phones: Array.from(uniqueClosingCustomers),
+            closing_customers_details: Array.from(uniqueClosingCustomers.entries()).map(([phone, name]) => ({ phone, name })),
             ...counts
         };
     });

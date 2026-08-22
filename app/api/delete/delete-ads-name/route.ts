@@ -1,10 +1,23 @@
-import supabase from "@/lib/db";
+import { createClient } from "@supabase/supabase-js";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
     const { id } = body;
+
+    const authHeader = req.headers.get("Authorization");
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        global: {
+          headers: {
+            Authorization: authHeader || "",
+          },
+        },
+      }
+    );
 
     if (!id) {
       return NextResponse.json(

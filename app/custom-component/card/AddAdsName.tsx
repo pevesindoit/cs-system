@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import H1 from "../H1";
 import { AdsNameData } from "@/app/types/types";
 import axios from "axios";
+import { supabaseBrowser } from "@/lib/supabaseBrowser";
 
 export default function AddAdsName() {
     const [adsName, setAdsName] = useState("");
@@ -40,8 +41,15 @@ export default function AddAdsName() {
         setLoading(true);
         setError(null);
         try {
+            const { data: { session } } = await supabaseBrowser.auth.getSession();
+            const token = session?.access_token;
+            
             const res = await axios.post("/api/add/add-ads-name", {
                 ads_name: adsName.trim(),
+            }, {
+                headers: {
+                    Authorization: `Bearer ${token}`
+                }
             });
             if (res.status === 200 && res.data?.allAdsNames) {
                 setAdsList(res.data.allAdsNames);
@@ -64,7 +72,14 @@ export default function AddAdsName() {
         setLoading(true);
         setError(null);
         try {
-            const res = await axios.post("/api/delete/delete-ads-name", { id });
+            const { data: { session } } = await supabaseBrowser.auth.getSession();
+            const token = session?.access_token;
+
+            const res = await axios.post("/api/delete/delete-ads-name", { id }, {
+                headers: {
+                    Authorization: `Bearer ${token}`
+                }
+            });
             if (res.status === 200 && res.data?.allAdsNames) {
                 setAdsList(res.data.allAdsNames);
             }
